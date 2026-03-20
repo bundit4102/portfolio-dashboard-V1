@@ -3196,26 +3196,24 @@ async function showQR(){
 
   const base=location.href.split('#')[0].split('?')[0];
 
-  // ── Full VIP URL (for Copy Link) ────────────
-  let vipUrl='';
+  // ── 1. Full URL → Copy Link button ──────────
   try{
-    const payload=JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY)});
-    const encoded=btoa(unescape(encodeURIComponent(payload)));
-    vipUrl=base+'#vip:'+encoded;
-    if(modal)modal.dataset.vipUrl=vipUrl;
-  }catch(e){}
+    const full=JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY)});
+    const enc=btoa(unescape(encodeURIComponent(full)));
+    modal.dataset.vipUrl=base+'#vip:'+enc;
+  }catch(e){modal.dataset.vipUrl=base;}
 
-  // ── Compact QR data (ชื่อ+status+% เท่านั้น ให้เล็กพอ) ──
+  // ── 2. Compact URL → QR Code only ───────────
+  // Only name + status + pct + category (no desc/logs/budget)
   let qrUrl='';
   try{
-    const compact={
-      t:fi(TODAY),
-      p:P.map(x=>({n:x.name||'',s:x.status||'',c:x.pct||0,cat:x.pcat||''})),
-      i:IDEAS.map(x=>({n:x.title||'',s:x.status||'',cat:x.cat||''})).slice(0,20)
+    const compact={t:fi(TODAY),
+      p:P.map(x=>({n:(x.name||'').slice(0,30),s:(x.status||'').slice(0,3),c:x.pct||0,cat:(x.pcat||'').slice(0,3)})),
+      i:IDEAS.slice(0,15).map(x=>({n:(x.title||'').slice(0,25),cat:(x.cat||'').slice(0,3),s:(x.status||'').slice(0,3)}))
     };
-    const enc=btoa(unescape(encodeURIComponent(JSON.stringify(compact))));
-    qrUrl=base+'#vip:'+enc;
-  }catch(e){qrUrl=vipUrl;}
+    const enc2=btoa(unescape(encodeURIComponent(JSON.stringify(compact))));
+    qrUrl=base+'#vip:'+enc2;
+  }catch(e){}
 
   // Load QR lib
   if(!window.QRCode){
@@ -3228,20 +3226,16 @@ async function showQR(){
   }
 
   if(qc)qc.innerHTML='';
-
-  const urlToQR=qrUrl.length<=2900?qrUrl:(vipUrl.length<=2900?vipUrl:'');
-  if(window.QRCode&&urlToQR){
+  if(window.QRCode&&qrUrl&&qrUrl.length<=2900){
     try{
-      new QRCode(qc,{text:urlToQR,width:200,height:200,colorDark:'#1c2b3a',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.L});
+      new QRCode(qc,{text:qrUrl,width:200,height:200,colorDark:'#1c2b3a',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.L});
       if(qs)qs.innerHTML='<span style="color:var(--green);font-size:11px">✅ QR พร้อมสแกน</span>';
     }catch(e){
-      if(qc)qc.innerHTML='<div style="font-size:11px;color:var(--muted);padding:12px;text-align:center">ใช้ Copy Link VIP ด้านล่างแทนครับ</div>';
+      if(qc)qc.innerHTML='<div style="padding:10px;font-size:11px;color:var(--muted);text-align:center">ใช้ Copy Link VIP แทนครับ</div>';
+      if(qs)qs.innerHTML='';
     }
   } else {
-    if(qc)qc.innerHTML=`<div style="font-size:12px;color:var(--amber);padding:14px;text-align:center;line-height:1.8">
-      📋 ข้อมูลมากเกินสำหรับ QR<br>
-      <span style="font-size:11px;color:var(--muted)">กรุณาใช้ปุ่ม Copy Link VIP<br>แล้วส่งทาง Line แทนครับ</span>
-    </div>`;
+    if(qc)qc.innerHTML='<div style="padding:14px;font-size:12px;color:var(--amber);text-align:center;line-height:1.8">⚠ ข้อมูลมากเกิน QR<br><span style="font-size:11px;color:var(--muted)">ใช้ปุ่ม Copy Link VIP<br>ส่งทาง Line แทนได้เลยครับ</span></div>';
     if(qs)qs.innerHTML='';
   }
 }
