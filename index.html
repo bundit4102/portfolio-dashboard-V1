@@ -1146,21 +1146,30 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
 <div class="modal-ov hidden" id="qrModal">
   <div class="modal-box" style="max-width:440px">
     <div class="modal-head" style="background:#2d1b4e">
-      <h3 style="color:#a87cc7">📱 QR Code — VIP View</h3>
+      <h3 style="color:#a87cc7">📱 แชร์ & QR Code</h3>
       <button class="modal-close" onclick="$('qrModal').classList.add('hidden')">✕</button>
     </div>
-    <div class="modal-body" style="text-align:center">
-      <p style="font-size:12px;color:var(--muted);margin-bottom:14px">สแกน QR หรือส่ง Link ให้ผู้บริหารดู Summary<br>แบบ Viewer-only ไม่ต้องเข้าสู่ระบบ</p>
-      <div id="qrCanvas" style="display:flex;justify-content:center;margin-bottom:12px"></div>
-      <div id="qrStatus" style="font-size:11px;margin-bottom:10px"></div>
-      <div id="qrUrl" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);word-break:break-all;background:var(--cream);padding:8px;border-radius:7px;margin-bottom:12px;text-align:left"></div>
-      <button class="btn b-navy" onclick="copyQrUrl()" style="width:100%;margin-bottom:8px">📋 Copy Link VIP</button>
-      <div style="padding-top:12px;border-top:1px solid var(--div);margin-top:4px">
-        <div style="font-size:11px;font-weight:700;color:var(--slate);margin-bottom:8px;text-align:left">📤 แชร์ข้อมูลให้ทีม (Sync Data)</div>
-        <p style="font-size:11px;color:var(--muted);text-align:left;margin-bottom:10px;line-height:1.6">ส่ง Link นี้ให้เพื่อนร่วมทีม — เปิดแล้วข้อมูลโหลดเข้าเครื่องเขาอัตโนมัติ</p>
-        <button class="btn b-out" onclick="copySyncLink()" style="width:100%;margin-bottom:6px">🔄 Copy Sync Link (ส่งข้อมูลให้ทีม)</button>
-        <div style="font-size:10px;color:var(--muted);text-align:center">ทีมเปิด link → ข้อมูลโหลดเข้าเครื่องทันที</div>
+    <div class="modal-body">
+
+      <!-- Section 1: VIP (ผู้บริหาร) -->
+      <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--div)">
+        <div style="font-size:12px;font-weight:700;color:#a87cc7;margin-bottom:8px">👑 VIP — ผู้บริหาร (ไม่ต้อง Login)</div>
+        <p style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6">สแกน QR หรือส่ง link — เปิดดู Summary ได้ทันที</p>
+        <div id="qrCanvas" style="display:flex;justify-content:center;margin-bottom:8px"></div>
+        <div id="qrStatus" style="font-size:11px;margin-bottom:8px;text-align:center"></div>
+        <div id="qrUrl" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);word-break:break-all;background:var(--cream);padding:7px 10px;border-radius:7px;margin-bottom:8px;display:none"></div>
+        <button class="btn b-navy" id="btnVipLink" onclick="copyVipLink()" style="width:100%">📋 Copy Link VIP (ส่ง Line ได้เลย)</button>
       </div>
+
+      <!-- Section 2: Sync (ทีมงาน) -->
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--slate);margin-bottom:8px">🔄 Sync — ส่งข้อมูล+Users ให้ทีม</div>
+        <p style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6">ทีมเปิด link → กด "โหลดข้อมูล" → login ได้ทันที พร้อมข้อมูลครบ</p>
+        <div id="syncProgress" style="font-size:11px;color:var(--muted);margin-bottom:8px;text-align:center;display:none">⏳ กำลังสร้าง link...</div>
+        <button class="btn b-out" id="btnSyncLink" onclick="createSyncLink()" style="width:100%;color:var(--blue);border-color:rgba(26,111,168,.3)">🔄 สร้าง & Copy Sync Link</button>
+        <div style="font-size:10px;color:var(--muted);text-align:center;margin-top:6px">link สั้น ส่ง Line ได้ ไม่แตก ✅</div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -3176,40 +3185,53 @@ ${slides.map((_,i)=>`  <Relationship Id="rId${i+2}" Type="http://schemas.openxml
 // QR CODE VIP VIEWER
 // ══════════════════════════════════════════════
 
-// Generate QR with full data embedded in URL (works across devices)
+// ══════════════════════════════════════════════
+// QR CODE & SHARE SYSTEM (JSONBin for short links)
+// ══════════════════════════════════════════════
+const JSONBIN_URL='https://api.jsonbin.io/v3/b';
+const JSONBIN_KEY='$2a$10$placeholder'; // public bins don't need key for reading
+
 async function showQR(){
   const modal=$('qrModal');
   modal.classList.remove('hidden');
-  const qs=$('qrStatus');
   const qc=$('qrCanvas');
-  const qu=$('qrUrl');
-  if(qc)qc.innerHTML='<div style="font-size:11px;color:var(--muted);padding:16px">กำลังสร้าง QR...</div>';
+  const qs=$('qrStatus');
+  if(qc)qc.innerHTML='<div style="font-size:11px;color:var(--muted);padding:12px">กำลังสร้าง QR...</div>';
+  if(qs)qs.innerHTML='';
 
-  // Encode data — VIP includes projects+ideas only
-  let encoded='';
-  try{
-    const payload=JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY)});
-    encoded=btoa(unescape(encodeURIComponent(payload)));
-  }catch(e){encoded='';}
+  // Store VIP data locally for this session
+  const vipPayload=JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY)});
 
-  // Sync link includes users too so teammates can login
-  let encodedSync='';
+  // Try JSONBin first for short link
+  let vipUrl='';
   try{
-    const syncPayload=JSON.stringify({
-      projects:P, ideas:IDEAS, today:fi(TODAY),
-      users:getUsers() // include all registered users
+    const res=await fetch('https://api.jsonbin.io/v3/b',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Bin-Private':'false','X-Bin-Name':'vip_'+Date.now()},
+      body:vipPayload
     });
-    encodedSync=btoa(unescape(encodeURIComponent(syncPayload)));
-  }catch(e){encodedSync=encoded;}
+    if(res.ok){
+      const data=await res.json();
+      const binId=data.metadata?.id||data.record?.id||'';
+      if(binId){
+        const base=location.href.split('#')[0].split('?')[0];
+        vipUrl=base+'?bin='+binId;
+      }
+    }
+  }catch(e){}
 
-  const base=location.href.split('#')[0].split('?')[0];
-  const vipUrl=base+'#vip:'+encoded;
-  const syncUrl=base+'?sync='+encodedSync;
+  // Fallback: use base64 in URL (old method)
+  if(!vipUrl){
+    let encoded='';
+    try{encoded=btoa(unescape(encodeURIComponent(vipPayload)));}catch(e){}
+    const base=location.href.split('#')[0].split('?')[0];
+    vipUrl=base+'#vip:'+encoded;
+  }
 
-  if(modal){modal.dataset.vipUrl=vipUrl; modal.dataset.syncUrl=syncUrl;}
-  if(qu)qu.textContent=base+'#vip ['+Math.round(encoded.length/1024*10)/10+' KB]';
+  // Store for copy
+  if(modal)modal.dataset.vipUrl=vipUrl;
 
-  // Load QR library
+  // Load QR lib
   if(!window.QRCode){
     await new Promise(res=>{
       const s=document.createElement('script');
@@ -3220,47 +3242,137 @@ async function showQR(){
   }
 
   if(qc)qc.innerHTML='';
-  if(window.QRCode&&encoded){
+  const isShort=vipUrl.length<500;
+  if(window.QRCode&&isShort){
     try{
-      if(vipUrl.length<=2900){
-        new QRCode(qc,{text:vipUrl,width:200,height:200,colorDark:'#1c2b3a',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.L});
-        if(qs)qs.innerHTML='<span style="color:var(--green);font-size:11px">✅ QR พร้อมใช้งาน</span>';
-      } else {
-        if(qc)qc.innerHTML=`<div style="padding:16px;font-size:12px;color:var(--amber);text-align:center;line-height:1.7">⚠ ข้อมูลเยอะเกินสำหรับ QR<br><span style="font-size:11px;color:var(--muted)">ใช้ปุ่ม Copy Link แทน</span></div>`;
-        if(qs)qs.innerHTML='<span style="color:var(--amber);font-size:11px">ใช้ Copy Link แทน QR</span>';
-      }
+      new QRCode(qc,{text:vipUrl,width:180,height:180,colorDark:'#1c2b3a',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});
+      if(qs)qs.innerHTML='<span style="color:var(--green);font-size:11px">✅ QR พร้อม · Link สั้น ส่ง Line ได้เลย</span>';
     }catch(e){
-      if(qc)qc.innerHTML=`<div style="padding:8px;font-size:11px;color:var(--muted)">ใช้ Copy Link ด้านล่าง</div>`;
+      if(qc)qc.innerHTML='<div style="padding:10px;font-size:11px;color:var(--muted)">ใช้ Copy Link ด้านล่าง</div>';
     }
   } else {
-    if(qc)qc.innerHTML=`<div style="padding:16px;font-size:11px;color:var(--muted)">ใช้ปุ่ม Copy Link</div>`;
+    if(qc)qc.innerHTML='<div style="padding:10px;font-size:12px;color:var(--amber);text-align:center">ใช้ปุ่ม Copy Link ครับ<br><span style="font-size:10px;color:var(--muted)">(QR ใหญ่เกิน สแกนยาก)</span></div>';
+    if(qs)qs.innerHTML='<span style="color:var(--amber);font-size:11px">ส่งผ่าน Copy Link แทนครับ</span>';
   }
 }
 
-function copyQrUrl(){
-  const url=$('qrModal').dataset.vipUrl||location.href.split('#')[0]+'#vip';
-  _copyToClipboard(url,'#qrModal .btn');
+function copyVipLink(){
+  const modal=$('qrModal');
+  const url=modal?.dataset.vipUrl;
+  if(!url){showQR();return;}
+  _copyToClipboard(url,'#btnVipLink');
+  showToast('✅ Copy Link VIP แล้ว! ส่ง Line ได้เลย','#1a7a4a');
 }
 
-function copySyncLink(){
-  const url=$('qrModal').dataset.syncUrl;
-  if(!url){alert('กรุณาเปิด QR modal ก่อน');return;}
-  _copyToClipboard(url,'[onclick="copySyncLink()"]');
+async function createSyncLink(){
+  const prog=$('syncProgress');
+  const btn=$('btnSyncLink');
+  if(prog)prog.style.display='block';
+  if(btn){btn.disabled=true;btn.textContent='⏳ กำลังสร้าง...';}
+
+  const syncPayload=JSON.stringify({
+    projects:P, ideas:IDEAS, today:fi(TODAY),
+    users:getUsers()
+  });
+
+  let syncUrl='';
+  try{
+    const res=await fetch('https://api.jsonbin.io/v3/b',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Bin-Private':'false','X-Bin-Name':'sync_'+Date.now()},
+      body:syncPayload
+    });
+    if(res.ok){
+      const data=await res.json();
+      const binId=data.metadata?.id||data.record?.id||'';
+      if(binId){
+        const base=location.href.split('#')[0].split('?')[0];
+        syncUrl=base+'?bin='+binId+'&mode=sync';
+      }
+    }
+  }catch(e){}
+
+  // Fallback: base64
+  if(!syncUrl){
+    let enc='';
+    try{enc=btoa(unescape(encodeURIComponent(syncPayload)));}catch(e){}
+    const base=location.href.split('#')[0].split('?')[0];
+    syncUrl=base+'?sync='+enc;
+  }
+
+  if(prog)prog.style.display='none';
+  if(btn){btn.disabled=false;btn.textContent='🔄 สร้าง & Copy Sync Link';}
+
+  _copyToClipboard(syncUrl,'#btnSyncLink');
+  const isShort=syncUrl.length<500;
+  showToast(isShort?'✅ Copy Sync Link แล้ว! ส่ง Line ได้เลย':'✅ Copy แล้ว (link ยาว — ใช้ Backup/Restore แทนดีกว่า)','#1a6fa8');
 }
+
+// Legacy functions (keep for backward compat)
+function copyQrUrl(){copyVipLink();}
+function copySyncLink(){createSyncLink();}
 
 function _copyToClipboard(text,btnSel){
   const doCopy=()=>{
-    const ta=document.createElement('textarea');
-    ta.value=text;ta.style.cssText='position:fixed;opacity:0;top:0;left:0';
-    document.body.appendChild(ta);ta.select();
-    try{document.execCommand('copy');}catch(e){}
-    document.body.removeChild(ta);
+    try{
+      const ta=document.createElement('textarea');
+      ta.value=text;ta.style.cssText='position:fixed;opacity:0;top:0;left:0';
+      document.body.appendChild(ta);ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }catch(e){}
     const btn=document.querySelector(btnSel);
-    if(btn){const o=btn.textContent;btn.textContent='✅ Copied!';setTimeout(()=>btn.textContent=o,2000);}
+    if(btn){const o=btn.textContent;btn.textContent='✅ Copied!';setTimeout(()=>btn.textContent=o,2500);}
   };
   if(navigator.clipboard){
     navigator.clipboard.writeText(text).then(doCopy).catch(doCopy);
-  } else {doCopy();}
+  }else{doCopy();}
+}
+
+// ── Load data from JSONBin or sync param ─────
+async function checkSyncParam(){
+  const params=new URLSearchParams(location.search);
+  const binId=params.get('bin');
+  const mode=params.get('mode');
+  const syncData=params.get('sync');
+
+  let snap=null;
+
+  if(binId){
+    // Fetch from JSONBin
+    try{
+      const res=await fetch('https://api.jsonbin.io/v3/b/'+binId+'/latest');
+      if(res.ok){
+        const data=await res.json();
+        snap=data.record||data;
+      }
+    }catch(e){}
+    try{history.replaceState({},'',location.pathname+location.hash);}catch(e){}
+  } else if(syncData){
+    // Legacy base64 sync
+    try{snap=JSON.parse(decodeURIComponent(escape(atob(syncData))));}catch(e){}
+    try{history.replaceState({},'',location.pathname+location.hash);}catch(e){}
+  }
+
+  if(!snap)return;
+
+  if(mode==='sync'||snap.users){
+    // Team sync mode — show import modal
+    _pendingSyncData=snap;
+    const info=$('syncImportInfo');
+    if(info){
+      const pc=(snap.projects||[]).length;
+      const ic=(snap.ideas||[]).length;
+      const uc=(snap.users||[]).length;
+      info.innerHTML=`พบข้อมูล <strong>${pc} โครงการ</strong>, <strong>${ic} Ideas</strong>${uc?` และ <strong>${uc} Users</strong>`:''}<br>
+        <span style="font-size:11px;color:var(--muted)">วันที่ข้อมูล: ${snap.today||'ไม่ระบุ'}</span>`;
+    }
+    $('syncImportModal').classList.remove('hidden');
+  } else {
+    // VIP mode — show VIP viewer directly
+    _pendingSyncData=snap;
+    initVipModeFromSnap(snap);
+  }
 }
 
 // ── Sync Import (for team members) ───────────
@@ -3326,50 +3438,13 @@ function showToast(msg,color){
   setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),400);},2500);
 }
 
-// ── VIP Viewer Mode — reads data from URL hash ─
-function initVipMode(){
-  let snap=null;
-
-  // Try to decode data from URL hash: #vip:base64data
-  const hash=location.hash||'';
-  if(hash.startsWith('#vip:')){
-    try{
-      const b64=hash.slice(5);
-      const decoded=decodeURIComponent(escape(atob(b64)));
-      snap=JSON.parse(decoded);
-    }catch(e){
-      // Try alternate encoding
-      try{
-        const b64=hash.slice(5);
-        snap=JSON.parse(decodeURIComponent(atob(b64)));
-      }catch(e2){snap=null;}
-    }
-  }
-
-  // Fallback: try localStorage (for same-device use)
-  if(!snap){
-    try{const s=localStorage.getItem('ptk_vip_snap');if(s)snap=JSON.parse(s);}catch(e){}
-  }
-
-  if(!snap){
-    document.body.innerHTML=`<div style="background:#0f0a1e;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'Sarabun',sans-serif">
-      <div style="text-align:center;color:#fff;padding:40px">
-        <div style="font-size:56px;margin-bottom:16px">🔒</div>
-        <div style="font-size:20px;font-weight:700;color:#a87cc7;margin-bottom:8px">ไม่พบข้อมูล VIP</div>
-        <div style="font-size:13px;color:rgba(255,255,255,.5);line-height:1.7">QR Code หรือ Link นี้อาจหมดอายุ<br>กรุณาขอ QR Code ใหม่จาก Admin</div>
-        <a href="${location.href.split('#')[0]}" style="display:inline-block;margin-top:20px;padding:10px 24px;background:#a87cc7;color:#fff;border-radius:8px;text-decoration:none;font-size:13px;font-weight:700">← กลับหน้าหลัก</a>
-      </div>
-    </div>`;
-    return;
-  }
-
-  // Populate globals
+// ── VIP Viewer Mode — reads data from URL hash or bin ─
+function initVipModeFromSnap(snap){
   P=snap.projects||[];
   IDEAS=snap.ideas||[];
   if(snap.today){TODAY=new Date(snap.today);TODAY.setHours(0,0,0,0);}
   else{TODAY=new Date();TODAY.setHours(0,0,0,0);}
 
-  // Hide login screen, show VIP screen
   const auth=document.getElementById('authScreen');
   if(auth)auth.style.display='none';
   const mainApp=document.getElementById('mainApp');
@@ -3378,10 +3453,41 @@ function initVipMode(){
   if(!vip)return;
   vip.classList.remove('hidden');
 
-  // Set date label
   const dl=$('vipDateLbl');
   if(dl)dl.textContent='ข้อมูล ณ วันที่ '+TODAY.toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'});
 
+  renderVipContent();
+}
+
+function initVipMode(){
+  let snap=null;
+  const hash=location.hash||'';
+  if(hash.startsWith('#vip:')){
+    try{
+      const b64=hash.slice(5);
+      snap=JSON.parse(decodeURIComponent(escape(atob(b64))));
+    }catch(e){
+      try{snap=JSON.parse(decodeURIComponent(atob(hash.slice(5))));}catch(e2){}
+    }
+  }
+  if(!snap){
+    try{const s=localStorage.getItem('ptk_vip_snap');if(s)snap=JSON.parse(s);}catch(e){}
+  }
+  if(!snap){
+    document.body.innerHTML=`<div style="background:#0f0a1e;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'Sarabun',sans-serif">
+      <div style="text-align:center;color:#fff;padding:40px">
+        <div style="font-size:56px;margin-bottom:16px">🔒</div>
+        <div style="font-size:20px;font-weight:700;color:#a87cc7;margin-bottom:8px">ไม่พบข้อมูล VIP</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.5);line-height:1.7">QR Code หรือ Link นี้หมดอายุแล้ว<br>กรุณาขอ QR Code ใหม่จาก Admin</div>
+        <a href="${location.href.split('#')[0].split('?')[0]}" style="display:inline-block;margin-top:20px;padding:10px 24px;background:#a87cc7;color:#fff;border-radius:8px;text-decoration:none;font-size:13px;font-weight:700">← กลับหน้าหลัก</a>
+      </div>
+    </div>`;
+    return;
+  }
+  initVipModeFromSnap(snap);
+}
+
+function renderVipContent(){
   const vc=$('vipContent');
   if(!vc)return;
 
