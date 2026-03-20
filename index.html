@@ -530,8 +530,18 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
     <!-- LOGIN FORM -->
     <div class="auth-body" id="loginForm">
       <div class="auth-err" id="loginErr"></div>
-      <div class="lf"><label>Username</label><input id="lUser" placeholder="กรอก username" onkeydown="if(event.key==='Enter')doLogin()"></div>
-      <div class="lf"><label>Password</label><input type="password" id="lPass" placeholder="กรอก password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="lf"><label>Username</label><input id="lUser" placeholder="กรอก username" onkeydown="if(event.key==='Enter')doLogin()" autocomplete="username"></div>
+      <div class="lf">
+        <label>Password</label>
+        <div style="position:relative">
+          <input type="password" id="lPass" placeholder="กรอก password" onkeydown="if(event.key==='Enter')doLogin()" autocomplete="current-password" style="width:100%;padding-right:40px">
+          <button type="button" onclick="togglePw('lPass',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:rgba(255,255,255,.4);font-size:16px;line-height:1;padding:2px">👁</button>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <input type="checkbox" id="rememberMe" style="width:14px;height:14px;cursor:pointer;accent-color:var(--gold)">
+        <label for="rememberMe" style="font-size:11px;color:rgba(255,255,255,.5);cursor:pointer">จดจำฉันไว้</label>
+      </div>
       <button class="auth-btn" onclick="doLogin()">เข้าสู่ระบบ →</button>
       <div class="auth-link">ยังไม่มีบัญชี? <span onclick="showAuthTab('reg')">สมัครสมาชิก</span></div>
       <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08);text-align:center">
@@ -549,9 +559,21 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
         <div class="lf"><label>ชื่อ-นามสกุล *</label><input id="rName" placeholder="ชื่อจริง นามสกุล"></div>
         <div class="lf"><label>แผนก / ตำแหน่ง</label><input id="rDept" placeholder="เช่น IT Department"></div>
       </div>
-      <div class="lf"><label>Username *</label><input id="rUser" placeholder="ตั้ง username (ไม่มีช่องว่าง)"></div>
-      <div class="lf"><label>Password *</label><input type="password" id="rPass" placeholder="อย่างน้อย 6 ตัวอักษร"></div>
-      <div class="lf"><label>ยืนยัน Password *</label><input type="password" id="rPass2" placeholder="กรอกรหัสผ่านอีกครั้ง"></div>
+      <div class="lf"><label>Username *</label><input id="rUser" placeholder="ตั้ง username (ไม่มีช่องว่าง)" autocomplete="username"></div>
+      <div class="lf">
+        <label>Password *</label>
+        <div style="position:relative">
+          <input type="password" id="rPass" placeholder="อย่างน้อย 6 ตัวอักษร" autocomplete="new-password" style="width:100%;padding-right:40px">
+          <button type="button" onclick="togglePw('rPass',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:rgba(255,255,255,.4);font-size:16px;line-height:1;padding:2px">👁</button>
+        </div>
+      </div>
+      <div class="lf">
+        <label>ยืนยัน Password *</label>
+        <div style="position:relative">
+          <input type="password" id="rPass2" placeholder="กรอกรหัสผ่านอีกครั้ง" autocomplete="new-password" style="width:100%;padding-right:40px">
+          <button type="button" onclick="togglePw('rPass2',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:rgba(255,255,255,.4);font-size:16px;line-height:1;padding:2px">👁</button>
+        </div>
+      </div>
       <div class="lf">
         <label>ขอสิทธิ์การเข้าถึง</label>
         <select id="rRole">
@@ -921,7 +943,11 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
       </div>
       <div style="text-align:right">
         <div style="font-size:11px;color:var(--muted);margin-bottom:6px">จัดการผู้ใช้ สิทธิ์ และการอนุมัติบัญชี</div>
-        <button class="btn b-navy" onclick="openCreateUserModal()">＋ สร้างผู้ใช้ใหม่</button>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn b-out" onclick="refreshAdminPanel()" title="โหลดข้อมูลผู้ใช้ใหม่">🔄 Refresh</button>
+          <button class="btn b-out" onclick="copyRegLink()" title="คัดลอก Link สมัครสมาชิก ส่งให้ผู้ใช้ใหม่" style="color:var(--blue);border-color:rgba(26,111,168,.3)">🔗 Copy Link สมัคร</button>
+          <button class="btn b-navy" onclick="openCreateUserModal()">＋ สร้างผู้ใช้ใหม่</button>
+        </div>
       </div>
     </div>
 
@@ -931,6 +957,16 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
       <div class="kc" style="border-top:3px solid var(--amber)"><div class="ki">⏳</div><div class="kl">รอการอนุมัติ</div><div class="kv" id="au-pending" style="color:var(--amber)">0</div><div class="ks">Pending</div></div>
       <div class="kc" style="border-top:3px solid var(--green)"><div class="ki">✅</div><div class="kl">อนุมัติแล้ว</div><div class="kv" id="au-approved" style="color:var(--green)">0</div><div class="ks">Active</div></div>
       <div class="kc" style="border-top:3px solid var(--red)"><div class="ki">❌</div><div class="kl">ปฏิเสธแล้ว</div><div class="kv" id="au-rejected" style="color:var(--red)">0</div><div class="ks">Rejected</div></div>
+    </div>
+
+    <!-- Pending notification banner -->
+    <div id="pendingBanner" style="display:none;background:rgba(200,122,0,.1);border:1px solid rgba(200,122,0,.3);border-radius:10px;padding:12px 16px;margin-bottom:16px;display:none;align-items:center;gap:12px">
+      <span style="font-size:20px">🔔</span>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700;color:var(--amber)">มีผู้ใช้รอการอนุมัติ <span id="pendingBannerCount">0</span> คน</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">กดปุ่ม "⏳ รอการอนุมัติ" ด้านล่างเพื่อดูรายการ</div>
+      </div>
+      <button class="btn b-out" style="border-color:rgba(200,122,0,.4);color:var(--amber);font-size:11px" onclick="setAdmFilter('pending')">ดูรายการ →</button>
     </div>
 
     <!-- Filter tabs -->
@@ -1132,10 +1168,12 @@ function showAuthTab(t){
 // ── LOGIN ─────────────────────────────────────
 function doLogin(){
   const u=$('lUser').value.trim(), p=$('lPass').value;
+  const remember=$('rememberMe')?.checked||false;
   if(!u||!p){showErr('loginErr','กรุณากรอก username และ password');return;}
 
   // Check built-in admin FIRST — cannot be overridden by localStorage
   if(u===ADMIN_USER.username && p===ADMIN_USER.password){
+    saveRemembered(u,p,remember);
     currentUser=ADMIN_USER;
     showAdminBox();
     return;
@@ -1155,6 +1193,7 @@ function doLogin(){
     return;
   }
   if(found.status==='rejected'){showErr('loginErr','บัญชีของคุณถูกปฏิเสธ กรุณาติดต่อ Admin');return;}
+  saveRemembered(u,p,remember);
   currentUser=found;
   if(found.role==='Admin'){
     showAdminBox();
@@ -1263,6 +1302,64 @@ function doLogout(){
 
 function showErr(id,msg){$(id).textContent=msg;$(id).classList.add('show');}
 
+// ── Password toggle ───────────────────────────
+function togglePw(inputId,btn){
+  const inp=$(inputId);
+  if(!inp)return;
+  const show=inp.type==='password';
+  inp.type=show?'text':'password';
+  btn.textContent=show?'🙈':'👁';
+  btn.style.color=show?'rgba(255,255,255,.7)':'rgba(255,255,255,.4)';
+}
+
+// ── Remember Me ───────────────────────────────
+const REMEMBER_KEY='ptk_remember_v1';
+function loadRemembered(){
+  try{
+    const r=localStorage.getItem(REMEMBER_KEY);
+    if(r){const d=JSON.parse(r);if(d.u&&d.p){$('lUser').value=d.u;$('lPass').value=d.p;$('rememberMe').checked=true;}}
+  }catch(e){}
+}
+function saveRemembered(u,p,remember){
+  try{
+    if(remember)localStorage.setItem(REMEMBER_KEY,JSON.stringify({u,p}));
+    else localStorage.removeItem(REMEMBER_KEY);
+  }catch(e){}
+}
+// Load remembered credentials on page load
+document.addEventListener('DOMContentLoaded',()=>{
+  loadRemembered();
+  // Auto-open register tab if ?reg=1 in URL
+  if(location.search.includes('reg=1')){
+    showAuthTab('reg');
+    // Clean URL without reload
+    try{history.replaceState({},'',location.pathname+location.hash);}catch(e){}
+  }
+});
+
+// ── Registration Link ─────────────────────────
+function copyRegLink(){
+  const base=location.href.split('#')[0].split('?')[0];
+  const regUrl=base+'?reg=1';
+  navigator.clipboard.writeText(regUrl).then(()=>{
+    const btn=document.querySelector('[onclick="copyRegLink()"]');
+    if(btn){const o=btn.textContent;btn.textContent='✅ Copied!';setTimeout(()=>btn.textContent=o,2000);}
+  }).catch(()=>{
+    const ta=document.createElement('textarea');
+    ta.value=regUrl;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+    alert('คัดลอกแล้ว: '+regUrl);
+  });
+}
+
+// ── Admin Refresh ─────────────────────────────
+function refreshAdminPanel(){
+  renderAdminPanel();
+  const btn=document.querySelector('[onclick="refreshAdminPanel()"]');
+  if(btn){const o=btn.textContent;btn.textContent='✅ Updated!';setTimeout(()=>btn.textContent=o,1500);}
+}
+
+
 // ── ADMIN USER MANAGEMENT ─────────────────────
 // ── ADMIN PANEL ──────────────────────────────
 let admFilter='all';
@@ -1285,6 +1382,12 @@ function renderAdminPanel(){
   $('au-pending').textContent=pend;
   $('au-approved').textContent=appr;
   $('au-rejected').textContent=rejd;
+
+  // Pending banner
+  const banner=$('pendingBanner');
+  const bc=$('pendingBannerCount');
+  if(banner){banner.style.display=pend>0?'flex':'none';}
+  if(bc)bc.textContent=pend;
 
   // Filter
   let list=all;
@@ -2947,96 +3050,138 @@ ${slides.map((_,i)=>`  <Relationship Id="rId${i+2}" Type="http://schemas.openxml
 // QR CODE VIP VIEWER
 // ══════════════════════════════════════════════
 
-// Generate a simple QR code using a pure-JS QR library (qrcode-generator via CDN)
+// Generate QR with full data embedded in URL (works across devices)
 async function showQR(){
   const modal=$('qrModal');
   modal.classList.remove('hidden');
+  $('qrCanvas').innerHTML='<div style="font-size:11px;color:var(--muted);padding:16px">กำลังสร้าง QR...</div>';
 
-  // Build VIP URL = current page URL + #vip + base64-encoded data snapshot
-  const snapshot=btoa(unescape(encodeURIComponent(JSON.stringify({
-    projects:P, ideas:IDEAS,
-    today:fi(TODAY),
-    ts:Date.now()
-  }))));
-  const vipUrl=location.href.split('#')[0]+'#vip:'+snapshot.slice(0,2000); // keep URL reasonable
-  // For full data we use localStorage key instead
-  try{localStorage.setItem('ptk_vip_snap',JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY)}));}catch(e){}
-  const shortUrl=location.href.split('#')[0]+'#vip';
+  // Compress & encode all data into URL hash
+  const payload=JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY)});
+  let encoded='';
+  try{
+    // Use btoa with URI encoding to handle Thai characters
+    encoded=btoa(unescape(encodeURIComponent(payload)));
+  }catch(e){
+    encoded=btoa(encodeURIComponent(payload));
+  }
+  const base=location.href.split('#')[0];
+  const vipUrl=base+'#vip:'+encoded;
 
-  $('qrUrl').textContent=shortUrl;
-  $('qrCanvas').innerHTML='<div style="font-size:11px;color:var(--muted)">กำลังโหลด QR...</div>';
+  $('qrUrl').textContent=vipUrl.length>80?vipUrl.slice(0,77)+'...':vipUrl;
+
+  // Store full URL for copy button
+  $('qrModal').dataset.vipUrl=vipUrl;
 
   // Load qrcode library
   if(!window.QRCode){
     await new Promise((res,rej)=>{
       const s=document.createElement('script');
       s.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
-      s.onload=res; s.onerror=rej;
+      s.onload=res; s.onerror=()=>res(); // don't reject, fallback gracefully
       document.head.appendChild(s);
-    }).catch(()=>{});
+    });
   }
 
   $('qrCanvas').innerHTML='';
   if(window.QRCode){
-    new QRCode($('qrCanvas'),{
-      text:shortUrl,
-      width:200, height:200,
-      colorDark:'#1c2b3a',
-      colorLight:'#ffffff',
-      correctLevel:QRCode.CorrectLevel.M
-    });
+    try{
+      new QRCode($('qrCanvas'),{
+        text:vipUrl,
+        width:200,height:200,
+        colorDark:'#1c2b3a',
+        colorLight:'#ffffff',
+        correctLevel:QRCode.CorrectLevel.L // L = smallest QR, fits more data
+      });
+    }catch(e){
+      $('qrCanvas').innerHTML=`<div style="padding:8px;font-size:11px;color:var(--red)">ข้อมูลมากเกินไปสำหรับ QR<br>ใช้ปุ่ม Copy Link แทนได้เลยครับ</div>`;
+    }
   } else {
-    // Fallback: show link only
-    $('qrCanvas').innerHTML=`<div style="padding:16px;font-size:11px;color:var(--muted)">ไม่สามารถโหลด QR library ได้<br>ใช้ Link ด้านล่างแทน</div>`;
+    $('qrCanvas').innerHTML=`<div style="padding:16px;font-size:11px;color:var(--muted)">ใช้ปุ่ม Copy Link ด้านล่าง</div>`;
   }
 }
 
 function copyQrUrl(){
-  const url=location.href.split('#')[0]+'#vip';
+  const url=$('qrModal').dataset.vipUrl||location.href.split('#')[0]+'#vip';
   navigator.clipboard.writeText(url).then(()=>{
     const btn=document.querySelector('#qrModal .btn');
-    if(btn){const o=btn.textContent;btn.textContent='✅ Copied!';setTimeout(()=>btn.textContent=o,1500);}
-  }).catch(()=>alert(url));
+    if(btn){const o=btn.textContent;btn.textContent='✅ Copied!';setTimeout(()=>btn.textContent=o,2000);}
+  }).catch(()=>{
+    // Fallback for browsers that block clipboard
+    const ta=document.createElement('textarea');
+    ta.value=url;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.select();
+    document.execCommand('copy');document.body.removeChild(ta);
+    const btn=document.querySelector('#qrModal .btn');
+    if(btn){const o=btn.textContent;btn.textContent='✅ Copied!';setTimeout(()=>btn.textContent=o,2000);}
+  });
 }
 
-// ── VIP Viewer Mode ─────────────────────────
+// ── VIP Viewer Mode — reads data from URL hash ─
 function initVipMode(){
-  // Load data from localStorage snapshot
   let snap=null;
-  try{const s=localStorage.getItem('ptk_vip_snap');if(s)snap=JSON.parse(s);}catch(e){}
+
+  // Try to decode data from URL hash: #vip:base64data
+  const hash=location.hash||'';
+  if(hash.startsWith('#vip:')){
+    try{
+      const b64=hash.slice(5);
+      const decoded=decodeURIComponent(escape(atob(b64)));
+      snap=JSON.parse(decoded);
+    }catch(e){
+      // Try alternate encoding
+      try{
+        const b64=hash.slice(5);
+        snap=JSON.parse(decodeURIComponent(atob(b64)));
+      }catch(e2){snap=null;}
+    }
+  }
+
+  // Fallback: try localStorage (for same-device use)
   if(!snap){
-    document.body.innerHTML=`<div style="font-family:sans-serif;text-align:center;padding:60px;color:#666">
-      <div style="font-size:48px;margin-bottom:16px">🔒</div>
-      <div style="font-size:18px;font-weight:700;margin-bottom:8px">ไม่พบข้อมูล VIP</div>
-      <div style="font-size:13px">กรุณาขอ QR Code ใหม่จาก Admin</div>
+    try{const s=localStorage.getItem('ptk_vip_snap');if(s)snap=JSON.parse(s);}catch(e){}
+  }
+
+  if(!snap){
+    document.body.innerHTML=`<div style="background:#0f0a1e;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'Sarabun',sans-serif">
+      <div style="text-align:center;color:#fff;padding:40px">
+        <div style="font-size:56px;margin-bottom:16px">🔒</div>
+        <div style="font-size:20px;font-weight:700;color:#a87cc7;margin-bottom:8px">ไม่พบข้อมูล VIP</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.5);line-height:1.7">QR Code หรือ Link นี้อาจหมดอายุ<br>กรุณาขอ QR Code ใหม่จาก Admin</div>
+        <a href="${location.href.split('#')[0]}" style="display:inline-block;margin-top:20px;padding:10px 24px;background:#a87cc7;color:#fff;border-radius:8px;text-decoration:none;font-size:13px;font-weight:700">← กลับหน้าหลัก</a>
+      </div>
     </div>`;
     return;
   }
+
   // Populate globals
   P=snap.projects||[];
   IDEAS=snap.ideas||[];
   if(snap.today){TODAY=new Date(snap.today);TODAY.setHours(0,0,0,0);}
+  else{TODAY=new Date();TODAY.setHours(0,0,0,0);}
 
-  // Hide everything, show VIP screen
-  document.getElementById('authScreen').style.display='none';
+  // Hide login screen, show VIP screen
+  const auth=document.getElementById('authScreen');
+  if(auth)auth.style.display='none';
+  const mainApp=document.getElementById('mainApp');
+  if(mainApp)mainApp.style.display='none';
   const vip=$('vipScreen');
+  if(!vip)return;
   vip.classList.remove('hidden');
 
   // Set date label
   const dl=$('vipDateLbl');
   if(dl)dl.textContent='ข้อมูล ณ วันที่ '+TODAY.toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'});
 
-  // Render summary content into vipContent
   const vc=$('vipContent');
   if(!vc)return;
 
-  // Build KPI row
   const CATS_V=PCAT.filter(c=>c.v);
   const STAGES_V=[
     {k:'idea',label:'Idea Pitching',   bg:'#f5f0e0'},
-    {k:'prop',label:'Project Proposal',bg:'#f5f0e0'},
+    {k:'prop',label:'Project Proposal',bg:'#f0ead8'},
     {k:'exec',label:'Execution',       bg:'#e8edf5'},
-    {k:'clos',label:'Closing',         bg:'#e4eaf5'},
+    {k:'clos',label:'Closing',         bg:'#dde4f0'},
     {k:'res', label:'Result Follow',   bg:'#edf5e8'},
   ];
   const stageOfV=p=>{
@@ -3053,7 +3198,6 @@ function initVipMode(){
   const doneP=P.filter(p=>stageOfV(p)==='res').length;
   const mo=TODAY.toLocaleString('en',{month:'long',year:'numeric'}).toUpperCase();
 
-  // Build matrix
   const mx={};
   CATS_V.forEach(c=>{mx[c.v]={};STAGES_V.forEach(s=>{mx[c.v][s.k]=[];});});
   IDEAS.forEach(idea=>{
@@ -3067,8 +3211,12 @@ function initVipMode(){
     const stk=stageOfV(p);
     if(mx[cv][stk])mx[cv][stk].push(p);
   });
-  const activeCatsV=CATS_V.filter(c=>P.some(p=>p.pcat===c.v)||IDEAS.some(i=>CATS_V.find(x=>x.v.toLowerCase()===(i.cat||'').toLowerCase())?.v===c.v));
+  const activeCatsV=CATS_V.filter(c=>
+    P.some(p=>p.pcat===c.v)||
+    IDEAS.some(i=>CATS_V.find(x=>x.v.toLowerCase()===(i.cat||'').toLowerCase())?.v===c.v)
+  );
 
+  const stageHeaderColors=['#c9a84c','#b8953a','#1c2b3a','#162236','#6aaa3f'];
   let html=`
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px">
     ${[
@@ -3082,42 +3230,48 @@ function initVipMode(){
       <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8a9bb0;margin-top:3px">${k.lbl}</div>
     </div>`).join('')}
   </div>
-  <div style="background:#1c2b3a;padding:14px 20px;text-align:center;border-radius:10px;margin-bottom:0">
-    <h2 style="font-family:serif;font-size:18px;color:#fff;letter-spacing:1px">LIST OF PROJECTS : ${mo}</h2>
+  <div style="background:#1c2b3a;padding:14px 20px;text-align:center;border-radius:10px 10px 0 0">
+    <h2 style="font-family:'Playfair Display',serif;font-size:18px;color:#fff;letter-spacing:1px;margin:0">LIST OF PROJECTS : ${mo}</h2>
   </div>
-  <table style="width:100%;border-collapse:collapse;font-size:11px">
+  <div style="overflow-x:auto">
+  <table style="width:100%;border-collapse:collapse;font-size:11px;font-family:'Sarabun',sans-serif">
     <thead><tr>
-      <th style="background:#eef0f5;padding:10px 14px;width:110px;text-align:left"></th>
-      ${STAGES_V.map(s=>`<th style="background:#c9a84c;color:#fff;padding:10px 16px;text-align:center;font-size:10px;letter-spacing:.5px">${s.label}</th>`).join('')}
+      <th style="background:#eef0f5;padding:10px 14px;width:110px;text-align:left;border:1px solid #dde2ea"></th>
+      ${STAGES_V.map((s,si)=>`<th style="background:${stageHeaderColors[si]};color:#fff;padding:10px 16px;text-align:center;font-size:11px;letter-spacing:.5px;border:1px solid rgba(255,255,255,.2)">${s.label}</th>`).join('')}
     </tr></thead>
     <tbody>
-    ${activeCatsV.map(cat=>`<tr>
+    ${activeCatsV.length?activeCatsV.map(cat=>`<tr>
       <td style="padding:12px 16px;font-size:13px;font-weight:600;color:#1c2b3a;background:#eef0f5;border:1px solid #dde2ea;vertical-align:middle">${cat.name.replace(/[^\w\s\u0E00-\u0E7F]/g,'').trim()}</td>
       ${STAGES_V.map(s=>{
-        const items=mx[cat.v][s.k]||[];
-        return`<td style="padding:10px 14px;background:${s.bg};border:1px solid rgba(255,255,255,.6);vertical-align:top">
+        const items=mx[cat.v]?mx[cat.v][s.k]||[]:[];
+        return`<td style="padding:10px 14px;background:${s.bg};border:1px solid rgba(200,200,200,.5);vertical-align:top;min-width:140px">
           ${items.length?`<ul style="margin:0;padding-left:16px">${items.map(p=>
             p._isIdea
-              ?`<li style="color:#c9a84c;font-style:italic;margin-bottom:2px">💡 ${p.name||p.id}</li>`
-              :`<li style="color:#1c2b3a;margin-bottom:2px">${p.name||p.id}</li>`
+              ?`<li style="color:#c9a84c;font-style:italic;margin-bottom:3px;line-height:1.5">💡 ${p.name||p.id}</li>`
+              :`<li style="color:#1c2b3a;margin-bottom:3px;line-height:1.5">${p.name||p.id}</li>`
           ).join('')}</ul>`:''}
         </td>`;
       }).join('')}
-    </tr>`).join('')}
+    </tr>`).join('')
+    :'<tr><td colspan="6" style="padding:24px;text-align:center;color:#8a9bb0;font-size:13px">ยังไม่มีข้อมูลโครงการ</td></tr>'}
     </tbody>
-  </table>`;
+  </table>
+  </div>`;
 
   vc.innerHTML=html;
 }
 
 // ── Detect #vip hash on page load ────────────
 (function(){
-  if(location.hash.startsWith('#vip')){
-    document.addEventListener('DOMContentLoaded',()=>initVipMode());
-    // Also try immediately if already loaded
-    if(document.readyState!=='loading')initVipMode();
+  if((location.hash||'').startsWith('#vip')){
+    if(document.readyState==='loading'){
+      document.addEventListener('DOMContentLoaded',initVipMode);
+    } else {
+      initVipMode();
+    }
   }
 })();
+
 
 </script>
 </body>
