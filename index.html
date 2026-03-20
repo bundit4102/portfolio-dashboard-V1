@@ -3202,47 +3202,47 @@ async function showQR(){
 
   const base=location.href.split('#')[0].split('?')[0];
 
-  // ── 1. Full URL → Copy Link button ──────────
+  // ── Full data URL → Copy Link only (ไม่ใช้ใน QR) ──
   try{
     const full=JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY)});
     const enc=btoa(unescape(encodeURIComponent(full)));
     modal.dataset.vipUrl=base+'#vip:'+enc;
   }catch(e){modal.dataset.vipUrl=base;}
 
-  // ── 2. Compact URL → QR Code only ───────────
-  // Only name + status + pct + category (no desc/logs/budget)
-  let qrUrl='';
-  try{
-    const compact={t:fi(TODAY),
-      p:P.map(x=>({n:(x.name||'').slice(0,30),s:(x.status||'').slice(0,3),c:x.pct||0,cat:(x.pcat||'').slice(0,3)})),
-      i:IDEAS.slice(0,15).map(x=>({n:(x.title||'').slice(0,25),cat:(x.cat||'').slice(0,3),s:(x.status||'').slice(0,3)}))
-    };
-    const enc2=btoa(unescape(encodeURIComponent(JSON.stringify(compact))));
-    qrUrl=base+'#vip:'+enc2;
-  }catch(e){}
+  // ── QR: ใช้แค่ URL หลักของระบบ (scan แล้วเปิด Dashboard) ──
+  // ไม่ embed ข้อมูล — QR จะสแกนได้ง่าย ไม่แตก
+  const qrUrl=base;
 
   // Load QR lib
   if(!window.QRCode){
     await new Promise(res=>{
       const s=document.createElement('script');
       s.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
-      s.onload=res;s.onerror=res;
+      s.onload=res; s.onerror=res;
       document.head.appendChild(s);
     });
   }
 
   if(qc)qc.innerHTML='';
-  if(window.QRCode&&qrUrl&&qrUrl.length<=2900){
+  if(window.QRCode){
     try{
-      new QRCode(qc,{text:qrUrl,width:200,height:200,colorDark:'#1c2b3a',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.L});
-      if(qs)qs.innerHTML='<span style="color:var(--green);font-size:11px">✅ QR พร้อมสแกน</span>';
+      new QRCode(qc,{
+        text:qrUrl,
+        width:220, height:220,
+        colorDark:'#1c2b3a',
+        colorLight:'#ffffff',
+        correctLevel:QRCode.CorrectLevel.M
+      });
+      if(qs)qs.innerHTML='<span style="color:var(--green);font-size:11px">✅ QR พร้อมสแกน — เปิด Dashboard</span>';
     }catch(e){
-      if(qc)qc.innerHTML='<div style="padding:10px;font-size:11px;color:var(--muted);text-align:center">ใช้ Copy Link VIP แทนครับ</div>';
+      if(qc)qc.innerHTML='<div style="padding:16px;font-size:12px;color:var(--muted);text-align:center">ใช้ Copy Link VIP แทนครับ</div>';
       if(qs)qs.innerHTML='';
     }
   } else {
-    if(qc)qc.innerHTML='<div style="padding:14px;font-size:12px;color:var(--amber);text-align:center;line-height:1.8">⚠ ข้อมูลมากเกิน QR<br><span style="font-size:11px;color:var(--muted)">ใช้ปุ่ม Copy Link VIP<br>ส่งทาง Line แทนได้เลยครับ</span></div>';
-    if(qs)qs.innerHTML='';
+    // Fallback: draw QR using Google Charts API (no external JS needed)
+    const encoded=encodeURIComponent(qrUrl);
+    if(qc)qc.innerHTML=`<img src="https://chart.googleapis.com/chart?cht=qr&chs=220x220&chl=${encoded}&chld=M|2" style="border-radius:8px" onerror="this.parentNode.innerHTML='<div style=padding:12px;color:var(--muted);font-size:11px>ไม่สามารถสร้าง QR ได้ ใช้ Copy Link แทนครับ</div>'">`;
+    if(qs)qs.innerHTML='<span style="color:var(--green);font-size:11px">✅ QR พร้อมสแกน</span>';
   }
 }
 
