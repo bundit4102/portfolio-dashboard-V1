@@ -1151,23 +1151,22 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
     </div>
     <div class="modal-body">
 
-      <!-- Section 1: VIP (ผู้บริหาร) -->
+      <!-- Section 1: VIP -->
       <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--div)">
         <div style="font-size:12px;font-weight:700;color:#a87cc7;margin-bottom:8px">👑 VIP — ผู้บริหาร (ไม่ต้อง Login)</div>
-        <p style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6">สแกน QR หรือส่ง link — เปิดดู Summary ได้ทันที</p>
-        <div id="qrCanvas" style="display:flex;justify-content:center;margin-bottom:8px"></div>
+        <div id="qrCanvas" style="display:flex;justify-content:center;margin-bottom:8px;min-height:60px;align-items:center">
+          <div style="font-size:11px;color:var(--muted)">กำลังสร้าง QR...</div>
+        </div>
         <div id="qrStatus" style="font-size:11px;margin-bottom:8px;text-align:center"></div>
-        <div id="qrUrl" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);word-break:break-all;background:var(--cream);padding:7px 10px;border-radius:7px;margin-bottom:8px;display:none"></div>
         <button class="btn b-navy" id="btnVipLink" onclick="copyVipLink()" style="width:100%">📋 Copy Link VIP (ส่ง Line ได้เลย)</button>
       </div>
 
-      <!-- Section 2: Sync (ทีมงาน) -->
+      <!-- Section 2: Sync -->
       <div>
-        <div style="font-size:12px;font-weight:700;color:var(--slate);margin-bottom:8px">🔄 Sync — ส่งข้อมูล+Users ให้ทีม</div>
-        <p style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6">ทีมเปิด link → กด "โหลดข้อมูล" → login ได้ทันที พร้อมข้อมูลครบ</p>
-        <div id="syncProgress" style="font-size:11px;color:var(--muted);margin-bottom:8px;text-align:center;display:none">⏳ กำลังสร้าง link...</div>
-        <button class="btn b-out" id="btnSyncLink" onclick="createSyncLink()" style="width:100%;color:var(--blue);border-color:rgba(26,111,168,.3)">🔄 สร้าง & Copy Sync Link</button>
-        <div style="font-size:10px;color:var(--muted);text-align:center;margin-top:6px">link สั้น ส่ง Line ได้ ไม่แตก ✅</div>
+        <div style="font-size:12px;font-weight:700;color:var(--slate);margin-bottom:6px">🔄 Sync ข้อมูล+Users ให้ทีม</div>
+        <p style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6">ดาวน์โหลดไฟล์ข้อมูล → ส่งให้ทีมทาง Line/Email → ทีมกด Restore เพื่อโหลด</p>
+        <button class="btn b-out" onclick="downloadSyncFile()" style="width:100%;margin-bottom:6px;color:var(--blue);border-color:rgba(26,111,168,.3)">📥 Download ไฟล์ข้อมูล (ส่งให้ทีม)</button>
+        <div style="font-size:10px;color:var(--muted);text-align:center">ทีมได้รับไฟล์ → กด 📂 Restore ในหน้ากรอกข้อมูล</div>
       </div>
 
     </div>
@@ -3186,52 +3185,25 @@ ${slides.map((_,i)=>`  <Relationship Id="rId${i+2}" Type="http://schemas.openxml
 // ══════════════════════════════════════════════
 
 // ══════════════════════════════════════════════
-// QR CODE & SHARE SYSTEM (JSONBin for short links)
+// QR CODE & SHARE SYSTEM
 // ══════════════════════════════════════════════
-const JSONBIN_URL='https://api.jsonbin.io/v3/b';
-const JSONBIN_KEY='$2a$10$placeholder'; // public bins don't need key for reading
-
 async function showQR(){
   const modal=$('qrModal');
   modal.classList.remove('hidden');
   const qc=$('qrCanvas');
   const qs=$('qrStatus');
-  if(qc)qc.innerHTML='<div style="font-size:11px;color:var(--muted);padding:12px">กำลังสร้าง QR...</div>';
-  if(qs)qs.innerHTML='';
 
-  // Store VIP data locally for this session
-  const vipPayload=JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY)});
-
-  // Try JSONBin first for short link
+  // Build VIP URL with base64 data
   let vipUrl='';
   try{
-    const res=await fetch('https://api.jsonbin.io/v3/b',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','X-Bin-Private':'false','X-Bin-Name':'vip_'+Date.now()},
-      body:vipPayload
-    });
-    if(res.ok){
-      const data=await res.json();
-      const binId=data.metadata?.id||data.record?.id||'';
-      if(binId){
-        const base=location.href.split('#')[0].split('?')[0];
-        vipUrl=base+'?bin='+binId;
-      }
-    }
-  }catch(e){}
-
-  // Fallback: use base64 in URL (old method)
-  if(!vipUrl){
-    let encoded='';
-    try{encoded=btoa(unescape(encodeURIComponent(vipPayload)));}catch(e){}
+    const payload=JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY)});
+    const encoded=btoa(unescape(encodeURIComponent(payload)));
     const base=location.href.split('#')[0].split('?')[0];
     vipUrl=base+'#vip:'+encoded;
-  }
+    if(modal)modal.dataset.vipUrl=vipUrl;
+  }catch(e){}
 
-  // Store for copy
-  if(modal)modal.dataset.vipUrl=vipUrl;
-
-  // Load QR lib
+  // Load QR lib and generate
   if(!window.QRCode){
     await new Promise(res=>{
       const s=document.createElement('script');
@@ -3242,162 +3214,73 @@ async function showQR(){
   }
 
   if(qc)qc.innerHTML='';
-  const isShort=vipUrl.length<500;
-  if(window.QRCode&&isShort){
+  if(window.QRCode&&vipUrl&&vipUrl.length<=2900){
     try{
-      new QRCode(qc,{text:vipUrl,width:180,height:180,colorDark:'#1c2b3a',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});
-      if(qs)qs.innerHTML='<span style="color:var(--green);font-size:11px">✅ QR พร้อม · Link สั้น ส่ง Line ได้เลย</span>';
+      new QRCode(qc,{text:vipUrl,width:180,height:180,colorDark:'#1c2b3a',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.L});
+      if(qs)qs.innerHTML='<span style="color:var(--green);font-size:11px">✅ สแกนได้เลย</span>';
     }catch(e){
-      if(qc)qc.innerHTML='<div style="padding:10px;font-size:11px;color:var(--muted)">ใช้ Copy Link ด้านล่าง</div>';
+      if(qc)qc.innerHTML='<div style="font-size:11px;color:var(--muted);padding:12px;text-align:center">ใช้ปุ่ม Copy Link VIP แทนครับ</div>';
+      if(qs)qs.innerHTML='<span style="color:var(--amber);font-size:11px">ข้อมูลเยอะ — ใช้ Copy Link แทน</span>';
     }
   } else {
-    if(qc)qc.innerHTML='<div style="padding:10px;font-size:12px;color:var(--amber);text-align:center">ใช้ปุ่ม Copy Link ครับ<br><span style="font-size:10px;color:var(--muted)">(QR ใหญ่เกิน สแกนยาก)</span></div>';
-    if(qs)qs.innerHTML='<span style="color:var(--amber);font-size:11px">ส่งผ่าน Copy Link แทนครับ</span>';
+    if(qc)qc.innerHTML='<div style="font-size:11px;color:var(--amber);padding:12px;text-align:center">⚠ ข้อมูลมากเกินสำหรับ QR<br>ใช้ปุ่ม Copy Link VIP ด้านล่างครับ</div>';
+    if(qs)qs.innerHTML='';
   }
 }
 
 function copyVipLink(){
   const modal=$('qrModal');
   const url=modal?.dataset.vipUrl;
-  if(!url){showQR();return;}
-  _copyToClipboard(url,'#btnVipLink');
+  if(!url){showToast('กรุณาเปิด QR modal ก่อน','var(--red)');return;}
+  _copyText(url,'#btnVipLink');
   showToast('✅ Copy Link VIP แล้ว! ส่ง Line ได้เลย','#1a7a4a');
 }
 
-async function createSyncLink(){
-  const prog=$('syncProgress');
-  const btn=$('btnSyncLink');
-  if(prog)prog.style.display='block';
-  if(btn){btn.disabled=true;btn.textContent='⏳ กำลังสร้าง...';}
-
-  const syncPayload=JSON.stringify({
-    projects:P, ideas:IDEAS, today:fi(TODAY),
-    users:getUsers()
-  });
-
-  let syncUrl='';
-  try{
-    const res=await fetch('https://api.jsonbin.io/v3/b',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','X-Bin-Private':'false','X-Bin-Name':'sync_'+Date.now()},
-      body:syncPayload
-    });
-    if(res.ok){
-      const data=await res.json();
-      const binId=data.metadata?.id||data.record?.id||'';
-      if(binId){
-        const base=location.href.split('#')[0].split('?')[0];
-        syncUrl=base+'?bin='+binId+'&mode=sync';
-      }
-    }
-  }catch(e){}
-
-  // Fallback: base64
-  if(!syncUrl){
-    let enc='';
-    try{enc=btoa(unescape(encodeURIComponent(syncPayload)));}catch(e){}
-    const base=location.href.split('#')[0].split('?')[0];
-    syncUrl=base+'?sync='+enc;
-  }
-
-  if(prog)prog.style.display='none';
-  if(btn){btn.disabled=false;btn.textContent='🔄 สร้าง & Copy Sync Link';}
-
-  _copyToClipboard(syncUrl,'#btnSyncLink');
-  const isShort=syncUrl.length<500;
-  showToast(isShort?'✅ Copy Sync Link แล้ว! ส่ง Line ได้เลย':'✅ Copy แล้ว (link ยาว — ใช้ Backup/Restore แทนดีกว่า)','#1a6fa8');
+function downloadSyncFile(){
+  // Include users in sync file
+  const data={projects:P,ideas:IDEAS,today:fi(TODAY),users:getUsers()};
+  dl(JSON.stringify(data,null,2),'application/json','Sync_Data_'+fi(TODAY)+'.json');
+  showToast('📥 Download ไฟล์ข้อมูลแล้ว! ส่งให้ทีมได้เลย','#1a6fa8');
 }
 
-// Legacy functions (keep for backward compat)
+// Legacy aliases
 function copyQrUrl(){copyVipLink();}
-function copySyncLink(){createSyncLink();}
+function copySyncLink(){downloadSyncFile();}
+function createSyncLink(){downloadSyncFile();}
 
-function _copyToClipboard(text,btnSel){
-  const doCopy=()=>{
-    try{
-      const ta=document.createElement('textarea');
-      ta.value=text;ta.style.cssText='position:fixed;opacity:0;top:0;left:0';
-      document.body.appendChild(ta);ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-    }catch(e){}
+function _copyText(text,btnSel){
+  const done=()=>{
     const btn=document.querySelector(btnSel);
     if(btn){const o=btn.textContent;btn.textContent='✅ Copied!';setTimeout(()=>btn.textContent=o,2500);}
   };
-  if(navigator.clipboard){
-    navigator.clipboard.writeText(text).then(doCopy).catch(doCopy);
-  }else{doCopy();}
+  if(navigator.clipboard){navigator.clipboard.writeText(text).then(done).catch(()=>{_fallbackCopy(text);done();});}
+  else{_fallbackCopy(text);done();}
 }
+function _fallbackCopy(text){
+  try{const ta=document.createElement('textarea');ta.value=text;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);}catch(e){}
+}
+// Keep _copyToClipboard for backward compat
+function _copyToClipboard(text,sel){_copyText(text,sel);}
 
-// ── Load data from JSONBin or sync param ─────
+// ── Load data from sync param (Restore via URL) ─
 async function checkSyncParam(){
-  const params=new URLSearchParams(location.search);
-  const binId=params.get('bin');
-  const mode=params.get('mode');
-  const syncData=params.get('sync');
-
-  let snap=null;
-
-  if(binId){
-    // Fetch from JSONBin
-    try{
-      const res=await fetch('https://api.jsonbin.io/v3/b/'+binId+'/latest');
-      if(res.ok){
-        const data=await res.json();
-        snap=data.record||data;
-      }
-    }catch(e){}
-    try{history.replaceState({},'',location.pathname+location.hash);}catch(e){}
-  } else if(syncData){
-    // Legacy base64 sync
-    try{snap=JSON.parse(decodeURIComponent(escape(atob(syncData))));}catch(e){}
-    try{history.replaceState({},'',location.pathname+location.hash);}catch(e){}
-  }
-
-  if(!snap)return;
-
-  if(mode==='sync'||snap.users){
-    // Team sync mode — show import modal
-    _pendingSyncData=snap;
-    const info=$('syncImportInfo');
-    if(info){
-      const pc=(snap.projects||[]).length;
-      const ic=(snap.ideas||[]).length;
-      const uc=(snap.users||[]).length;
-      info.innerHTML=`พบข้อมูล <strong>${pc} โครงการ</strong>, <strong>${ic} Ideas</strong>${uc?` และ <strong>${uc} Users</strong>`:''}<br>
-        <span style="font-size:11px;color:var(--muted)">วันที่ข้อมูล: ${snap.today||'ไม่ระบุ'}</span>`;
-    }
-    $('syncImportModal').classList.remove('hidden');
-  } else {
-    // VIP mode — show VIP viewer directly
-    _pendingSyncData=snap;
-    initVipModeFromSnap(snap);
-  }
-}
-
-// ── Sync Import (for team members) ───────────
-let _pendingSyncData=null;
-function checkSyncParam(){
   const params=new URLSearchParams(location.search);
   const syncData=params.get('sync');
   if(!syncData)return;
-  try{
-    const decoded=decodeURIComponent(escape(atob(syncData)));
-    const snap=JSON.parse(decoded);
-    _pendingSyncData=snap;
-    // Clean URL
-    try{history.replaceState({},'',location.pathname+location.hash);}catch(e){}
-    // Show import modal
-    const info=$('syncImportInfo');
-    if(info){
-      const pc=(snap.projects||[]).length;
-      const ic=(snap.ideas||[]).length;
-      const uc=(snap.users||[]).length;
-      info.innerHTML=`พบข้อมูล <strong>${pc} โครงการ</strong>, <strong>${ic} Ideas</strong>${uc?` และ <strong>${uc} Users</strong>`:''}<br>
-        <span style="font-size:11px;color:var(--muted)">วันที่ข้อมูล: ${snap.today||'ไม่ระบุ'}</span>`;
-    }
-    $('syncImportModal').classList.remove('hidden');
-  }catch(e){console.log('Sync decode error:',e);}
+  let snap=null;
+  try{snap=JSON.parse(decodeURIComponent(escape(atob(syncData))));}catch(e){}
+  try{history.replaceState({},'',location.pathname+location.hash);}catch(e){}
+  if(!snap)return;
+  _pendingSyncData=snap;
+  const info=$('syncImportInfo');
+  if(info){
+    const pc=(snap.projects||[]).length;
+    const ic=(snap.ideas||[]).length;
+    const uc=(snap.users||[]).length;
+    info.innerHTML=`พบข้อมูล <strong>${pc} โครงการ</strong>, <strong>${ic} Ideas</strong>${uc?` และ <strong>${uc} Users</strong>`:''}<br>
+      <span style="font-size:11px;color:var(--muted)">วันที่ข้อมูล: ${snap.today||'ไม่ระบุ'}</span>`;
+  }
+  $('syncImportModal').classList.remove('hidden');
 }
 
 function confirmSyncImport(){
