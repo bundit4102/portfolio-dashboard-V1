@@ -3192,18 +3192,32 @@ async function showQR(){
   modal.classList.remove('hidden');
   const qc=$('qrCanvas');
   const qs=$('qrStatus');
+  if(qc)qc.innerHTML='<div style="font-size:11px;color:var(--muted);padding:12px">กำลังสร้าง...</div>';
 
-  // Build VIP URL with base64 data
+  const base=location.href.split('#')[0].split('?')[0];
+
+  // ── Full VIP URL (for Copy Link) ────────────
   let vipUrl='';
   try{
     const payload=JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY)});
     const encoded=btoa(unescape(encodeURIComponent(payload)));
-    const base=location.href.split('#')[0].split('?')[0];
     vipUrl=base+'#vip:'+encoded;
     if(modal)modal.dataset.vipUrl=vipUrl;
   }catch(e){}
 
-  // Load QR lib and generate
+  // ── Compact QR data (ชื่อ+status+% เท่านั้น ให้เล็กพอ) ──
+  let qrUrl='';
+  try{
+    const compact={
+      t:fi(TODAY),
+      p:P.map(x=>({n:x.name||'',s:x.status||'',c:x.pct||0,cat:x.pcat||''})),
+      i:IDEAS.map(x=>({n:x.title||'',s:x.status||'',cat:x.cat||''})).slice(0,20)
+    };
+    const enc=btoa(unescape(encodeURIComponent(JSON.stringify(compact))));
+    qrUrl=base+'#vip:'+enc;
+  }catch(e){qrUrl=vipUrl;}
+
+  // Load QR lib
   if(!window.QRCode){
     await new Promise(res=>{
       const s=document.createElement('script');
@@ -3214,16 +3228,20 @@ async function showQR(){
   }
 
   if(qc)qc.innerHTML='';
-  if(window.QRCode&&vipUrl&&vipUrl.length<=2900){
+
+  const urlToQR=qrUrl.length<=2900?qrUrl:(vipUrl.length<=2900?vipUrl:'');
+  if(window.QRCode&&urlToQR){
     try{
-      new QRCode(qc,{text:vipUrl,width:180,height:180,colorDark:'#1c2b3a',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.L});
-      if(qs)qs.innerHTML='<span style="color:var(--green);font-size:11px">✅ สแกนได้เลย</span>';
+      new QRCode(qc,{text:urlToQR,width:200,height:200,colorDark:'#1c2b3a',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.L});
+      if(qs)qs.innerHTML='<span style="color:var(--green);font-size:11px">✅ QR พร้อมสแกน</span>';
     }catch(e){
-      if(qc)qc.innerHTML='<div style="font-size:11px;color:var(--muted);padding:12px;text-align:center">ใช้ปุ่ม Copy Link VIP แทนครับ</div>';
-      if(qs)qs.innerHTML='<span style="color:var(--amber);font-size:11px">ข้อมูลเยอะ — ใช้ Copy Link แทน</span>';
+      if(qc)qc.innerHTML='<div style="font-size:11px;color:var(--muted);padding:12px;text-align:center">ใช้ Copy Link VIP ด้านล่างแทนครับ</div>';
     }
   } else {
-    if(qc)qc.innerHTML='<div style="font-size:11px;color:var(--amber);padding:12px;text-align:center">⚠ ข้อมูลมากเกินสำหรับ QR<br>ใช้ปุ่ม Copy Link VIP ด้านล่างครับ</div>';
+    if(qc)qc.innerHTML=`<div style="font-size:12px;color:var(--amber);padding:14px;text-align:center;line-height:1.8">
+      📋 ข้อมูลมากเกินสำหรับ QR<br>
+      <span style="font-size:11px;color:var(--muted)">กรุณาใช้ปุ่ม Copy Link VIP<br>แล้วส่งทาง Line แทนครับ</span>
+    </div>`;
     if(qs)qs.innerHTML='';
   }
 }
@@ -3323,10 +3341,20 @@ function showToast(msg,color){
 
 // ── VIP Viewer Mode — reads data from URL hash or bin ─
 function initVipModeFromSnap(snap){
-  P=snap.projects||[];
-  IDEAS=snap.ideas||[];
-  if(snap.today){TODAY=new Date(snap.today);TODAY.setHours(0,0,0,0);}
-  else{TODAY=new Date();TODAY.setHours(0,0,0,0);}
+  // Handle both full format {projects,ideas,today} and compact format {p,i,t}
+  if(snap.p){
+    // Compact format from QR — expand back
+    P=(snap.p||[]).map(x=>({name:x.n||'',status:x.s||'Not Started',pct:x.c||0,pcat:x.cat||'',id:'',owner:'',desc:'',logs:[]}));
+    IDEAS=(snap.i||[]).map(x=>({title:x.n||'',status:x.s||'new',cat:x.cat||'',id:'',owner:''}));
+    if(snap.t){TODAY=new Date(snap.t);TODAY.setHours(0,0,0,0);}
+    else{TODAY=new Date();TODAY.setHours(0,0,0,0);}
+  } else {
+    // Full format
+    P=snap.projects||[];
+    IDEAS=snap.ideas||[];
+    if(snap.today){TODAY=new Date(snap.today);TODAY.setHours(0,0,0,0);}
+    else{TODAY=new Date();TODAY.setHours(0,0,0,0);}
+  }
 
   const auth=document.getElementById('authScreen');
   if(auth)auth.style.display='none';
