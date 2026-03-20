@@ -3202,16 +3202,21 @@ async function showQR(){
 
   const base=location.href.split('#')[0].split('?')[0];
 
-  // ── Full data URL → Copy Link only (ไม่ใช้ใน QR) ──
+  // ── Full data URL → Copy Link button ──────────
   try{
     const full=JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY)});
     const enc=btoa(unescape(encodeURIComponent(full)));
     modal.dataset.vipUrl=base+'#vip:'+enc;
-  }catch(e){modal.dataset.vipUrl=base;}
+  }catch(e){modal.dataset.vipUrl=base+'#vip-open';}
 
-  // ── QR: ใช้แค่ URL หลักของระบบ (scan แล้วเปิด Dashboard) ──
-  // ไม่ embed ข้อมูล — QR จะสแกนได้ง่าย ไม่แตก
-  const qrUrl=base;
+  // ── QR: ใช้ #vip-open → เปิด VIP Dashboard ได้เลย ไม่ต้อง login ──
+  // บันทึกข้อมูลปัจจุบันไว้ใน localStorage ก่อน แล้วให้ VIP โหลดจากนั้น
+  try{
+    const snap={projects:P,ideas:IDEAS,today:fi(TODAY)};
+    localStorage.setItem('ptk_vip_snap',JSON.stringify(snap));
+  }catch(e){}
+
+  const qrUrl=base+'#vip-open';
 
   // Load QR lib
   if(!window.QRCode){
@@ -3233,15 +3238,14 @@ async function showQR(){
         colorLight:'#ffffff',
         correctLevel:QRCode.CorrectLevel.M
       });
-      if(qs)qs.innerHTML='<span style="color:var(--green);font-size:11px">✅ QR พร้อมสแกน — เปิด Dashboard</span>';
+      if(qs)qs.innerHTML='<span style="color:var(--green);font-size:11px">✅ QR พร้อมสแกน — เปิด Dashboard ได้เลย ไม่ต้อง Login</span>';
     }catch(e){
       if(qc)qc.innerHTML='<div style="padding:16px;font-size:12px;color:var(--muted);text-align:center">ใช้ Copy Link VIP แทนครับ</div>';
       if(qs)qs.innerHTML='';
     }
   } else {
-    // Fallback: draw QR using Google Charts API (no external JS needed)
     const encoded=encodeURIComponent(qrUrl);
-    if(qc)qc.innerHTML=`<img src="https://chart.googleapis.com/chart?cht=qr&chs=220x220&chl=${encoded}&chld=M|2" style="border-radius:8px" onerror="this.parentNode.innerHTML='<div style=padding:12px;color:var(--muted);font-size:11px>ไม่สามารถสร้าง QR ได้ ใช้ Copy Link แทนครับ</div>'">`;
+    if(qc)qc.innerHTML=`<img src="https://chart.googleapis.com/chart?cht=qr&chs=220x220&chl=${encoded}&chld=M|2" style="border-radius:8px" onerror="this.parentNode.innerHTML='<div style=padding:12px;color:var(--muted);font-size:11px>ใช้ Copy Link แทนครับ</div>'">`;
     if(qs)qs.innerHTML='<span style="color:var(--green);font-size:11px">✅ QR พร้อมสแกน</span>';
   }
 }
@@ -3373,6 +3377,8 @@ function initVipModeFromSnap(snap){
 function initVipMode(){
   let snap=null;
   const hash=location.hash||'';
+
+  // Case 1: #vip: with embedded data
   if(hash.startsWith('#vip:')){
     try{
       const b64=hash.slice(5);
@@ -3381,9 +3387,30 @@ function initVipMode(){
       try{snap=JSON.parse(decodeURIComponent(atob(hash.slice(5))));}catch(e2){}
     }
   }
+
+  // Case 2: #vip-open → load from localStorage (QR code path)
+  if(!snap && (hash==='#vip-open' || hash.startsWith('#vip-open'))){
+    try{const s=localStorage.getItem('ptk_vip_snap');if(s)snap=JSON.parse(s);}catch(e){}
+    // If no stored snap, create empty one so VIP mode still opens
+    if(!snap){
+      try{
+        const p=localStorage.getItem('ptk_proj_v5');
+        const id=localStorage.getItem('ptk_ideas_v5');
+        const td=localStorage.getItem('ptk_today_v5');
+        snap={
+          projects:p?JSON.parse(p):[],
+          ideas:id?JSON.parse(id):[],
+          today:td||new Date().toISOString().split('T')[0]
+        };
+      }catch(e){snap={projects:[],ideas:[],today:new Date().toISOString().split('T')[0]};}
+    }
+  }
+
+  // Case 3: try localStorage fallback
   if(!snap){
     try{const s=localStorage.getItem('ptk_vip_snap');if(s)snap=JSON.parse(s);}catch(e){}
   }
+
   if(!snap){
     document.body.innerHTML=`<div style="background:#0f0a1e;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'Sarabun',sans-serif">
       <div style="text-align:center;color:#fff;padding:40px">
@@ -3489,7 +3516,8 @@ function renderVipContent(){
 
 // ── Detect #vip hash on page load ────────────
 (function(){
-  if((location.hash||'').startsWith('#vip')){
+  const h=location.hash||'';
+  if(h.startsWith('#vip')){
     if(document.readyState==='loading'){
       document.addEventListener('DOMContentLoaded',initVipMode);
     } else {
