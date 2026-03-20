@@ -1046,16 +1046,23 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
 
 <!-- QR CODE MODAL -->
 <div class="modal-ov hidden" id="qrModal">
-  <div class="modal-box" style="max-width:400px">
+  <div class="modal-box" style="max-width:440px">
     <div class="modal-head" style="background:#2d1b4e">
       <h3 style="color:#a87cc7">📱 QR Code — VIP View</h3>
       <button class="modal-close" onclick="$('qrModal').classList.add('hidden')">✕</button>
     </div>
     <div class="modal-body" style="text-align:center">
-      <p style="font-size:12px;color:var(--muted);margin-bottom:16px">สแกน QR นี้เพื่อดู Summary Dashboard<br>แบบ Viewer-only ไม่ต้องเข้าสู่ระบบ</p>
-      <div id="qrCanvas" style="display:flex;justify-content:center;margin-bottom:16px"></div>
-      <div id="qrUrl" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);word-break:break-all;background:var(--cream);padding:8px;border-radius:7px;margin-bottom:12px"></div>
-      <button class="btn b-navy" onclick="copyQrUrl()" style="width:100%">📋 Copy Link</button>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:14px">สแกน QR หรือส่ง Link ให้ผู้บริหารดู Summary<br>แบบ Viewer-only ไม่ต้องเข้าสู่ระบบ</p>
+      <div id="qrCanvas" style="display:flex;justify-content:center;margin-bottom:12px"></div>
+      <div id="qrStatus" style="font-size:11px;margin-bottom:10px"></div>
+      <div id="qrUrl" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);word-break:break-all;background:var(--cream);padding:8px;border-radius:7px;margin-bottom:12px;text-align:left"></div>
+      <button class="btn b-navy" onclick="copyQrUrl()" style="width:100%;margin-bottom:8px">📋 Copy Link VIP</button>
+      <div style="padding-top:12px;border-top:1px solid var(--div);margin-top:4px">
+        <div style="font-size:11px;font-weight:700;color:var(--slate);margin-bottom:8px;text-align:left">📤 แชร์ข้อมูลให้ทีม (Sync Data)</div>
+        <p style="font-size:11px;color:var(--muted);text-align:left;margin-bottom:10px;line-height:1.6">ส่ง Link นี้ให้เพื่อนร่วมทีม — เปิดแล้วข้อมูลโหลดเข้าเครื่องเขาอัตโนมัติ</p>
+        <button class="btn b-out" onclick="copySyncLink()" style="width:100%;margin-bottom:6px">🔄 Copy Sync Link (ส่งข้อมูลให้ทีม)</button>
+        <div style="font-size:10px;color:var(--muted);text-align:center">ทีมเปิด link → ข้อมูลโหลดเข้าเครื่องทันที</div>
+      </div>
     </div>
   </div>
 </div>
@@ -1071,7 +1078,27 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
     <div id="vipContent" style="background:var(--white);border-radius:16px;overflow:hidden;padding:24px"></div>
   </div>
 </div>
-<!-- HISTORY MODAL -->
+<!-- SYNC IMPORT OVERLAY -->
+<div class="modal-ov hidden" id="syncImportModal">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-head" style="background:#1c2b3a">
+      <h3>📥 รับข้อมูลจากทีม</h3>
+      <button class="modal-close" onclick="$('syncImportModal').classList.add('hidden')">✕</button>
+    </div>
+    <div class="modal-body" style="text-align:center">
+      <div style="font-size:36px;margin-bottom:12px">📦</div>
+      <div style="font-size:14px;font-weight:700;color:var(--slate);margin-bottom:6px">พบข้อมูลโครงการจากทีม</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.7" id="syncImportInfo"></div>
+      <div style="background:rgba(192,57,43,.08);border:1px solid rgba(192,57,43,.2);border-radius:8px;padding:10px;margin-bottom:16px;font-size:11px;color:var(--red);text-align:left">
+        ⚠ การโหลดจะแทนที่ข้อมูลปัจจุบันในเครื่องของคุณ
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn b-out" onclick="$('syncImportModal').classList.add('hidden')" style="flex:1">ยกเลิก</button>
+        <button class="btn b-navy" onclick="confirmSyncImport()" style="flex:1">✅ โหลดข้อมูล</button>
+      </div>
+    </div>
+  </div>
+</div>
 <div class="hist-ov hidden" id="histModal">
   <div class="hist-box">
     <div class="hist-head">
@@ -1332,9 +1359,10 @@ document.addEventListener('DOMContentLoaded',()=>{
   // Auto-open register tab if ?reg=1 in URL
   if(location.search.includes('reg=1')){
     showAuthTab('reg');
-    // Clean URL without reload
     try{history.replaceState({},'',location.pathname+location.hash);}catch(e){}
   }
+  // Check for sync data in URL (?sync=...)
+  setTimeout(checkSyncParam, 300);
 });
 
 // ── Registration Link ─────────────────────────
@@ -3054,67 +3082,129 @@ ${slides.map((_,i)=>`  <Relationship Id="rId${i+2}" Type="http://schemas.openxml
 async function showQR(){
   const modal=$('qrModal');
   modal.classList.remove('hidden');
-  $('qrCanvas').innerHTML='<div style="font-size:11px;color:var(--muted);padding:16px">กำลังสร้าง QR...</div>';
+  const qs=$('qrStatus');
+  const qc=$('qrCanvas');
+  const qu=$('qrUrl');
+  if(qc)qc.innerHTML='<div style="font-size:11px;color:var(--muted);padding:16px">กำลังสร้าง QR...</div>';
 
-  // Compress & encode all data into URL hash
-  const payload=JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY)});
+  // Encode data into URL
   let encoded='';
   try{
-    // Use btoa with URI encoding to handle Thai characters
+    const payload=JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY)});
     encoded=btoa(unescape(encodeURIComponent(payload)));
-  }catch(e){
-    encoded=btoa(encodeURIComponent(payload));
-  }
-  const base=location.href.split('#')[0];
+  }catch(e){encoded='';}
+
+  const base=location.href.split('#')[0].split('?')[0];
   const vipUrl=base+'#vip:'+encoded;
 
-  $('qrUrl').textContent=vipUrl.length>80?vipUrl.slice(0,77)+'...':vipUrl;
+  // Store for copy buttons
+  if(modal)modal.dataset.vipUrl=vipUrl;
+  if(modal)modal.dataset.syncUrl=base+'?sync='+encoded;
 
-  // Store full URL for copy button
-  $('qrModal').dataset.vipUrl=vipUrl;
+  // Display shortened URL
+  if(qu)qu.textContent=vipUrl.length>100?base+'#vip:[ข้อมูล '+Math.round(encoded.length/1024*10)/10+' KB]':vipUrl;
 
-  // Load qrcode library
+  // Load QR library
   if(!window.QRCode){
-    await new Promise((res,rej)=>{
+    await new Promise(res=>{
       const s=document.createElement('script');
       s.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
-      s.onload=res; s.onerror=()=>res(); // don't reject, fallback gracefully
+      s.onload=res;s.onerror=res;
       document.head.appendChild(s);
     });
   }
 
-  $('qrCanvas').innerHTML='';
-  if(window.QRCode){
+  if(qc)qc.innerHTML='';
+  if(window.QRCode&&encoded){
     try{
-      new QRCode($('qrCanvas'),{
-        text:vipUrl,
-        width:200,height:200,
-        colorDark:'#1c2b3a',
-        colorLight:'#ffffff',
-        correctLevel:QRCode.CorrectLevel.L // L = smallest QR, fits more data
-      });
+      // QR has size limit ~2953 chars — use L correction for max capacity
+      if(vipUrl.length<=2900){
+        new QRCode(qc,{text:vipUrl,width:200,height:200,colorDark:'#1c2b3a',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.L});
+        if(qs){qs.innerHTML='<span style="color:var(--green);font-size:11px">✅ QR พร้อมใช้งาน</span>';}
+      } else {
+        if(qc)qc.innerHTML=`<div style="padding:16px;font-size:12px;color:var(--amber);text-align:center;line-height:1.7">⚠ ข้อมูลเยอะเกินสำหรับ QR Code<br><span style="font-size:11px;color:var(--muted)">ใช้ปุ่ม Copy Link แทนได้เลย</span></div>`;
+        if(qs){qs.innerHTML='<span style="color:var(--amber);font-size:11px">ใช้ Copy Link แทน QR ครับ</span>';}
+      }
     }catch(e){
-      $('qrCanvas').innerHTML=`<div style="padding:8px;font-size:11px;color:var(--red)">ข้อมูลมากเกินไปสำหรับ QR<br>ใช้ปุ่ม Copy Link แทนได้เลยครับ</div>`;
+      if(qc)qc.innerHTML=`<div style="padding:8px;font-size:11px;color:var(--muted)">ใช้ Copy Link ด้านล่าง</div>`;
     }
   } else {
-    $('qrCanvas').innerHTML=`<div style="padding:16px;font-size:11px;color:var(--muted)">ใช้ปุ่ม Copy Link ด้านล่าง</div>`;
+    if(qc)qc.innerHTML=`<div style="padding:16px;font-size:11px;color:var(--muted)">ใช้ปุ่ม Copy Link</div>`;
   }
 }
 
 function copyQrUrl(){
   const url=$('qrModal').dataset.vipUrl||location.href.split('#')[0]+'#vip';
-  navigator.clipboard.writeText(url).then(()=>{
-    const btn=document.querySelector('#qrModal .btn');
-    if(btn){const o=btn.textContent;btn.textContent='✅ Copied!';setTimeout(()=>btn.textContent=o,2000);}
-  }).catch(()=>{
-    // Fallback for browsers that block clipboard
+  _copyToClipboard(url,'#qrModal .btn');
+}
+
+function copySyncLink(){
+  const url=$('qrModal').dataset.syncUrl;
+  if(!url){alert('กรุณาเปิด QR modal ก่อน');return;}
+  _copyToClipboard(url,'[onclick="copySyncLink()"]');
+}
+
+function _copyToClipboard(text,btnSel){
+  const doCopy=()=>{
     const ta=document.createElement('textarea');
-    ta.value=url;ta.style.position='fixed';ta.style.opacity='0';
+    ta.value=text;ta.style.cssText='position:fixed;opacity:0;top:0;left:0';
     document.body.appendChild(ta);ta.select();
-    document.execCommand('copy');document.body.removeChild(ta);
-    const btn=document.querySelector('#qrModal .btn');
+    try{document.execCommand('copy');}catch(e){}
+    document.body.removeChild(ta);
+    const btn=document.querySelector(btnSel);
     if(btn){const o=btn.textContent;btn.textContent='✅ Copied!';setTimeout(()=>btn.textContent=o,2000);}
-  });
+  };
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(text).then(doCopy).catch(doCopy);
+  } else {doCopy();}
+}
+
+// ── Sync Import (for team members) ───────────
+let _pendingSyncData=null;
+function checkSyncParam(){
+  const params=new URLSearchParams(location.search);
+  const syncData=params.get('sync');
+  if(!syncData)return;
+  try{
+    const decoded=decodeURIComponent(escape(atob(syncData)));
+    const snap=JSON.parse(decoded);
+    _pendingSyncData=snap;
+    // Clean URL
+    try{history.replaceState({},'',location.pathname+location.hash);}catch(e){}
+    // Show import modal
+    const info=$('syncImportInfo');
+    if(info){
+      const pc=(snap.projects||[]).length;
+      const ic=(snap.ideas||[]).length;
+      info.innerHTML=`พบข้อมูล <strong>${pc} โครงการ</strong> และ <strong>${ic} Ideas</strong><br>
+        <span style="font-size:11px;color:var(--muted)">วันที่ข้อมูล: ${snap.today||'ไม่ระบุ'}</span>`;
+    }
+    $('syncImportModal').classList.remove('hidden');
+  }catch(e){console.log('Sync decode error:',e);}
+}
+
+function confirmSyncImport(){
+  if(!_pendingSyncData)return;
+  try{
+    if(_pendingSyncData.projects)P=_pendingSyncData.projects;
+    if(_pendingSyncData.ideas)IDEAS=_pendingSyncData.ideas;
+    if(_pendingSyncData.today){TODAY=new Date(_pendingSyncData.today);TODAY.setHours(0,0,0,0);}
+    save();
+    renderInput();renderDash();renderIdeas();
+    try{renderSummary();}catch(e){}
+    $('syncImportModal').classList.add('hidden');
+    _pendingSyncData=null;
+    // Show success toast
+    showToast('✅ โหลดข้อมูลจากทีมสำเร็จ!','var(--green)');
+  }catch(e){alert('Error importing data: '+e.message);}
+}
+
+function showToast(msg,color){
+  const t=document.createElement('div');
+  t.style.cssText=`position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:${color||'var(--navy)'};color:#fff;padding:10px 22px;border-radius:10px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.25);transition:opacity .4s`;
+  t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),400);},2500);
 }
 
 // ── VIP Viewer Mode — reads data from URL hash ─
