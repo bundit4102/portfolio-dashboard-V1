@@ -1174,14 +1174,31 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
 </div>
 
 <!-- VIP VIEWER OVERLAY (activated by #vip in URL) -->
-<div class="auth-screen hidden" id="vipScreen" style="background:#0f0a1e;overflow-y:auto;align-items:flex-start;padding-top:20px">
-  <div style="max-width:1200px;width:100%;padding:20px;margin:0 auto">
-    <div style="text-align:center;margin-bottom:20px">
-      <div style="font-family:'Playfair Display',serif;font-size:24px;color:#a87cc7;margin-bottom:4px">📊 Portfolio Summary</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.4);letter-spacing:2px">EXECUTIVE VIEW · READ ONLY</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:6px" id="vipDateLbl"></div>
+<div class="auth-screen hidden" id="vipScreen" style="background:#0f0a1e;overflow-y:auto;align-items:flex-start;padding-top:0">
+  <div style="max-width:1200px;width:100%;margin:0 auto">
+    <!-- VIP Header -->
+    <div style="background:#1c2b3a;padding:16px 24px;position:sticky;top:0;z-index:10;border-bottom:1px solid rgba(201,168,76,.2)">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div>
+          <div style="font-family:'Playfair Display',serif;font-size:18px;color:#a87cc7">📊 Portfolio Summary</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.35);letter-spacing:1.5px;margin-top:2px">EXECUTIVE VIEW · READ ONLY · <span id="vipDateLbl"></span></div>
+        </div>
+        <!-- VIP Nav tabs -->
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button onclick="vipTab('summary')" id="vtab-summary" style="padding:6px 14px;border-radius:20px;font-size:11px;font-weight:700;font-family:'Sarabun',sans-serif;cursor:pointer;border:1px solid rgba(201,168,76,.4);background:rgba(201,168,76,.2);color:#c9a84c;transition:all .2s">📋 Summary</button>
+          <button onclick="vipTab('gantt')" id="vtab-gantt" style="padding:6px 14px;border-radius:20px;font-size:11px;font-weight:700;font-family:'Sarabun',sans-serif;cursor:pointer;border:1px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.5);transition:all .2s">📅 Gantt</button>
+          <button onclick="vipTab('ideas')" id="vtab-ideas" style="padding:6px 14px;border-radius:20px;font-size:11px;font-weight:700;font-family:'Sarabun',sans-serif;cursor:pointer;border:1px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.5);transition:all .2s">💡 Ideas</button>
+          <button onclick="vipTab('list')" id="vtab-list" style="padding:6px 14px;border-radius:20px;font-size:11px;font-weight:700;font-family:'Sarabun',sans-serif;cursor:pointer;border:1px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.5);transition:all .2s">📁 Projects</button>
+        </div>
+      </div>
     </div>
-    <div id="vipContent" style="background:var(--white);border-radius:16px;overflow-x:auto;overflow-y:visible;padding:20px"></div>
+    <!-- VIP Content panels -->
+    <div style="padding:20px">
+      <div id="vipContent" style="background:var(--white);border-radius:16px;overflow-x:auto;overflow-y:visible;padding:20px"></div>
+      <div id="vipGantt" style="display:none;background:var(--white);border-radius:16px;overflow-x:auto;padding:20px"></div>
+      <div id="vipIdeas" style="display:none;background:var(--white);border-radius:16px;overflow-x:auto;padding:20px"></div>
+      <div id="vipList" style="display:none;background:var(--white);border-radius:16px;overflow-x:auto;padding:20px"></div>
+    </div>
   </div>
 </div>
 <!-- SYNC IMPORT OVERLAY -->
@@ -3202,21 +3219,33 @@ async function showQR(){
 
   const base=location.href.split('#')[0].split('?')[0];
 
-  // ── Full data URL → Copy Link button ──────────
+  // ── Full data URL → Copy Link ──────────────────
   try{
     const full=JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY)});
     const enc=btoa(unescape(encodeURIComponent(full)));
     modal.dataset.vipUrl=base+'#vip:'+enc;
   }catch(e){modal.dataset.vipUrl=base+'#vip-open';}
 
-  // ── QR: ใช้ #vip-open → เปิด VIP Dashboard ได้เลย ไม่ต้อง login ──
-  // บันทึกข้อมูลปัจจุบันไว้ใน localStorage ก่อน แล้วให้ VIP โหลดจากนั้น
+  // ── QR: ultra-compact data embed ──────────────
+  // เก็บแค่ข้อมูลจำเป็น: id, name, pcat, status, pct, pe, owner
+  let qrUrl=base+'#vip-open'; // fallback
   try{
-    const snap={projects:P,ideas:IDEAS,today:fi(TODAY)};
-    localStorage.setItem('ptk_vip_snap',JSON.stringify(snap));
+    const compact={
+      t:fi(TODAY),
+      p:P.map(x=>[(x.id||'').slice(0,12),(x.name||'').slice(0,24),x.pcat||'',(x.status||'NS').slice(0,2),x.pct||0,(x.pe||'').slice(5),(x.owner||'').slice(0,10)]),
+      i:IDEAS.slice(0,20).map(x=>[(x.title||'').slice(0,22),(x.cat||''),(x.status||'new').slice(0,3)])
+    };
+    const json=JSON.stringify(compact);
+    const enc=btoa(unescape(encodeURIComponent(json)));
+    const candidate=base+'#vipq:'+enc;
+    if(candidate.length<=2953) qrUrl=candidate; // QR capacity limit
+    else qrUrl=base+'#vip-open'; // too long → use localStorage
   }catch(e){}
 
-  const qrUrl=base+'#vip-open';
+  // บันทึก snap ไว้ใน localStorage เผื่อ QR ใช้ #vip-open
+  try{
+    localStorage.setItem('ptk_vip_snap',JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY)}));
+  }catch(e){}
 
   // Load QR lib
   if(!window.QRCode){
@@ -3229,23 +3258,18 @@ async function showQR(){
   }
 
   if(qc)qc.innerHTML='';
-  if(window.QRCode){
+  const makeQR=(url)=>{
     try{
-      new QRCode(qc,{
-        text:qrUrl,
-        width:220, height:220,
-        colorDark:'#1c2b3a',
-        colorLight:'#ffffff',
-        correctLevel:QRCode.CorrectLevel.M
-      });
+      new QRCode(qc,{text:url,width:220,height:220,colorDark:'#1c2b3a',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
       if(qs)qs.innerHTML='<span style="color:var(--green);font-size:11px">✅ QR พร้อมสแกน — เปิด Dashboard ได้เลย ไม่ต้อง Login</span>';
     }catch(e){
-      if(qc)qc.innerHTML='<div style="padding:16px;font-size:12px;color:var(--muted);text-align:center">ใช้ Copy Link VIP แทนครับ</div>';
-      if(qs)qs.innerHTML='';
+      if(qc)qc.innerHTML=`<img src="https://chart.googleapis.com/chart?cht=qr&chs=220x220&chl=${encodeURIComponent(url)}&chld=M|2" style="border-radius:8px">`;
+      if(qs)qs.innerHTML='<span style="color:var(--green);font-size:11px">✅ QR พร้อมสแกน</span>';
     }
-  } else {
-    const encoded=encodeURIComponent(qrUrl);
-    if(qc)qc.innerHTML=`<img src="https://chart.googleapis.com/chart?cht=qr&chs=220x220&chl=${encoded}&chld=M|2" style="border-radius:8px" onerror="this.parentNode.innerHTML='<div style=padding:12px;color:var(--muted);font-size:11px>ใช้ Copy Link แทนครับ</div>'">`;
+  };
+  if(window.QRCode) makeQR(qrUrl);
+  else{
+    if(qc)qc.innerHTML=`<img src="https://chart.googleapis.com/chart?cht=qr&chs=220x220&chl=${encodeURIComponent(qrUrl)}&chld=M|2" style="border-radius:8px">`;
     if(qs)qs.innerHTML='<span style="color:var(--green);font-size:11px">✅ QR พร้อมสแกน</span>';
   }
 }
@@ -3378,35 +3402,46 @@ function initVipMode(){
   let snap=null;
   const hash=location.hash||'';
 
-  // Case 1: #vip: with embedded data
+  // Case 1: #vip: full embedded data
   if(hash.startsWith('#vip:')){
-    try{
-      const b64=hash.slice(5);
-      snap=JSON.parse(decodeURIComponent(escape(atob(b64))));
-    }catch(e){
-      try{snap=JSON.parse(decodeURIComponent(atob(hash.slice(5))));}catch(e2){}
-    }
+    try{snap=JSON.parse(decodeURIComponent(escape(atob(hash.slice(5)))));}
+    catch(e){try{snap=JSON.parse(decodeURIComponent(atob(hash.slice(5))));}catch(e2){}}
   }
 
-  // Case 2: #vip-open → load from localStorage (QR code path)
-  if(!snap && (hash==='#vip-open' || hash.startsWith('#vip-open'))){
+  // Case 2: #vipq: ultra-compact QR format → expand
+  if(!snap && hash.startsWith('#vipq:')){
+    try{
+      const c=JSON.parse(decodeURIComponent(escape(atob(hash.slice(6)))));
+      // Expand compact format: p=[[id,name,pcat,status_abbr,pct,pe_short,owner]]
+      const statusMap={'On':'On Track','De':'Delay','Co':'Completed','At':'At Risk','NS':'Not Started','No':'Not Started'};
+      snap={
+        today:c.t||fi(new Date()),
+        projects:(c.p||[]).map(r=>({
+          id:r[0]||'',name:r[1]||'',pcat:r[2]||'',
+          status:statusMap[r[3]]||r[3]||'Not Started',
+          pct:r[4]||0,
+          pe:r[5]?'2026-'+r[5]:'',
+          owner:r[6]||''
+        })),
+        ideas:(c.i||[]).map(r=>({title:r[0]||'',cat:r[1]||'',status:r[2]==='app'?'approved':r[2]==='rej'?'rejected':r[2]==='rev'?'review':'new'}))
+      };
+    }catch(e){console.warn('vipq parse error:',e);}
+  }
+
+  // Case 3: #vip-open → load from localStorage
+  if(!snap && (hash==='#vip-open'||hash.startsWith('#vip-open'))){
     try{const s=localStorage.getItem('ptk_vip_snap');if(s)snap=JSON.parse(s);}catch(e){}
-    // If no stored snap, create empty one so VIP mode still opens
     if(!snap){
       try{
-        const p=localStorage.getItem('ptk_proj_v5');
+        const pj=localStorage.getItem('ptk_proj_v5');
         const id=localStorage.getItem('ptk_ideas_v5');
         const td=localStorage.getItem('ptk_today_v5');
-        snap={
-          projects:p?JSON.parse(p):[],
-          ideas:id?JSON.parse(id):[],
-          today:td||new Date().toISOString().split('T')[0]
-        };
-      }catch(e){snap={projects:[],ideas:[],today:new Date().toISOString().split('T')[0]};}
+        snap={projects:pj?JSON.parse(pj):[],ideas:id?JSON.parse(id):[],today:td||fi(new Date())};
+      }catch(e){snap={projects:[],ideas:[],today:fi(new Date())};}
     }
   }
 
-  // Case 3: try localStorage fallback
+  // Case 4: localStorage fallback
   if(!snap){
     try{const s=localStorage.getItem('ptk_vip_snap');if(s)snap=JSON.parse(s);}catch(e){}
   }
@@ -3425,7 +3460,120 @@ function initVipMode(){
   initVipModeFromSnap(snap);
 }
 
-function renderVipContent(){
+function vipTab(t){
+  ['summary','gantt','ideas','list'].forEach(x=>{
+    const btn=$('vtab-'+x);
+    const panel=x==='summary'?$('vipContent'):$('vip'+x.charAt(0).toUpperCase()+x.slice(1));
+    if(btn){
+      if(x===t){btn.style.background='rgba(201,168,76,.2)';btn.style.borderColor='rgba(201,168,76,.4)';btn.style.color='#c9a84c';}
+      else{btn.style.background='transparent';btn.style.borderColor='rgba(255,255,255,.15)';btn.style.color='rgba(255,255,255,.5)';}
+    }
+    if(panel)panel.style.display=x===t?'block':'none';
+  });
+  if(t==='gantt')renderVipGantt();
+  if(t==='ideas')renderVipIdeas();
+  if(t==='list')renderVipList();
+}
+
+function renderVipGantt(){
+  const el=$('vipGantt');if(!el)return;
+  const SCOL={'On Track':'#1a7a4a','Delay':'#c0392b','Completed':'#6c3483','At Risk':'#c87a00','Not Started':'#8a9bb0'};
+  const CS2=new Date('2025-04-01'),CE2=new Date('2026-09-30'),TMS2=CE2-CS2;
+  const pp2=dt=>dt?Math.min(100,Math.max(0,(dt-CS2)/TMS2*100)):null;
+  const td2=pp2(TODAY);
+  let html=`<h3 style="font-family:'Playfair Display',serif;font-size:16px;color:#1c2b3a;margin-bottom:16px">📅 Gantt Timeline</h3>`;
+  if(!P.length){el.innerHTML=html+'<div style="color:#8a9bb0;text-align:center;padding:24px">ยังไม่มีข้อมูลโครงการ</div>';return;}
+  html+=`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px;min-width:700px">
+    <thead><tr style="background:#1c2b3a;color:#fff">
+      <th style="padding:8px 10px;text-align:left;width:180px">Project</th>
+      <th style="padding:8px 10px;width:90px">Status</th>
+      <th style="padding:8px 10px;width:50px">%</th>
+      <th style="padding:8px 10px">Timeline</th>
+    </tr></thead><tbody>`;
+  P.forEach((p,i)=>{
+    const bg=i%2===0?'#fff':'#f7f5f0';
+    const scol=SCOL[p.status]||'#8a9bb0';
+    const ps=p.ps?new Date(p.ps):null, pe=p.pe?new Date(p.pe):null;
+    const as=p.as_?new Date(p.as_):null;
+    const pL=pp2(ps),pR=pp2(pe),aL=pp2(as);
+    const aR=p.ae?pp2(new Date(p.ae)):(as&&pe?Math.min(100,aL+(p.pct/100)*(pR-aL)):aL);
+    const planBar=pL!==null&&pR!==null?`<div style="position:absolute;left:${pL}%;width:${Math.max(.5,pR-pL)}%;top:4px;height:5px;background:#e8e2d9;border:1px solid #ccc;border-radius:2px"></div>`:'';
+    const actBar=aL!==null&&aR!==null?`<div style="position:absolute;left:${aL}%;width:${Math.max(.5,(aR||aL)-aL)}%;top:12px;height:7px;background:${scol};border-radius:2px"></div>`:'';
+    html+=`<tr style="background:${bg}">
+      <td style="padding:7px 10px;font-weight:600;color:#1c2b3a">${p.name||p.id}<br><span style="font-size:9px;color:#8a9bb0;font-family:monospace">${p.id}</span></td>
+      <td style="padding:7px 10px"><span style="font-size:10px;font-weight:700;color:${scol}">${p.status}</span></td>
+      <td style="padding:7px 10px;font-family:monospace;color:${scol};font-weight:700">${p.pct}%</td>
+      <td style="padding:7px 10px">
+        <div style="position:relative;height:24px;background:#f0ece4;border-radius:3px">
+          ${planBar}${actBar}
+          ${td2!==null?`<div style="position:absolute;left:${td2}%;top:0;bottom:0;width:1.5px;background:#c9a84c;z-index:5"></div>`:''}
+        </div>
+      </td>
+    </tr>`;
+  });
+  html+='</tbody></table></div>';
+  el.innerHTML=html;
+}
+
+function renderVipIdeas(){
+  const el=$('vipIdeas');if(!el)return;
+  const SCOL2={new:'#1a6fa8',review:'#c87a00',approved:'#1a7a4a',rejected:'#c0392b'};
+  let html=`<h3 style="font-family:'Playfair Display',serif;font-size:16px;color:#1c2b3a;margin-bottom:16px">💡 Idea Pitching</h3>`;
+  if(!IDEAS.length){el.innerHTML=html+'<div style="color:#8a9bb0;text-align:center;padding:24px">ยังไม่มีข้อมูล Idea</div>';return;}
+  const sorted=[...IDEAS].sort((a,b)=>{const sa=((+a.impact||5)+(+a.feasibility||5)+(+a.strategic||5));const sb=((+b.impact||5)+(+b.feasibility||5)+(+b.strategic||5));return sb-sa;});
+  html+=`<table style="width:100%;border-collapse:collapse;font-size:11px">
+    <thead><tr style="background:#1c2b3a;color:#fff">
+      <th style="padding:8px 10px;text-align:left">Idea</th>
+      <th style="padding:8px 10px">Category</th>
+      <th style="padding:8px 10px">Status</th>
+      <th style="padding:8px 10px">Score</th>
+    </tr></thead><tbody>`;
+  sorted.forEach((x,i)=>{
+    const sc=Math.round(((+x.impact||5)+(+x.feasibility||5)+(+x.strategic||5))/3*10);
+    const scol=sc>=70?'#1a7a4a':sc>=50?'#c87a00':'#c0392b';
+    const stcol=SCOL2[x.status]||'#8a9bb0';
+    html+=`<tr style="background:${i%2===0?'#fff':'#f7f5f0'}">
+      <td style="padding:8px 10px;font-weight:600;color:#1c2b3a">${x.title||'—'}<br><span style="font-size:10px;color:#8a9bb0;font-weight:400">${x.owner||''}</span></td>
+      <td style="padding:8px 10px;text-align:center"><span style="font-size:10px;font-weight:700;color:#856404;background:#fff8dc;padding:2px 7px;border-radius:10px">${x.cat||'—'}</span></td>
+      <td style="padding:8px 10px;text-align:center"><span style="font-size:10px;font-weight:700;color:${stcol}">${x.status}</span></td>
+      <td style="padding:8px 10px;text-align:center;font-family:monospace;font-size:14px;font-weight:700;color:${scol}">${sc}</td>
+    </tr>`;
+  });
+  html+='</tbody></table>';
+  el.innerHTML=html;
+}
+
+function renderVipList(){
+  const el=$('vipList');if(!el)return;
+  const SCOL={'On Track':'#1a7a4a','Delay':'#c0392b','Completed':'#6c3483','At Risk':'#c87a00','Not Started':'#8a9bb0'};
+  let html=`<h3 style="font-family:'Playfair Display',serif;font-size:16px;color:#1c2b3a;margin-bottom:16px">📁 รายการโครงการทั้งหมด</h3>`;
+  if(!P.length){el.innerHTML=html+'<div style="color:#8a9bb0;text-align:center;padding:24px">ยังไม่มีข้อมูล</div>';return;}
+  html+=`<table style="width:100%;border-collapse:collapse;font-size:11px">
+    <thead><tr style="background:#1c2b3a;color:#fff">
+      <th style="padding:8px 10px;text-align:left">ID</th>
+      <th style="padding:8px 10px;text-align:left">ชื่อโครงการ</th>
+      <th style="padding:8px 10px">Category</th>
+      <th style="padding:8px 10px">Owner</th>
+      <th style="padding:8px 10px">Status</th>
+      <th style="padding:8px 10px">%</th>
+      <th style="padding:8px 10px">Plan End</th>
+    </tr></thead><tbody>`;
+  P.forEach((p,i)=>{
+    const scol=SCOL[p.status]||'#8a9bb0';
+    const pe=p.pe?new Date(p.pe).toLocaleDateString('th-TH',{day:'2-digit',month:'short',year:'2-digit'}):'—';
+    html+=`<tr style="background:${i%2===0?'#fff':'#f7f5f0'}">
+      <td style="padding:7px 10px;font-family:monospace;font-size:10px;color:#9a7a2e">${p.id}</td>
+      <td style="padding:7px 10px;font-weight:600;color:#1c2b3a">${p.name||'—'}</td>
+      <td style="padding:7px 10px;text-align:center"><span style="font-size:10px;font-weight:700;background:#fff8dc;color:#856404;padding:2px 7px;border-radius:10px">${p.pcat||'—'}</span></td>
+      <td style="padding:7px 10px;color:#8a9bb0;font-size:10px">${p.owner||'—'}</td>
+      <td style="padding:7px 10px;text-align:center"><span style="font-size:10px;font-weight:700;color:${scol}">${p.status}</span></td>
+      <td style="padding:7px 10px;text-align:center;font-family:monospace;font-weight:700;color:${scol}">${p.pct}%</td>
+      <td style="padding:7px 10px;text-align:center;font-family:monospace;font-size:10px;color:#8a9bb0">${pe}</td>
+    </tr>`;
+  });
+  html+='</tbody></table>';
+  el.innerHTML=html;
+}
   const vc=$('vipContent');
   if(!vc)return;
 
