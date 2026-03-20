@@ -507,6 +507,104 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .pop{animation:pop .22s ease both}
+
+/* ════════════════════════════════════
+   RESPONSIVE — Mobile & Tablet
+════════════════════════════════════ */
+@media(max-width:768px){
+  /* Nav */
+  .nav{flex-wrap:wrap;padding:0 12px;gap:0}
+  .brand{font-size:13px;padding:10px 12px 10px 0;margin-right:8px}
+  .nav-tab{padding:10px 10px;font-size:10px;letter-spacing:.3px}
+  .nav-gap{display:none}
+  .save-pill{display:none}
+  .b-save-nav span{display:none}
+  .b-save-nav{padding:6px 10px;font-size:11px;margin-right:3px}
+  .stale-nav-btn{padding:5px 8px;font-size:10px;margin-right:3px}
+  .user-pill .uinfo{display:none}
+  .uavt{width:28px;height:28px;font-size:11px}
+  .logout-btn{padding:5px 8px;font-size:10px}
+  /* Wrap */
+  .wrap{padding:16px 14px 40px}
+  /* KPI row */
+  .krow{grid-template-columns:repeat(2,1fr);gap:8px}
+  /* Gantt — scroll horizontally */
+  .gantt-card{overflow-x:auto}
+  /* Bottom layout — stack */
+  .bg2{grid-template-columns:1fr}
+  /* Dashboard topbar */
+  .topbar{flex-direction:column;align-items:flex-start;gap:10px}
+  .topbar>div:last-child{text-align:left;display:flex;gap:8px;flex-wrap:wrap}
+  /* Input table — scroll */
+  .tw{overflow-x:auto}
+  /* Summary matrix — scroll */
+  #sumMatrix{overflow-x:auto}
+  #sumMatrix table{min-width:600px}
+  .ikrow{grid-template-columns:repeat(2,1fr)}
+  /* Kanban */
+  .kanban-mini{grid-template-columns:1fr 1fr}
+  /* Auth box */
+  .auth-box{margin:10px}
+  .auth-body{padding:20px 18px 24px}
+  /* Modal */
+  .modal-box{margin:12px}
+  .dp-row{grid-template-columns:1fr}
+  /* Hist */
+  .hist-box{max-width:100%;margin:10px}
+  /* Admin */
+  .krow.admin-krow{grid-template-columns:repeat(2,1fr)}
+  /* Summary KPI */
+  #sumKpiRow{grid-template-columns:repeat(2,1fr)}
+  /* VIP screen */
+  #vipScreen>div{padding:12px}
+  #vipContent{padding:14px}
+  /* QR Modal */
+  .modal-box{max-width:100%!important}
+}
+
+@media(max-width:480px){
+  .nav-tab{padding:8px 7px;font-size:9px}
+  .brand{font-size:12px}
+  .krow{grid-template-columns:repeat(2,1fr);gap:6px}
+  .kc{padding:11px 12px 10px}
+  .kv{font-size:22px}
+  .ikrow{grid-template-columns:1fr 1fr}
+  .kanban-mini{grid-template-columns:1fr}
+  #sumKpiRow{grid-template-columns:repeat(2,1fr)}
+  .topbar h1{font-size:17px}
+  /* Auth full width */
+  .auth-box{border-radius:12px}
+  .auth-logo{padding:24px 20px 18px}
+  .auth-logo-title{font-size:20px}
+  .auth-body{padding:16px 16px 20px}
+  .auth-tabs .auth-tab{font-size:11px;padding:10px 8px}
+  /* QR VIP full screen */
+  #vipScreen{overflow-y:auto}
+  #vipContent table{font-size:10px}
+  #vipContent .sum-cat-lbl{font-size:11px;min-width:70px;padding:8px}
+}
+
+/* Landscape phone */
+@media(max-width:900px) and (orientation:landscape){
+  .nav{flex-wrap:nowrap;overflow-x:auto}
+  .krow{grid-template-columns:repeat(5,1fr)}
+  .bg2{grid-template-columns:1fr 240px}
+  .wrap{padding:14px 16px 30px}
+}
+
+/* iPad portrait */
+@media(min-width:768px) and (max-width:1024px){
+  .krow{grid-template-columns:repeat(3,1fr)}
+  .bg2{grid-template-columns:1fr 240px}
+  .wrap{padding:20px 20px 50px}
+  .gantt-card{overflow-x:auto}
+  .tw{overflow-x:auto}
+  #sumMatrix{overflow-x:auto}
+}
+
+/* Force horizontal scroll on small screens for tables */
+.tw,.gantt-card,#sumMatrix,.card{-webkit-overflow-scrolling:touch}
+
 </style>
 </head>
 <body>
@@ -1068,14 +1166,14 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
 </div>
 
 <!-- VIP VIEWER OVERLAY (activated by #vip in URL) -->
-<div class="auth-screen hidden" id="vipScreen" style="background:#0f0a1e">
-  <div style="max-width:1200px;width:100%;padding:20px">
-    <div style="text-align:center;margin-bottom:28px">
-      <div style="font-family:'Playfair Display',serif;font-size:28px;color:#a87cc7;margin-bottom:4px">📊 Portfolio Summary</div>
+<div class="auth-screen hidden" id="vipScreen" style="background:#0f0a1e;overflow-y:auto;align-items:flex-start;padding-top:20px">
+  <div style="max-width:1200px;width:100%;padding:20px;margin:0 auto">
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-family:'Playfair Display',serif;font-size:24px;color:#a87cc7;margin-bottom:4px">📊 Portfolio Summary</div>
       <div style="font-size:11px;color:rgba(255,255,255,.4);letter-spacing:2px">EXECUTIVE VIEW · READ ONLY</div>
       <div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:6px" id="vipDateLbl"></div>
     </div>
-    <div id="vipContent" style="background:var(--white);border-radius:16px;overflow:hidden;padding:24px"></div>
+    <div id="vipContent" style="background:var(--white);border-radius:16px;overflow-x:auto;overflow-y:visible;padding:20px"></div>
   </div>
 </div>
 <!-- SYNC IMPORT OVERLAY -->
@@ -3087,22 +3185,29 @@ async function showQR(){
   const qu=$('qrUrl');
   if(qc)qc.innerHTML='<div style="font-size:11px;color:var(--muted);padding:16px">กำลังสร้าง QR...</div>';
 
-  // Encode data into URL
+  // Encode data — VIP includes projects+ideas only
   let encoded='';
   try{
     const payload=JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY)});
     encoded=btoa(unescape(encodeURIComponent(payload)));
   }catch(e){encoded='';}
 
+  // Sync link includes users too so teammates can login
+  let encodedSync='';
+  try{
+    const syncPayload=JSON.stringify({
+      projects:P, ideas:IDEAS, today:fi(TODAY),
+      users:getUsers() // include all registered users
+    });
+    encodedSync=btoa(unescape(encodeURIComponent(syncPayload)));
+  }catch(e){encodedSync=encoded;}
+
   const base=location.href.split('#')[0].split('?')[0];
   const vipUrl=base+'#vip:'+encoded;
+  const syncUrl=base+'?sync='+encodedSync;
 
-  // Store for copy buttons
-  if(modal)modal.dataset.vipUrl=vipUrl;
-  if(modal)modal.dataset.syncUrl=base+'?sync='+encoded;
-
-  // Display shortened URL
-  if(qu)qu.textContent=vipUrl.length>100?base+'#vip:[ข้อมูล '+Math.round(encoded.length/1024*10)/10+' KB]':vipUrl;
+  if(modal){modal.dataset.vipUrl=vipUrl; modal.dataset.syncUrl=syncUrl;}
+  if(qu)qu.textContent=base+'#vip ['+Math.round(encoded.length/1024*10)/10+' KB]';
 
   // Load QR library
   if(!window.QRCode){
@@ -3117,13 +3222,12 @@ async function showQR(){
   if(qc)qc.innerHTML='';
   if(window.QRCode&&encoded){
     try{
-      // QR has size limit ~2953 chars — use L correction for max capacity
       if(vipUrl.length<=2900){
         new QRCode(qc,{text:vipUrl,width:200,height:200,colorDark:'#1c2b3a',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.L});
-        if(qs){qs.innerHTML='<span style="color:var(--green);font-size:11px">✅ QR พร้อมใช้งาน</span>';}
+        if(qs)qs.innerHTML='<span style="color:var(--green);font-size:11px">✅ QR พร้อมใช้งาน</span>';
       } else {
-        if(qc)qc.innerHTML=`<div style="padding:16px;font-size:12px;color:var(--amber);text-align:center;line-height:1.7">⚠ ข้อมูลเยอะเกินสำหรับ QR Code<br><span style="font-size:11px;color:var(--muted)">ใช้ปุ่ม Copy Link แทนได้เลย</span></div>`;
-        if(qs){qs.innerHTML='<span style="color:var(--amber);font-size:11px">ใช้ Copy Link แทน QR ครับ</span>';}
+        if(qc)qc.innerHTML=`<div style="padding:16px;font-size:12px;color:var(--amber);text-align:center;line-height:1.7">⚠ ข้อมูลเยอะเกินสำหรับ QR<br><span style="font-size:11px;color:var(--muted)">ใช้ปุ่ม Copy Link แทน</span></div>`;
+        if(qs)qs.innerHTML='<span style="color:var(--amber);font-size:11px">ใช้ Copy Link แทน QR</span>';
       }
     }catch(e){
       if(qc)qc.innerHTML=`<div style="padding:8px;font-size:11px;color:var(--muted)">ใช้ Copy Link ด้านล่าง</div>`;
@@ -3176,7 +3280,8 @@ function checkSyncParam(){
     if(info){
       const pc=(snap.projects||[]).length;
       const ic=(snap.ideas||[]).length;
-      info.innerHTML=`พบข้อมูล <strong>${pc} โครงการ</strong> และ <strong>${ic} Ideas</strong><br>
+      const uc=(snap.users||[]).length;
+      info.innerHTML=`พบข้อมูล <strong>${pc} โครงการ</strong>, <strong>${ic} Ideas</strong>${uc?` และ <strong>${uc} Users</strong>`:''}<br>
         <span style="font-size:11px;color:var(--muted)">วันที่ข้อมูล: ${snap.today||'ไม่ระบุ'}</span>`;
     }
     $('syncImportModal').classList.remove('hidden');
@@ -3189,13 +3294,27 @@ function confirmSyncImport(){
     if(_pendingSyncData.projects)P=_pendingSyncData.projects;
     if(_pendingSyncData.ideas)IDEAS=_pendingSyncData.ideas;
     if(_pendingSyncData.today){TODAY=new Date(_pendingSyncData.today);TODAY.setHours(0,0,0,0);}
+    // Restore users (so admin-created accounts work on this device)
+    if(_pendingSyncData.users&&_pendingSyncData.users.length){
+      // Merge: keep existing users, add any missing ones from sync
+      const existing=getUsers();
+      const merged=[...existing];
+      _pendingSyncData.users.forEach(u=>{
+        if(!merged.find(x=>x.username===u.username))merged.push(u);
+        else{
+          // Update status/role if changed
+          const idx=merged.findIndex(x=>x.username===u.username);
+          if(idx>=0){merged[idx].status=u.status;merged[idx].role=u.role;}
+        }
+      });
+      saveUsers(merged);
+    }
     save();
     renderInput();renderDash();renderIdeas();
     try{renderSummary();}catch(e){}
     $('syncImportModal').classList.add('hidden');
     _pendingSyncData=null;
-    // Show success toast
-    showToast('✅ โหลดข้อมูลจากทีมสำเร็จ!','var(--green)');
+    showToast('✅ โหลดข้อมูลและ Users สำเร็จ!','var(--green)');
   }catch(e){alert('Error importing data: '+e.message);}
 }
 
