@@ -605,51 +605,6 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
 /* Force horizontal scroll on small screens for tables */
 .tw,.gantt-card,#sumMatrix,.card{-webkit-overflow-scrolling:touch}
 
-/* ════ PRINT / PDF STYLES ════ */
-@media print{
-  @page{size:A3 landscape;margin:12mm 10mm;}
-  body{background:#fff!important;color:#000!important;font-family:'Sarabun',Arial,sans-serif;font-size:9pt;}
-  body::before{display:none!important;}
-  /* Hide everything except summary panel */
-  .auth-screen,.nav,.modal-ov,.hist-ov,#vipScreen,.ov,
-  [id^="panel-"]:not(#panel-summary){display:none!important;}
-  #panel-summary{display:block!important;padding:0!important;}
-  #panel-summary .wrap{padding:4mm 0!important;max-width:100%!important;}
-  /* Header */
-  .sum-header{margin-bottom:4mm!important;padding-bottom:2mm!important;}
-  .sum-header h1{font-size:16pt!important;color:#1c2b3a!important;}
-  /* KPI cards */
-  .sum-kpi-row{display:flex!important;gap:3mm!important;margin-bottom:4mm!important;}
-  .sum-kpi-card{flex:1!important;border:1px solid #ddd!important;border-radius:4mm!important;padding:3mm!important;text-align:center!important;break-inside:avoid;}
-  .sum-kpi-icon{font-size:14pt!important;}
-  .sum-kpi-val{font-size:18pt!important;font-weight:700!important;}
-  .sum-kpi-lbl{font-size:7pt!important;color:#666!important;letter-spacing:1px!important;}
-  /* Charts section */
-  .sum-charts{display:flex!important;gap:4mm!important;margin-bottom:4mm!important;}
-  .sum-chart-box{flex:1!important;border:1px solid #eee!important;border-radius:3mm!important;padding:3mm!important;}
-  /* Matrix table */
-  #sumMatrix table{width:100%!important;border-collapse:collapse!important;font-size:7.5pt!important;}
-  #sumMatrix th{background:#1c2b3a!important;color:#fff!important;padding:2mm 3mm!important;print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important;}
-  #sumMatrix td{border:0.3mm solid #ddd!important;padding:1.5mm 2.5mm!important;vertical-align:top!important;}
-  #sumMatrix li{margin-bottom:0.5mm!important;line-height:1.3!important;}
-  /* Stage headers */
-  .stage-head-idea{background:#c9a84c!important;print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important;}
-  .stage-head-prop{background:#b8953a!important;print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important;}
-  .stage-head-exec{background:#1c2b3a!important;print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important;}
-  .stage-head-clos{background:#162236!important;print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important;}
-  .stage-head-res{background:#6aaa3f!important;print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important;}
-  /* No page break in table rows */
-  #sumMatrix tr{break-inside:avoid!important;}
-  /* Export button hidden in print */
-  .b-pdf,.btn,.stale-nav{display:none!important;}
-  /* Page number */
-  .sum-footer{display:flex!important;justify-content:space-between!important;font-size:7pt!important;color:#999!important;margin-top:3mm!important;border-top:0.3mm solid #eee!important;padding-top:2mm!important;}
-  /* Canvas elements (charts) — force colors */
-  canvas{print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important;}
-  /* Force all colors to print */
-  *{print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important;}
-}
-
 </style>
 </head>
 <body>
@@ -2461,29 +2416,20 @@ function renderSummary(){
 async function exportSummaryPDF(){
   const btn=document.querySelector('[onclick="exportSummaryPDF()"]');
   const orig=btn?btn.innerHTML:'';
-  // Switch to summary panel first
+  if(btn){btn.innerHTML='⏳ กำลังสร้าง...';btn.disabled=true;}
   if(!$('panel-summary').classList.contains('on'))sw('summary');
-  await new Promise(r=>setTimeout(r,300)); // wait for render
-
-  // Inject a print title override
-  const titleEl=document.createElement('style');
-  titleEl.id='_print_title_override';
-  titleEl.textContent=`@media print{
-    body::after{content:'';display:none}
-    #panel-summary .sum-header .org-tag::after{content:' · Project Portfolio Summary · ${new Date().toLocaleDateString("th-TH",{day:"numeric",month:"long",year:"numeric"})}'}
-  }`;
-  document.head.appendChild(titleEl);
-
-  // Use browser print → Save as PDF
+  await new Promise(r=>setTimeout(r,100));
+  if(!window.html2pdf){
+    await new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});
+  }
+  const nav=$('mainApp').querySelector('.nav');
+  const navDisp=nav?nav.style.display:'';
+  if(nav)nav.style.display='none';
   try{
-    window.print();
+    await html2pdf().set({margin:[8,6],filename:'Summary_'+fi(TODAY)+'.pdf',image:{type:'jpeg',quality:.97},html2canvas:{scale:2,useCORS:true,scrollY:0},jsPDF:{unit:'mm',format:'a3',orientation:'landscape'}}).from($('panel-summary')).save();
   }catch(e){alert('Error: '+e.message);}
-
-  // Cleanup
-  setTimeout(()=>{
-    const el=document.getElementById('_print_title_override');
-    if(el)el.remove();
-  },2000);
+  if(nav)nav.style.display=navDisp;
+  if(btn){btn.innerHTML=orig;btn.disabled=false;}
 }
 
 
@@ -3285,28 +3231,29 @@ async function showQR(){
   const qc=$('qrCanvas');
   const qs=$('qrStatus');
   if(qc)qc.innerHTML='<div style="font-size:11px;color:var(--muted);padding:12px">กำลังสร้าง QR...</div>';
-
   const base=location.href.split('#')[0].split('?')[0];
-
-  // ── Full data → Copy Link VIP ────────────────
   try{
     const full=JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY)});
     const enc=btoa(unescape(encodeURIComponent(full)));
     modal.dataset.vipUrl=base+'#vip:'+enc;
   }catch(e){modal.dataset.vipUrl=base+'#vip-open';}
-
-  // ── Save snap to localStorage so #vip-open works ──
   try{localStorage.setItem('ptk_vip_snap',JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY)}));}catch(e){}
-
   const qrUrl=base+'#vip-open';
   if(qc)qc.innerHTML='';
   if(qs)qs.innerHTML='';
-
-  // ── Draw QR fully offline (pure JS, no CDN) ──
   try{
-    const canvas=_makeQrCanvas(qrUrl,'#1c2b3a','#ffffff',220);
-    canvas.style.cssText='border-radius:8px;display:block;max-width:220px';
-    if(qc){qc.innerHTML='';qc.appendChild(canvas);}
+    const qr=_QrCode.encodeText(qrUrl,_QrCode.Ecc.MEDIUM);
+    const sz=qr.size, sc=Math.max(2,Math.floor(220/sz)), margin=4;
+    const total=sz*sc+margin*2;
+    const cv=document.createElement('canvas');
+    cv.width=total; cv.height=total;
+    const ctx=cv.getContext('2d');
+    ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,total,total);
+    ctx.fillStyle='#1c2b3a';
+    for(let y=0;y<sz;y++)for(let x=0;x<sz;x++)
+      if(qr.getModule(x,y))ctx.fillRect(margin+x*sc,margin+y*sc,sc,sc);
+    cv.style.cssText='border-radius:8px;display:block;max-width:220px';
+    if(qc){qc.innerHTML='';qc.appendChild(cv);}
     if(qs)qs.innerHTML='<span style="color:var(--green);font-size:11px">✅ QR พร้อมสแกน — สแกนแล้วเข้า Dashboard ได้เลย ไม่ต้อง Login</span>';
   }catch(e){
     if(qc)qc.innerHTML='<div style="padding:14px;text-align:center;font-size:12px;color:var(--amber)">⚠ ใช้ปุ่ม <b>Copy Link VIP</b> ด้านล่างแทนครับ</div>';
@@ -3314,157 +3261,194 @@ async function showQR(){
 }
 
 // ═══════════════════════════════════════════════
-// PURE JS QR CODE (no CDN, no external lib)
-// Implements QR Code version 1-10, byte mode, ECC-M
+// QR CODE — Nayuki reference implementation
+// (ported to single-file, no dependencies)
 // ═══════════════════════════════════════════════
-function _makeQrCanvas(text, dark, light, size){
-  const data=_qrEncode(text);
-  const n=data.length; // n×n matrix
-  const scale=Math.max(2,Math.floor((size-8)/n));
-  const margin=4;
-  const total=n*scale+margin*2;
-  const cv=document.createElement('canvas');
-  cv.width=total; cv.height=total;
-  const ctx=cv.getContext('2d');
-  ctx.fillStyle=light; ctx.fillRect(0,0,total,total);
-  ctx.fillStyle=dark;
-  for(let r=0;r<n;r++)for(let c=0;c<n;c++)
-    if(data[r][c])ctx.fillRect(margin+c*scale,margin+r*scale,scale,scale);
-  return cv;
+const _QrCode=(()=>{
+function _ab(val,len,bb){if(len<0||len>31||val>>>len!=0)throw new RangeError();for(let i=len-1;i>=0;i--)bb.push((val>>>i)&1);}
+function _gb(x,i){return((x>>>i)&1)!=0;}
+class Seg{
+  static makeBytes(data){const bb=[];for(const b of data)_ab(b,8,bb);return new Seg(Seg.Mode.BYTE,data.length,bb);}
+  static makeSegs(text){return text==''?[]:[Seg.makeBytes(Array.from(text).map(c=>c.charCodeAt(0)))];}
+  static totBits(segs,ver){let r=0;for(const s of segs){const c=s.mode.ccb(ver);if(s.numChars>=1<<c)return Infinity;r+=4+c+s.bitData.length;}return r;}
+  constructor(mode,numChars,bitData){this.mode=mode;this.numChars=numChars;this.bitData=bitData;}
+  getData(){return this.bitData.slice();}
 }
-
-function _qrEncode(text){
-  const bytes=Array.from(text).map(c=>c.charCodeAt(0)&0xff);
-  const len=bytes.length;
-  // ECC-M capacity per version
-  const cap_m=[0,14,26,42,62,84,106,122,154,180,213];
-  const ec_cnt=[0,10,16,26,18,24,16,18,22,22,26];
-  const align_pos=[0,[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,28,46],[6,32,50]];
-  let ver=1;for(;ver<=10;ver++)if(cap_m[ver]>=len)break;
-  if(ver>10)ver=10;
-  const sz=17+ver*4;
-
-  // 1. Build data codewords
-  const pb=[];
-  const pushB=(v,l)=>{for(let i=l-1;i>=0;i--)pb.push((v>>i)&1);};
-  pushB(4,4);pushB(len,8);bytes.forEach(b=>pushB(b,8));pushB(0,4);
-  while(pb.length%8)pb.push(0);
-  const pads=[0xEC,0x11];let pi=0;
-  const capBits=cap_m[ver]*8; // ECC-M data capacity
-  while(pb.length<capBits)pushB(pads[pi++%2],8);
-  const cw=[];
-  for(let i=0;i<pb.length;i+=8){let b=0;for(let j=0;j<8;j++)b=(b<<1)|(pb[i+j]||0);cw.push(b);}
-
-  // 2. RS error correction
-  const ec=_rsEncode(cw,ec_cnt[ver]);
-
-  // 3. All bits (data + EC) — built separately, not reusing pb
-  const all=[];
-  const pushA=(v,l)=>{for(let i=l-1;i>=0;i--)all.push((v>>i)&1);};
-  [...cw,...ec].forEach(b=>pushA(b,8));
-
-  // 4. Matrix
-  const mat=Array.from({length:sz},()=>new Array(sz).fill(0));
-  const fix=Array.from({length:sz},()=>new Array(sz).fill(false));
-
-  // Finder pattern
-  const fin=(r,c)=>{
-    for(let i=0;i<7;i++)for(let j=0;j<7;j++){
-      mat[r+i][c+j]=(i===0||i===6||j===0||j===6||i>=2&&i<=4&&j>=2&&j<=4)?1:0;
-      fix[r+i][c+j]=true;
+Seg.Mode={
+  BYTE:{modeBits:0x4,ccb(v){return v<10?8:16;}},
+};
+class QrCode{
+  static encodeText(text,ecl){return QrCode.encodeSegs(Seg.makeSegs(text),ecl);}
+  static encodeSegs(segs,ecl,minVer=1,maxVer=40,msk=-1,boost=true){
+    let ver,used;
+    for(ver=minVer;;ver++){
+      const cap=QrCode.numDataCw(ver,ecl)*8;
+      used=Seg.totBits(segs,ver);
+      if(used<=cap)break;
+      if(ver>=maxVer)throw new RangeError('Data too long');
     }
-  };
-  fin(0,0);fin(0,sz-7);fin(sz-7,0);
-
-  // Separators
-  const s=(r,c)=>{if(r>=0&&r<sz&&c>=0&&c<sz&&!fix[r][c]){mat[r][c]=0;fix[r][c]=true;}};
-  for(let i=0;i<8;i++){
-    s(7,i);s(i,7);          // TL
-    s(7,sz-1-i);s(i,sz-8); // TR
-    s(sz-8,i);s(sz-1-i,7); // BL
+    for(const ne of[QrCode.Ecc.MEDIUM,QrCode.Ecc.QUARTILE,QrCode.Ecc.HIGH])
+      if(boost&&used<=QrCode.numDataCw(ver,ne)*8)ecl=ne;
+    const bb=[];
+    for(const seg of segs){_ab(seg.mode.modeBits,4,bb);_ab(seg.numChars,seg.mode.ccb(ver),bb);for(const b of seg.getData())bb.push(b);}
+    const cap=QrCode.numDataCw(ver,ecl)*8;
+    _ab(0,Math.min(4,cap-bb.length),bb);
+    _ab(0,(8-bb.length%8)%8,bb);
+    for(let p=0xEC;bb.length<cap;p^=0xEC^0x11)_ab(p,8,bb);
+    const dw=[];while(dw.length*8<bb.length)dw.push(0);
+    bb.forEach((b,i)=>dw[i>>>3]|=b<<(7-(i&7)));
+    if(msk==-1){let mp=Infinity;for(let i=0;i<8;i++){const q=new QrCode(ver,ecl,dw,i);const p=q.penalty();if(p<mp){mp=p;msk=i;}}}
+    return new QrCode(ver,ecl,dw,msk);
   }
-
-  // Timing patterns
-  for(let i=8;i<sz-8;i++){
-    if(!fix[6][i]){mat[6][i]=i%2===0?1:0;fix[6][i]=true;}
-    if(!fix[i][6]){mat[i][6]=i%2===0?1:0;fix[i][6]=true;}
+  constructor(ver,ecl,dw,msk){
+    this.version=ver;this.errorCorrectionLevel=ecl;
+    if(ver<1||ver>40)throw new RangeError();
+    this.size=ver*4+17;
+    this.mods=Array.from({length:this.size},()=>new Array(this.size).fill(false));
+    this.isFn=Array.from({length:this.size},()=>new Array(this.size).fill(false));
+    this._drawFn();
+    this._drawCw(this._addEcc(dw));
+    this.mask=msk;
+    this._applyMask(msk);
+    this._drawFmt(msk);
+    this.isFn=[];
   }
-
-  // Dark module
-  mat[sz-8][8]=1;fix[sz-8][8]=true;
-
-  // Alignment patterns (ver>=2)
-  const ap=align_pos[ver];
-  for(let ai=0;ai<ap.length;ai++)for(let aj=0;aj<ap.length;aj++){
-    const ar=ap[ai],ac=ap[aj];
-    if(fix[ar][ac])continue;
-    for(let i=-2;i<=2;i++)for(let j=-2;j<=2;j++){
-      mat[ar+i][ac+j]=(Math.abs(i)===2||Math.abs(j)===2||(i===0&&j===0))?1:0;
-      fix[ar+i][ac+j]=true;
+  getModule(x,y){return 0<=x&&x<this.size&&0<=y&&y<this.size&&this.mods[y][x];}
+  _setFn(x,y,c){this.mods[y][x]=c;this.isFn[y][x]=true;}
+  _drawFn(){
+    const s=this.size;
+    for(let i=0;i<s;i++){this._setFn(6,i,i%2==0);this._setFn(i,6,i%2==0);}
+    this._drawFinder(3,3);this._drawFinder(s-4,3);this._drawFinder(3,s-4);
+    const ap=this._alignPos();const na=ap.length;
+    for(let i=0;i<na;i++)for(let j=0;j<na;j++)
+      if(!((i==0&&j==0)||(i==0&&j==na-1)||(i==na-1&&j==0)))this._drawAlign(ap[i],ap[j]);
+    this._drawFmt(0);this._drawVer();
+  }
+  _drawFmt(msk){
+    const s=this.size;
+    const data=this.errorCorrectionLevel.formatBits<<3|msk;
+    let rem=data;for(let i=0;i<10;i++)rem=(rem<<1)^((rem>>>9)*0x537);
+    const bits=(data<<10|rem)^0x5412;
+    for(let i=0;i<=5;i++)this._setFn(8,i,_gb(bits,i));
+    this._setFn(8,7,_gb(bits,6));this._setFn(8,8,_gb(bits,7));this._setFn(7,8,_gb(bits,8));
+    for(let i=9;i<15;i++)this._setFn(14-i,8,_gb(bits,i));
+    for(let i=0;i<8;i++)this._setFn(s-1-i,8,_gb(bits,i));
+    for(let i=8;i<15;i++)this._setFn(8,s-15+i,_gb(bits,i));
+    this._setFn(8,s-8,true);
+  }
+  _drawVer(){
+    if(this.version<7)return;
+    let rem=this.version;for(let i=0;i<12;i++)rem=(rem<<1)^((rem>>>11)*0x1F25);
+    const bits=this.version<<12|rem;
+    for(let i=0;i<18;i++){const c=_gb(bits,i),a=this.size-11+i%3,b=Math.floor(i/3);this._setFn(a,b,c);this._setFn(b,a,c);}
+  }
+  _drawFinder(x,y){
+    for(let dy=-4;dy<=4;dy++)for(let dx=-4;dx<=4;dx++){
+      const d=Math.max(Math.abs(dx),Math.abs(dy)),xx=x+dx,yy=y+dy;
+      if(0<=xx&&xx<this.size&&0<=yy&&yy<this.size)this._setFn(xx,yy,d!=2&&d!=4);
     }
   }
-
-  // Format info placeholder (will fill after masking)
-  const fp1=[[8,0],[8,1],[8,2],[8,3],[8,4],[8,5],[8,7],[8,8],[7,8],[5,8],[4,8],[3,8],[2,8],[1,8],[0,8]];
-  const fp2=[[sz-1,8],[sz-2,8],[sz-3,8],[sz-4,8],[sz-5,8],[sz-6,8],[sz-7,8],[8,sz-8],[8,sz-7],[8,sz-6],[8,sz-5],[8,sz-4],[8,sz-3],[8,sz-2],[8,sz-1]];
-  fp1.forEach(([r,c])=>{mat[r][c]=0;fix[r][c]=true;});
-  fp2.forEach(([r,c])=>{mat[r][c]=0;fix[r][c]=true;});
-
-  // 5. Place data bits — correct QR zigzag per spec
-  // Columns go right-to-left in pairs; within each pair, direction alternates up/down
-  let bi=0;
-  let colPair=0; // counts column-pairs from right
-  for(let right=sz-1;right>=1;right-=2){
-    if(right===6){right=5;} // skip timing column
-    const upward=(colPair%2===0); // even pairs go upward (bottom→top)
-    colPair++;
-    for(let vert=0;vert<sz;vert++){
-      const row=upward?(sz-1-vert):vert;
-      for(let j=0;j<2;j++){
-        const col=right-j;
-        if(col>=0&&!fix[row][col]){
-          mat[row][col]=bi<all.length?all[bi++]:0;
+  _drawAlign(x,y){for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++)this._setFn(x+dx,y+dy,Math.max(Math.abs(dx),Math.abs(dy))!=1);}
+  _alignPos(){
+    const v=this.version;if(v==1)return[];
+    const na=Math.floor(v/7)+2;
+    const step=v==32?26:Math.ceil((v*4+4)/(na*2-2))*2;
+    const r=[6];for(let p=this.size-7;r.length<na;p-=step)r.splice(1,0,p);
+    return r;
+  }
+  _addEcc(data){
+    const v=this.version,ecl=this.errorCorrectionLevel;
+    const nb=QrCode.NEB[ecl.ordinal][v],bel=QrCode.ECB[ecl.ordinal][v];
+    const rc=Math.floor(QrCode._rawMods(v)/8);
+    const nsb=nb-rc%nb,sbl=Math.floor(rc/nb);
+    const blocks=[];const rsDiv=QrCode._rsDiv(bel);
+    for(let i=0,k=0;i<nb;i++){
+      const dat=data.slice(k,k+sbl-bel+(i<nsb?0:1));k+=dat.length;
+      const ecc=QrCode._rsRem(dat,rsDiv);
+      if(i<nsb)dat.push(0);blocks.push(dat.concat(ecc));
+    }
+    const res=[];
+    for(let i=0;i<blocks[0].length;i++)blocks.forEach((bl,j)=>{if(i!=sbl-bel||j>=nsb)res.push(bl[i]);});
+    return res;
+  }
+  _drawCw(data){
+    let i=0;
+    for(let right=this.size-1;right>=1;right-=2){
+      if(right==6)right=5;
+      for(let vert=0;vert<this.size;vert++){
+        for(let j=0;j<2;j++){
+          const x=right-j,upward=((right+1)&2)==0,y=upward?this.size-1-vert:vert;
+          if(!this.isFn[y][x]&&i<data.length*8){this.mods[y][x]=_gb(data[i>>>3],7-(i&7));i++;}
         }
       }
     }
   }
-
-  // 6. Apply mask 0: (row+col)%2==0
-  for(let r=0;r<sz;r++)for(let c=0;c<sz;c++)
-    if(!fix[r][c]&&(r+c)%2===0)mat[r][c]^=1;
-
-  // 7. Format info ECC-M(01) mask-0 = 0x77C4 → pre-computed
-  // ECC-M=01, mask=000 → format data = 0b01000 = 8
-  // After BCH: 0b01000 00011 → XOR 101010000010010 = 0b111011111000100 = 0x77C4? Let's compute:
-  const fmtData=(0b01<<3)|0; // ECC=M(01), mask=0
-  let fmtRem=fmtData<<10;
-  for(let i=14;i>=10;i--)if((fmtRem>>i)&1)fmtRem^=(0x537<<(i-10));
-  const fmtFull=((fmtData<<10)|fmtRem)^0x5412;
-  const getFmt=(i)=>(fmtFull>>(14-i))&1;
-  fp1.forEach(([r,c],i)=>{mat[r][c]=getFmt(i);});
-  fp2.forEach(([r,c],i)=>{mat[r][c]=getFmt(i);});
-
-  return mat;
-}
-
-function _rsEncode(data,ecn){
-  const gen=_rsGen(ecn);
-  const msg=[...data,...new Array(ecn).fill(0)];
-  for(let i=0;i<data.length;i++){
-    const c=msg[i];if(!c)continue;
-    for(let j=0;j<gen.length;j++)msg[i+j]^=_gf_mul(gen[j],c);
+  _applyMask(msk){
+    for(let y=0;y<this.size;y++)for(let x=0;x<this.size;x++){
+      let inv;
+      switch(msk){
+        case 0:inv=(x+y)%2==0;break;case 1:inv=y%2==0;break;
+        case 2:inv=x%3==0;break;case 3:inv=(x+y)%3==0;break;
+        case 4:inv=(Math.floor(x/3)+Math.floor(y/2))%2==0;break;
+        case 5:inv=x*y%2+x*y%3==0;break;
+        case 6:inv=(x*y%2+x*y%3)%2==0;break;
+        case 7:inv=((x+y)%2+x*y%3)%2==0;break;
+        default:throw new RangeError();
+      }
+      if(!this.isFn[y]||!this.isFn[y][x])if(this.isFn.length>0)this.mods[y][x]^=inv;
+    }
   }
-  return msg.slice(data.length);
+  penalty(){
+    const s=this.size;let r=0;
+    const penLine=(h)=>{
+      for(let a=0;a<s;a++){
+        let rc=false,run=0,hist=[0,0,0,0,0,0,0];
+        for(let b=0;b<s;b++){
+          const v=h?this.mods[a][b]:this.mods[b][a];
+          if(v==rc){run++;if(run==5)r+=3;else if(run>5)r++;}
+          else{this._fph(run,hist);if(!rc)r+=this._fpc(hist)*40;rc=v;run=1;}
+        }
+        r+=this._fpt(rc,run,hist)*40;
+      }
+    };
+    penLine(true);penLine(false);
+    for(let y=0;y<s-1;y++)for(let x=0;x<s-1;x++){
+      const c=this.mods[y][x];
+      if(c==this.mods[y][x+1]&&c==this.mods[y+1][x]&&c==this.mods[y+1][x+1])r+=3;
+    }
+    let dk=0;for(const row of this.mods)dk+=row.reduce((s,c)=>s+(c?1:0),0);
+    const tot=s*s;const k=Math.ceil(Math.abs(dk*20-tot*10)/tot)-1;r+=k*10;
+    return r;
+  }
+  _fpc(h){const n=h[1];const co=n>0&&h[2]==n&&h[3]==n*3&&h[4]==n&&h[5]==n;return(co&&h[0]>=n*4&&h[6]>=n?1:0)+(co&&h[6]>=n*4&&h[0]>=n?1:0);}
+  _fpt(c,l,h){if(c){this._fph(l,h);l=0;}l+=this.size;this._fph(l,h);return this._fpc(h);}
+  _fph(l,h){if(h[0]==0)l+=this.size;h.pop();h.unshift(l);}
+  static _rawMods(v){let r=(16*v+128)*v+64;if(v>=2){const na=Math.floor(v/7)+2;r-=(25*na-10)*na-55;if(v>=7)r-=36;}return r;}
+  static numDataCw(v,ecl){return Math.floor(QrCode._rawMods(v)/8)-QrCode.ECB[ecl.ordinal][v]*QrCode.NEB[ecl.ordinal][v];}
+  static _rsDiv(deg){const r=[];for(let i=0;i<deg-1;i++)r.push(0);r.push(1);let root=1;for(let i=0;i<deg;i++){for(let j=0;j<r.length;j++){r[j]=QrCode._rsMul(r[j],root);if(j+1<r.length)r[j]^=r[j+1];}root=QrCode._rsMul(root,0x02);}return r;}
+  static _rsRem(data,div){const r=div.map(()=>0);for(const b of data){const f=b^r.shift();r.push(0);div.forEach((c,i)=>r[i]^=QrCode._rsMul(c,f));}return r;}
+  static _rsMul(x,y){let z=0;for(let i=7;i>=0;i--){z=(z<<1)^((z>>>7)*0x11D);z^=((y>>>i)&1)*x;}return z;}
 }
-function _rsGen(n){
-  let g=[1];
-  for(let i=0;i<n;i++){const r=[1,_gf_pow(2,i)];const t=new Array(g.length+1).fill(0);for(let a=0;a<g.length;a++)for(let b=0;b<r.length;b++)t[a+b]^=_gf_mul(g[a],r[b]);g=t;}
-  return g;
-}
-const _LOG=new Uint8Array(256),_EXP=new Uint8Array(512);
-(()=>{let x=1;for(let i=0;i<255;i++){_EXP[i]=x;_LOG[x]=i;x=x<128?x<<1:(x<<1)^0x11d;}for(let i=255;i<512;i++)_EXP[i]=_EXP[i-255];})();
-function _gf_mul(a,b){return(a&&b)?_EXP[_LOG[a]+_LOG[b]]:0;}
-function _gf_pow(a,b){return _EXP[(_LOG[a]*b)%255];}
+QrCode.Ecc={
+  LOW:{ordinal:0,formatBits:1},MEDIUM:{ordinal:1,formatBits:0},
+  QUARTILE:{ordinal:2,formatBits:3},HIGH:{ordinal:3,formatBits:2},
+};
+QrCode.ECB=[
+  [-1,7,10,15,20,26,18,20,24,30,18,20,24,26,30,22,24,28,30,28,28,28,30,30,26,28,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30],
+  [-1,10,16,26,18,24,16,18,22,22,26,30,22,22,24,24,28,28,26,26,26,26,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28],
+  [-1,13,22,18,26,18,24,18,22,20,24,28,26,24,20,30,24,28,28,26,30,28,30,30,30,30,28,30,30,30,30,30,30,30,30,30,30,30,30,30,30],
+  [-1,17,28,22,16,22,28,26,26,24,28,24,28,22,24,24,30,28,28,26,28,30,24,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30],
+];
+QrCode.NEB=[
+  [-1,1,1,1,1,1,2,2,2,2,4,4,4,4,4,6,6,6,6,7,8,8,9,9,10,12,12,12,13,14,15,16,17,18,19,19,20,21,22,24,25],
+  [-1,1,1,1,2,2,4,4,4,5,5,5,8,9,9,10,10,11,13,14,16,17,17,18,20,21,23,25,26,28,29,31,33,35,37,38,40,43,45,47,49],
+  [-1,1,1,2,2,4,4,6,6,8,8,8,10,12,16,12,17,16,18,21,20,23,23,25,27,29,34,34,35,38,40,43,45,48,51,53,56,59,62,65,68],
+  [-1,1,1,2,4,4,4,5,6,8,8,11,11,16,16,18,16,19,21,25,25,25,34,30,32,35,37,40,42,45,48,51,54,57,60,63,66,70,74,77,81],
+];
+QrCode.MIN_VERSION=1;QrCode.MAX_VERSION=40;
+return QrCode;
+})();
+
 
 function copyVipLink(){
   const modal=$('qrModal');
