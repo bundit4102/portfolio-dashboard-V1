@@ -605,6 +605,119 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
 /* Force horizontal scroll on small screens for tables */
 .tw,.gantt-card,#sumMatrix,.card{-webkit-overflow-scrolling:touch}
 
+/* ════ PRINT CSS (Executive PDF) ════ */
+@media print{
+  @page{size:A3 landscape;margin:10mm 12mm 10mm 12mm;}
+  @page:first{margin-top:8mm;}
+  /* Hide everything except summary panel */
+  body>*:not(#mainApp){display:none!important;}
+  .auth-screen,.modal-ov,.hist-ov,#vipScreen,.ov{display:none!important;}
+  .nav,.stale-nav,.save-pill,.user-pill,.logout-btn,
+  [id^="panel-"]:not(#panel-summary){display:none!important;}
+  #panel-summary{display:block!important;}
+  #panel-summary .wrap{padding:0!important;max-width:100%!important;}
+  /* Export button hidden */
+  .b-pdf,.btn{display:none!important;}
+  /* Force colors to print */
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+  /* Header */
+  .org-tag{font-size:8pt!important;color:#9a7a2e!important;letter-spacing:2px!important;}
+  h1{font-size:18pt!important;color:#1c2b3a!important;margin-bottom:0!important;}
+  /* KPI cards grid — force 5 columns */
+  #sumKpiRow{
+    display:grid!important;
+    grid-template-columns:repeat(5,1fr)!important;
+    gap:5mm!important;
+    margin-bottom:6mm!important;
+  }
+  .sum-kpi-card{
+    border:0.5mm solid #e0d8cc!important;
+    border-radius:3mm!important;
+    padding:4mm!important;
+    text-align:center!important;
+    background:#fff!important;
+    break-inside:avoid!important;
+    page-break-inside:avoid!important;
+  }
+  .sum-kpi-card::after{height:2mm!important;}
+  .sum-kpi-icon{font-size:16pt!important;margin-bottom:2mm!important;}
+  .sum-kpi-num{font-size:24pt!important;font-weight:700!important;line-height:1!important;}
+  .sum-kpi-lbl{font-size:7pt!important;letter-spacing:1px!important;margin-top:1mm!important;}
+  /* Charts row */
+  #panel-summary>div.wrap>div:nth-child(3){
+    display:grid!important;
+    grid-template-columns:1fr 1fr!important;
+    gap:5mm!important;
+    margin-bottom:5mm!important;
+  }
+  .card{
+    border:0.5mm solid #e0d8cc!important;
+    border-radius:3mm!important;
+    padding:4mm!important;
+    background:#fff!important;
+    break-inside:avoid!important;
+  }
+  .sec-t{font-size:7pt!important;letter-spacing:1.5px!important;color:#9a7a2e!important;}
+  /* SVG donuts */
+  svg{overflow:visible!important;}
+  /* Matrix table */
+  #sumMatrix{page-break-before:avoid!important;}
+  #sumMatrix table{
+    width:100%!important;
+    border-collapse:collapse!important;
+    font-size:7.5pt!important;
+    font-family:Sarabun,Arial,sans-serif!important;
+    break-inside:auto!important;
+  }
+  #sumMatrix thead tr{break-inside:avoid!important;break-after:avoid!important;}
+  #sumMatrix tr{break-inside:avoid!important;page-break-inside:avoid!important;}
+  #sumMatrix th{
+    padding:2mm 3mm!important;
+    font-size:7.5pt!important;
+    font-weight:700!important;
+    border:0.3mm solid rgba(255,255,255,.2)!important;
+  }
+  #sumMatrix td{
+    border:0.3mm solid #dde2ea!important;
+    padding:2mm 3mm!important;
+    vertical-align:top!important;
+    font-size:7.5pt!important;
+  }
+  #sumMatrix li{
+    font-size:7pt!important;
+    line-height:1.4!important;
+    margin-bottom:0.5mm!important;
+    color:#1c2b3a!important;
+  }
+  /* Category row labels */
+  #sumMatrix td:first-child{
+    font-size:8pt!important;
+    font-weight:700!important;
+    color:#1c2b3a!important;
+    background:#eef0f5!important;
+    border:0.3mm solid #dde2ea!important;
+    white-space:nowrap!important;
+    padding:3mm 4mm!important;
+  }
+  /* Force stage header colors */
+  #sumMatrix th:nth-child(2){background:#c9a84c!important;color:#fff!important;}
+  #sumMatrix th:nth-child(3){background:#b8953a!important;color:#fff!important;}
+  #sumMatrix th:nth-child(4){background:#1c2b3a!important;color:#fff!important;}
+  #sumMatrix th:nth-child(5){background:#162236!important;color:#fff!important;}
+  #sumMatrix th:nth-child(6){background:#6aaa3f!important;color:#fff!important;}
+  /* Idea items in table — gold italic */
+  #sumMatrix li[style*="gold"]{color:#c9a84c!important;}
+  /* Footer */
+  .sum-footer,#sumFooter{
+    display:flex!important;
+    justify-content:space-between!important;
+    font-size:7pt!important;
+    color:#aaa!important;
+    margin-top:4mm!important;
+    padding-top:2mm!important;
+    border-top:0.3mm solid #ddd!important;
+  }
+}
 </style>
 </head>
 <body>
@@ -810,7 +923,7 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
       </div>
       <div style="text-align:right">
         <div class="mn" style="color:var(--muted);margin-bottom:6px">รายงาน ณ วันที่ &nbsp;<span id="sumDateLbl" style="color:var(--slate);font-weight:600"></span></div>
-        <button class="btn b-navy b-pdf" onclick="exportSummaryPDF()" style="font-size:11px;padding:6px 14px">📄 Export PDF</button>
+        <button class="btn b-navy b-pdf" onclick="exportSummaryPDF()" style="font-size:11px;padding:6px 14px" title="กด Print → Save as PDF">📄 Export PDF</button>
       </div>
     </div>
 
@@ -2085,16 +2198,30 @@ function clearAll(){if(!confirm('ล้างข้อมูลโครงก�
 function chgToday(){const v=$('tdInput').value;TODAY=v?new Date(v):new Date();TODAY.setHours(0,0,0,0);renderInput();sched();if($('panel-dash').classList.contains('on'))renderDash();}
 
 function fullRefresh(){
+  // Reload data from storage
   load();
+  // Reset today's date
   TODAY=new Date();TODAY.setHours(0,0,0,0);
   const ti=$('tdInput');if(ti)ti.value=fi(TODAY);
-  renderInput();
-  renderDash();
-  renderIdeas();
+  // Re-render ALL panels
+  try{renderInput();}catch(e){}
+  try{renderDash();}catch(e){}
+  try{renderIdeas();}catch(e){}
   try{renderSummary();}catch(e){}
+  try{renderAdminPanel();}catch(e){}
+  try{checkAdminNotif();}catch(e){}
+  try{updateStaleNav();}catch(e){}
+  try{startClock();}catch(e){}
   setSave('ok');
+  // Visual feedback
   const btn=document.querySelector('[onclick="fullRefresh()"]');
-  if(btn){const orig=btn.textContent;btn.textContent='✅ Refreshed!';setTimeout(()=>btn.textContent=orig,1500);}
+  if(btn){
+    const orig=btn.innerHTML;
+    btn.innerHTML='✅ Refreshed!';
+    btn.style.background='var(--green)';
+    setTimeout(()=>{btn.innerHTML=orig;btn.style.background='';},1800);
+  }
+  showToast('✅ Refresh ทุกหน้าเรียบร้อยแล้ว','var(--green)');
 }
 function expCSV(){const h='Project ID,Project Name,Category,Project Owner,Status,Progress %,Plan Start,Plan End,Actual Start,Actual End';const rows=P.map(p=>[p.id,p.name,p.pcat||'',p.owner,p.status,p.pct,p.ps||'',p.pe||'',p.as_||'',p.ae||''].map(v=>`"${v}"`).join(','));dl('\uFEFF'+[h,...rows].join('\n'),'text/csv','Gantt_'+fi(TODAY)+'.csv');}
 function impFromCSV(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const lines=ev.target.result.trim().split(/\r?\n/);const hdrs=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,'').toLowerCase());const ix={};hdrs.forEach((h,i)=>{if(/project.?id|^id$/i.test(h))ix.id=i;if(/project.?name|^name$/i.test(h))ix.name=i;if(/category|pcat/i.test(h))ix.pcat=i;if(/owner/i.test(h))ix.owner=i;if(/^status$/i.test(h))ix.status=i;if(/progress/i.test(h))ix.pct=i;if(/plan.?start/i.test(h))ix.ps=i;if(/plan.?end/i.test(h))ix.pe=i;if(/actual.?start/i.test(h))ix.as_=i;if(/actual.?end/i.test(h))ix.ae=i;});P=lines.slice(1).filter(l=>l.trim()).map(line=>{const v=line.split(',').map(x=>x.trim().replace(/^"|"$/g,''));const raw=parseFloat(v[ix.pct]||0);return{id:v[ix.id]||'',name:v[ix.name]||'',pcat:v[ix.pcat]||'',owner:v[ix.owner]||'',status:v[ix.status]||'Not Started',pct:raw<=1?Math.round(raw*100):Math.round(raw),ps:v[ix.ps]||'',pe:v[ix.pe]||'',as_:v[ix.as_]||'',ae:v[ix.ae]||''};}).filter(p=>p.id);renderInput();save();renderDash();}catch(err){alert('Error: '+err.message);}e.target.value='';};r.readAsText(f,'UTF-8');}
@@ -2414,22 +2541,40 @@ function renderSummary(){
 }
 
 async function exportSummaryPDF(){
-  const btn=document.querySelector('[onclick="exportSummaryPDF()"]');
-  const orig=btn?btn.innerHTML:'';
-  if(btn){btn.innerHTML='⏳ กำลังสร้าง...';btn.disabled=true;}
-  if(!$('panel-summary').classList.contains('on'))sw('summary');
-  await new Promise(r=>setTimeout(r,100));
-  if(!window.html2pdf){
-    await new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});
+  // Switch to summary panel first
+  if(!$('panel-summary').classList.contains('on')) sw('summary');
+  await new Promise(r=>setTimeout(r,400));
+
+  // Add/update print footer
+  let footer=$('sumPrintFooter');
+  if(!footer){
+    footer=document.createElement('div');
+    footer.id='sumPrintFooter';
+    footer.style.cssText='display:none'; // hidden on screen, shown in print CSS
+    const wrap=$('#panel-summary .wrap')||$('panel-summary').querySelector('.wrap');
+    if(wrap)wrap.appendChild(footer);
   }
-  const nav=$('mainApp').querySelector('.nav');
-  const navDisp=nav?nav.style.display:'';
-  if(nav)nav.style.display='none';
-  try{
-    await html2pdf().set({margin:[8,6],filename:'Summary_'+fi(TODAY)+'.pdf',image:{type:'jpeg',quality:.97},html2canvas:{scale:2,useCORS:true,scrollY:0},jsPDF:{unit:'mm',format:'a3',orientation:'landscape'}}).from($('panel-summary')).save();
-  }catch(e){alert('Error: '+e.message);}
-  if(nav)nav.style.display=navDisp;
-  if(btn){btn.innerHTML=orig;btn.disabled=false;}
+  const dateStr=TODAY.toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'});
+  footer.innerHTML=`<div style="display:flex;justify-content:space-between;font-size:7pt;color:#aaa;margin-top:6mm;padding-top:2mm;border-top:0.3mm solid #ddd">
+    <span>Project Portfolio Summary · Confidential</span>
+    <span>รายงาน ณ วันที่ ${dateStr}</span>
+    <span>EXECUTIVE VIEW · AUTO GENERATED</span>
+  </div>`;
+
+  // Add print-show class to footer
+  const style=document.createElement('style');
+  style.id='_pdf_footer_style';
+  style.textContent='@media print{#sumPrintFooter{display:block!important;}}';
+  document.head.appendChild(style);
+
+  // Print
+  window.print();
+
+  // Cleanup after brief delay
+  setTimeout(()=>{
+    const s=document.getElementById('_pdf_footer_style');
+    if(s)s.remove();
+  },3000);
 }
 
 
@@ -3448,7 +3593,6 @@ QrCode.NEB=[
 QrCode.MIN_VERSION=1;QrCode.MAX_VERSION=40;
 return QrCode;
 })();
-
 
 function copyVipLink(){
   const modal=$('qrModal');
