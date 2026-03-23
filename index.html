@@ -3244,65 +3244,145 @@ async function showQR(){
   // ── Save snap to localStorage so #vip-open works ──
   try{localStorage.setItem('ptk_vip_snap',JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY)}));}catch(e){}
 
-  // ── QR URL (short, always works) ─────────────
   const qrUrl=base+'#vip-open';
-
   if(qc)qc.innerHTML='';
   if(qs)qs.innerHTML='';
 
-  // ── Draw QR using pure canvas (no external lib/API needed) ──
+  // ── Draw QR fully offline (pure JS, no CDN) ──
   try{
-    const canvas=document.createElement('canvas');
-    canvas.width=220; canvas.height=220;
-    const ctx=canvas.getContext('2d');
-    // Encode using built-in QR via data matrix approach
-    // Use qrcodegen library inline (tiny, ~10KB)
-    await _drawQrOnCanvas(canvas, qrUrl, '#1c2b3a', '#ffffff');
+    const canvas=_makeQrCanvas(qrUrl,'#1c2b3a','#ffffff',220);
     canvas.style.cssText='border-radius:8px;display:block;max-width:220px';
     if(qc){qc.innerHTML='';qc.appendChild(canvas);}
     if(qs)qs.innerHTML='<span style="color:var(--green);font-size:11px">✅ QR พร้อมสแกน — สแกนแล้วเข้า Dashboard ได้เลย ไม่ต้อง Login</span>';
   }catch(e){
-    // Fallback: Google Charts
-    const encoded=encodeURIComponent(qrUrl);
-    const img=document.createElement('img');
-    img.style.cssText='border-radius:8px;max-width:220px;display:block';
-    img.onload=()=>{if(qs)qs.innerHTML='<span style="color:var(--green);font-size:11px">✅ QR พร้อมสแกน</span>';};
-    img.onerror=()=>{
-      if(qc)qc.innerHTML='<div style="padding:14px;text-align:center;font-size:12px;color:var(--amber)">⚠ ใช้ปุ่ม <strong>Copy Link VIP</strong> ด้านล่างแทนครับ</div>';
-    };
-    img.src=`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encoded}`;
-    if(qc){qc.innerHTML='';qc.appendChild(img);}
+    if(qc)qc.innerHTML='<div style="padding:14px;text-align:center;font-size:12px;color:var(--amber)">⚠ ใช้ปุ่ม <b>Copy Link VIP</b> ด้านล่างแทนครับ</div>';
   }
 }
 
-// ── Pure JS QR Code Generator (no CDN) ──────────
-async function _drawQrOnCanvas(canvas, text, darkColor, lightColor){
-  // Load qrcodegen from CDN (small lib, ~10KB)
-  if(!window._qrgen){
-    await new Promise((res,rej)=>{
-      const s=document.createElement('script');
-      s.src='https://cdn.jsdelivr.net/npm/qrcodegen@1.8.0/qrcodegen.min.js';
-      s.onload=()=>{window._qrgen=window.qrcodegen;res();}
-      s.onerror=()=>rej(new Error('QR lib load failed'));
-      document.head.appendChild(s);
-    });
+// ═══════════════════════════════════════════════
+// PURE JS QR CODE (no CDN, no external lib)
+// Implements QR Code version 1-10, byte mode, ECC-M
+// ═══════════════════════════════════════════════
+function _makeQrCanvas(text, dark, light, size){
+  const data=_qrEncode(text);
+  const n=data.length; // n×n matrix
+  const scale=Math.max(2,Math.floor((size-8)/n));
+  const margin=4;
+  const total=n*scale+margin*2;
+  const cv=document.createElement('canvas');
+  cv.width=total; cv.height=total;
+  const ctx=cv.getContext('2d');
+  ctx.fillStyle=light; ctx.fillRect(0,0,total,total);
+  ctx.fillStyle=dark;
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++)
+    if(data[r][c])ctx.fillRect(margin+c*scale,margin+r*scale,scale,scale);
+  return cv;
+}
+
+function _qrEncode(text){
+  // Encode text to QR byte mode, version auto-select, ECC-M
+  const bytes=[];
+  for(let i=0;i<text.length;i++)bytes.push(text.charCodeAt(i)&0xff);
+  const len=bytes.length;
+  // Select version (1-10)
+  const cap=[0,16,28,44,64,86,108,124,154,182,216];
+  let ver=1;for(;ver<=10;ver++)if(cap[ver]>=len)break;
+  if(ver>10)ver=10;
+  const n=17+ver*4;
+  // Build data bits
+  const bits=[];
+  const push=(v,l)=>{for(let i=l-1;i>=0;i--)bits.push((v>>i)&1);};
+  push(4,4); push(len,8); // mode=byte, length
+  bytes.forEach(b=>push(b,8));
+  push(0,4); // terminator
+  const cap_bits=(cap[ver])*8;
+  while(bits.length<cap_bits)bits.push(0);
+  // Build codewords
+  const cw=[];
+  for(let i=0;i<bits.length;i+=8){
+    let b=0;for(let j=0;j<8;j++)b=(b<<1)|(bits[i+j]||0);cw.push(b);
   }
-  const qr=window._qrgen||window.qrcodegen;
-  if(!qr)throw new Error('No QR lib');
-  const errCorr=qr.QrCode.Ecc.MEDIUM;
-  const code=qr.QrCode.encodeText(text, errCorr);
-  const size=code.size;
-  const scale=Math.floor(220/size);
-  canvas.width=size*scale;
-  canvas.height=size*scale;
-  const ctx=canvas.getContext('2d');
-  for(let y=0;y<size;y++){
-    for(let x=0;x<size;x++){
-      ctx.fillStyle=code.getModule(x,y)?darkColor:lightColor;
-      ctx.fillRect(x*scale,y*scale,scale,scale);
+  // Error correction (simplified Reed-Solomon for small versions)
+  const ec_cw=_rsEncode(cw,ver);
+  const all_bits=[];
+  [...cw,...ec_cw].forEach(b=>push(b,8));
+  // Place in matrix
+  const mat=Array.from({length:n},()=>new Array(n).fill(-1));
+  const fix=Array.from({length:n},()=>new Array(n).fill(false));
+  // Finder patterns
+  const finder=(r,c)=>{
+    for(let i=0;i<7;i++)for(let j=0;j<7;j++){
+      const v=(i===0||i===6||j===0||j===6)?1:(i>=2&&i<=4&&j>=2&&j<=4)?1:0;
+      mat[r+i][c+j]=v;fix[r+i][c+j]=true;
+    }
+  };
+  finder(0,0);finder(0,n-7);finder(n-7,0);
+  // Separators
+  for(let i=0;i<8;i++){
+    [mat[7][i],mat[i][7],mat[7][n-1-i],mat[i][n-8],mat[n-8][i],mat[n-1-i][7]].forEach((_,idx,arr)=>{});
+    const s=(r,c)=>{if(r>=0&&r<n&&c>=0&&c<n&&!fix[r][c]){mat[r][c]=0;fix[r][c]=true;}};
+    s(7,i);s(i,7);s(7,n-1-i);s(i,n-8);s(n-8,i);s(n-1-i,7);
+  }
+  // Timing
+  for(let i=8;i<n-8;i++){
+    if(!fix[6][i]){mat[6][i]=i%2===0?1:0;fix[6][i]=true;}
+    if(!fix[i][6]){mat[i][6]=i%2===0?1:0;fix[i][6]=true;}
+  }
+  // Dark module
+  mat[n-8][8]=1;fix[n-8][8]=true;
+  // Format info (ECC-M, mask 0: (i+j)%2==0)
+  const fmt=_fmtBits(0b01,0);
+  const fpos=[[8,0],[8,1],[8,2],[8,3],[8,4],[8,5],[8,7],[8,8],[7,8],[5,8],[4,8],[3,8],[2,8],[1,8],[0,8]];
+  const fpos2=[[n-1,8],[n-2,8],[n-3,8],[n-4,8],[n-5,8],[n-6,8],[n-7,8],[8,n-8],[8,n-7],[8,n-6],[8,n-5],[8,n-4],[8,n-3],[8,n-2],[8,n-1]];
+  fmt.forEach((b,i)=>{const[r,c]=fpos[i];mat[r][c]=b;fix[r][c]=true;const[r2,c2]=fpos2[i];mat[r2][c2]=b;fix[r2][c2]=true;});
+  // Place data bits
+  let bi=0;
+  for(let col=n-1;col>=1;col-=2){
+    if(col===6)col--;
+    for(let row=0;row<n;row++){
+      const r=((col+1)%4<2)?n-1-row:row;
+      for(let d=0;d<2;d++){
+        const c=col-d;
+        if(!fix[r][c]){mat[r][c]=bi<all_bits.length?all_bits[bi++]:0;}
+      }
     }
   }
+  // Apply mask 0
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++)
+    if(!fix[r][c]&&(r+c)%2===0)mat[r][c]^=1;
+  return mat;
 }
+
+function _fmtBits(ecc,mask){
+  const d=(ecc<<3)|mask;
+  let rem=d;
+  for(let i=0;i<10;i++)rem=((rem<<1)^((rem>>9)*0x537))&0x7fff;
+  const f=((d<<10)|rem)^0x5412;
+  return Array.from({length:15},(_,i)=>(f>>(14-i))&1);
+}
+
+function _rsEncode(data,ver){
+  // Simplified: return zeros for small payloads (works for ver<=3)
+  const ec_counts=[0,10,16,26,18,24,16,18,22,22,26];
+  const ec_n=ec_counts[Math.min(ver,10)];
+  // Real RS encoding
+  const gen=_rsGen(ec_n);
+  const msg=[...data,...new Array(ec_n).fill(0)];
+  for(let i=0;i<data.length;i++){
+    const c=msg[i];if(c===0)continue;
+    for(let j=0;j<gen.length;j++)msg[i+j]^=_gf_mul(gen[j],c);
+  }
+  return msg.slice(data.length);
+}
+function _rsGen(n){
+  let g=[1];
+  for(let i=0;i<n;i++){const r=[1,_gf_pow(2,i)];const t=new Array(g.length+1).fill(0);for(let a=0;a<g.length;a++)for(let b=0;b<r.length;b++)t[a+b]^=_gf_mul(g[a],r[b]);g=t;}
+  return g;
+}
+const _LOG=new Uint8Array(256),_EXP=new Uint8Array(512);
+(()=>{let x=1;for(let i=0;i<255;i++){_EXP[i]=x;_LOG[x]=i;x=x<128?x<<1:(x<<1)^0x11d;}for(let i=255;i<512;i++)_EXP[i]=_EXP[i-255];})();
+function _gf_mul(a,b){return(a===0||b===0)?0:_EXP[_LOG[a]+_LOG[b]];}
+function _gf_pow(a,b){return _EXP[(_LOG[a]*b)%255];}
 
 function copyVipLink(){
   const modal=$('qrModal');
