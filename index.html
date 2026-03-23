@@ -3280,96 +3280,120 @@ function _makeQrCanvas(text, dark, light, size){
 }
 
 function _qrEncode(text){
-  // Encode text to QR byte mode, version auto-select, ECC-M
-  const bytes=[];
-  for(let i=0;i<text.length;i++)bytes.push(text.charCodeAt(i)&0xff);
+  const bytes=Array.from(text).map(c=>c.charCodeAt(0)&0xff);
   const len=bytes.length;
-  // Select version (1-10)
-  const cap=[0,16,28,44,64,86,108,124,154,182,216];
-  let ver=1;for(;ver<=10;ver++)if(cap[ver]>=len)break;
+  // ECC-M capacity per version
+  const cap_m=[0,14,26,42,62,84,106,122,154,180,213];
+  const ec_cnt=[0,10,16,26,18,24,16,18,22,22,26];
+  const align_pos=[0,[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,28,46],[6,32,50]];
+  let ver=1;for(;ver<=10;ver++)if(cap_m[ver]>=len)break;
   if(ver>10)ver=10;
-  const n=17+ver*4;
-  // Build data bits
-  const bits=[];
-  const push=(v,l)=>{for(let i=l-1;i>=0;i--)bits.push((v>>i)&1);};
-  push(4,4); push(len,8); // mode=byte, length
-  bytes.forEach(b=>push(b,8));
-  push(0,4); // terminator
-  const cap_bits=(cap[ver])*8;
-  while(bits.length<cap_bits)bits.push(0);
-  // Build codewords
+  const sz=17+ver*4;
+
+  // 1. Build data codewords
+  const pb=[];
+  const pushB=(v,l)=>{for(let i=l-1;i>=0;i--)pb.push((v>>i)&1);};
+  pushB(4,4);pushB(len,8);bytes.forEach(b=>pushB(b,8));pushB(0,4);
+  while(pb.length%8)pb.push(0);
+  const pads=[0xEC,0x11];let pi=0;
+  const capBits=cap_m[ver]*8; // ECC-M data capacity
+  while(pb.length<capBits)pushB(pads[pi++%2],8);
   const cw=[];
-  for(let i=0;i<bits.length;i+=8){
-    let b=0;for(let j=0;j<8;j++)b=(b<<1)|(bits[i+j]||0);cw.push(b);
-  }
-  // Error correction (simplified Reed-Solomon for small versions)
-  const ec_cw=_rsEncode(cw,ver);
-  const all_bits=[];
-  [...cw,...ec_cw].forEach(b=>push(b,8));
-  // Place in matrix
-  const mat=Array.from({length:n},()=>new Array(n).fill(-1));
-  const fix=Array.from({length:n},()=>new Array(n).fill(false));
-  // Finder patterns
-  const finder=(r,c)=>{
+  for(let i=0;i<pb.length;i+=8){let b=0;for(let j=0;j<8;j++)b=(b<<1)|(pb[i+j]||0);cw.push(b);}
+
+  // 2. RS error correction
+  const ec=_rsEncode(cw,ec_cnt[ver]);
+
+  // 3. All bits (data + EC) — built separately, not reusing pb
+  const all=[];
+  const pushA=(v,l)=>{for(let i=l-1;i>=0;i--)all.push((v>>i)&1);};
+  [...cw,...ec].forEach(b=>pushA(b,8));
+
+  // 4. Matrix
+  const mat=Array.from({length:sz},()=>new Array(sz).fill(0));
+  const fix=Array.from({length:sz},()=>new Array(sz).fill(false));
+
+  // Finder pattern
+  const fin=(r,c)=>{
     for(let i=0;i<7;i++)for(let j=0;j<7;j++){
-      const v=(i===0||i===6||j===0||j===6)?1:(i>=2&&i<=4&&j>=2&&j<=4)?1:0;
-      mat[r+i][c+j]=v;fix[r+i][c+j]=true;
+      mat[r+i][c+j]=(i===0||i===6||j===0||j===6||i>=2&&i<=4&&j>=2&&j<=4)?1:0;
+      fix[r+i][c+j]=true;
     }
   };
-  finder(0,0);finder(0,n-7);finder(n-7,0);
+  fin(0,0);fin(0,sz-7);fin(sz-7,0);
+
   // Separators
+  const s=(r,c)=>{if(r>=0&&r<sz&&c>=0&&c<sz&&!fix[r][c]){mat[r][c]=0;fix[r][c]=true;}};
   for(let i=0;i<8;i++){
-    [mat[7][i],mat[i][7],mat[7][n-1-i],mat[i][n-8],mat[n-8][i],mat[n-1-i][7]].forEach((_,idx,arr)=>{});
-    const s=(r,c)=>{if(r>=0&&r<n&&c>=0&&c<n&&!fix[r][c]){mat[r][c]=0;fix[r][c]=true;}};
-    s(7,i);s(i,7);s(7,n-1-i);s(i,n-8);s(n-8,i);s(n-1-i,7);
+    s(7,i);s(i,7);          // TL
+    s(7,sz-1-i);s(i,sz-8); // TR
+    s(sz-8,i);s(sz-1-i,7); // BL
   }
-  // Timing
-  for(let i=8;i<n-8;i++){
+
+  // Timing patterns
+  for(let i=8;i<sz-8;i++){
     if(!fix[6][i]){mat[6][i]=i%2===0?1:0;fix[6][i]=true;}
     if(!fix[i][6]){mat[i][6]=i%2===0?1:0;fix[i][6]=true;}
   }
+
   // Dark module
-  mat[n-8][8]=1;fix[n-8][8]=true;
-  // Format info (ECC-M, mask 0: (i+j)%2==0)
-  const fmt=_fmtBits(0b01,0);
-  const fpos=[[8,0],[8,1],[8,2],[8,3],[8,4],[8,5],[8,7],[8,8],[7,8],[5,8],[4,8],[3,8],[2,8],[1,8],[0,8]];
-  const fpos2=[[n-1,8],[n-2,8],[n-3,8],[n-4,8],[n-5,8],[n-6,8],[n-7,8],[8,n-8],[8,n-7],[8,n-6],[8,n-5],[8,n-4],[8,n-3],[8,n-2],[8,n-1]];
-  fmt.forEach((b,i)=>{const[r,c]=fpos[i];mat[r][c]=b;fix[r][c]=true;const[r2,c2]=fpos2[i];mat[r2][c2]=b;fix[r2][c2]=true;});
-  // Place data bits
+  mat[sz-8][8]=1;fix[sz-8][8]=true;
+
+  // Alignment patterns (ver>=2)
+  const ap=align_pos[ver];
+  for(let ai=0;ai<ap.length;ai++)for(let aj=0;aj<ap.length;aj++){
+    const ar=ap[ai],ac=ap[aj];
+    if(fix[ar][ac])continue;
+    for(let i=-2;i<=2;i++)for(let j=-2;j<=2;j++){
+      mat[ar+i][ac+j]=(Math.abs(i)===2||Math.abs(j)===2||(i===0&&j===0))?1:0;
+      fix[ar+i][ac+j]=true;
+    }
+  }
+
+  // Format info placeholder (will fill after masking)
+  const fp1=[[8,0],[8,1],[8,2],[8,3],[8,4],[8,5],[8,7],[8,8],[7,8],[5,8],[4,8],[3,8],[2,8],[1,8],[0,8]];
+  const fp2=[[sz-1,8],[sz-2,8],[sz-3,8],[sz-4,8],[sz-5,8],[sz-6,8],[sz-7,8],[8,sz-8],[8,sz-7],[8,sz-6],[8,sz-5],[8,sz-4],[8,sz-3],[8,sz-2],[8,sz-1]];
+  fp1.forEach(([r,c])=>{mat[r][c]=0;fix[r][c]=true;});
+  fp2.forEach(([r,c])=>{mat[r][c]=0;fix[r][c]=true;});
+
+  // 5. Place data bits (zigzag right-to-left, up/down)
   let bi=0;
-  for(let col=n-1;col>=1;col-=2){
-    if(col===6)col--;
-    for(let row=0;row<n;row++){
-      const r=((col+1)%4<2)?n-1-row:row;
-      for(let d=0;d<2;d++){
-        const c=col-d;
-        if(!fix[r][c]){mat[r][c]=bi<all_bits.length?all_bits[bi++]:0;}
+  for(let right=sz-1;right>=1;right-=2){
+    if(right===6)right=5;
+    for(let vert=0;vert<sz;vert++){
+      for(let j=0;j<2;j++){
+        const row=((Math.floor((sz-1-right)/2))%2===0)?sz-1-vert:vert;
+        const col=right-j;
+        if(!fix[row][col]){
+          mat[row][col]=bi<all.length?all[bi++]:0;
+        }
       }
     }
   }
-  // Apply mask 0
-  for(let r=0;r<n;r++)for(let c=0;c<n;c++)
+
+  // 6. Apply mask 0: (row+col)%2==0
+  for(let r=0;r<sz;r++)for(let c=0;c<sz;c++)
     if(!fix[r][c]&&(r+c)%2===0)mat[r][c]^=1;
+
+  // 7. Format info ECC-M(01) mask-0 = 0x77C4 → pre-computed
+  // ECC-M=01, mask=000 → format data = 0b01000 = 8
+  // After BCH: 0b01000 00011 → XOR 101010000010010 = 0b111011111000100 = 0x77C4? Let's compute:
+  const fmtData=(0b01<<3)|0; // ECC=M(01), mask=0
+  let fmtRem=fmtData<<10;
+  for(let i=14;i>=10;i--)if((fmtRem>>i)&1)fmtRem^=(0x537<<(i-10));
+  const fmtFull=((fmtData<<10)|fmtRem)^0x5412;
+  const getFmt=(i)=>(fmtFull>>(14-i))&1;
+  fp1.forEach(([r,c],i)=>{mat[r][c]=getFmt(i);});
+  fp2.forEach(([r,c],i)=>{mat[r][c]=getFmt(i);});
+
   return mat;
 }
 
-function _fmtBits(ecc,mask){
-  const d=(ecc<<3)|mask;
-  let rem=d;
-  for(let i=0;i<10;i++)rem=((rem<<1)^((rem>>9)*0x537))&0x7fff;
-  const f=((d<<10)|rem)^0x5412;
-  return Array.from({length:15},(_,i)=>(f>>(14-i))&1);
-}
-
-function _rsEncode(data,ver){
-  // Simplified: return zeros for small payloads (works for ver<=3)
-  const ec_counts=[0,10,16,26,18,24,16,18,22,22,26];
-  const ec_n=ec_counts[Math.min(ver,10)];
-  // Real RS encoding
-  const gen=_rsGen(ec_n);
-  const msg=[...data,...new Array(ec_n).fill(0)];
+function _rsEncode(data,ecn){
+  const gen=_rsGen(ecn);
+  const msg=[...data,...new Array(ecn).fill(0)];
   for(let i=0;i<data.length;i++){
-    const c=msg[i];if(c===0)continue;
+    const c=msg[i];if(!c)continue;
     for(let j=0;j<gen.length;j++)msg[i+j]^=_gf_mul(gen[j],c);
   }
   return msg.slice(data.length);
@@ -3381,7 +3405,7 @@ function _rsGen(n){
 }
 const _LOG=new Uint8Array(256),_EXP=new Uint8Array(512);
 (()=>{let x=1;for(let i=0;i<255;i++){_EXP[i]=x;_LOG[x]=i;x=x<128?x<<1:(x<<1)^0x11d;}for(let i=255;i<512;i++)_EXP[i]=_EXP[i-255];})();
-function _gf_mul(a,b){return(a===0||b===0)?0:_EXP[_LOG[a]+_LOG[b]];}
+function _gf_mul(a,b){return(a&&b)?_EXP[_LOG[a]+_LOG[b]]:0;}
 function _gf_pow(a,b){return _EXP[(_LOG[a]*b)%255];}
 
 function copyVipLink(){
