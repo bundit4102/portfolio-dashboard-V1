@@ -617,7 +617,7 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
   #panel-summary{display:block!important;}
   #panel-summary .wrap{padding:0!important;max-width:100%!important;}
   /* Export button hidden */
-  .b-pdf,.btn{display:none!important;}
+  .b-pdf,.btn,#btnExportPDF,#btnPrintSummary{display:none!important;}
   /* Force colors to print */
   *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
   /* Header */
@@ -923,7 +923,14 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
       </div>
       <div style="text-align:right">
         <div class="mn" style="color:var(--muted);margin-bottom:6px">รายงาน ณ วันที่ &nbsp;<span id="sumDateLbl" style="color:var(--slate);font-weight:600"></span></div>
-        <button class="btn b-navy b-pdf" onclick="exportSummaryPDF()" style="font-size:11px;padding:6px 14px" title="กด Print → Save as PDF">📄 Export PDF</button>
+        <div style="display:flex;gap:6px;justify-content:flex-end">
+          <button class="btn b-pdf" onclick="exportSummaryPDF()" id="btnExportPDF" style="font-size:11px;padding:6px 14px;background:rgba(192,57,43,.12);border:1px solid rgba(192,57,43,.25);color:#e87060" title="Download เป็นไฟล์ PDF">
+            📄 Export PDF
+          </button>
+          <button class="btn b-out" onclick="printSummary()" id="btnPrintSummary" style="font-size:11px;padding:6px 14px" title="Print / Print to PDF">
+            🖨️ Print
+          </button>
+        </div>
       </div>
     </div>
 
@@ -2541,40 +2548,188 @@ function renderSummary(){
 }
 
 async function exportSummaryPDF(){
-  // Switch to summary panel first
+  const btn=$('btnExportPDF');
+  if(btn){btn.innerHTML='⏳ กำลังสร้าง...';btn.disabled=true;}
+
+  // Switch to summary panel
   if(!$('panel-summary').classList.contains('on')) sw('summary');
-  await new Promise(r=>setTimeout(r,400));
+  await new Promise(r=>setTimeout(r,500));
 
-  // Add/update print footer
-  let footer=$('sumPrintFooter');
-  if(!footer){
-    footer=document.createElement('div');
-    footer.id='sumPrintFooter';
-    footer.style.cssText='display:none'; // hidden on screen, shown in print CSS
-    const wrap=$('#panel-summary .wrap')||$('panel-summary').querySelector('.wrap');
-    if(wrap)wrap.appendChild(footer);
+  try{
+    // Build clean HTML for PDF
+    const dateStr=TODAY.toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'});
+    const monthStr=TODAY.toLocaleString('en',{month:'long',year:'numeric'}).toUpperCase();
+    const STAGE_COLS=['#c9a84c','#b8953a','#1c2b3a','#162236','#6aaa3f'];
+    const STAGE_LBLS=['Idea Pitching','Project Proposal','Execution','Closing','Result Follow'];
+    const SCOL={'On Track':'#1a7a4a','Delay':'#c0392b','Completed':'#6c3483','At Risk':'#c87a00','Not Started':'#8a9bb0'};
+    const PCAT_LBL={ENE:'Energy',CST:'Cost',QLT:'Quality',PRD:'Productivity',SAF:'Safety',MRL:'Morale',ENV:'Environment'};
+
+    // KPIs
+    const total=P.length;
+    const stageOf=p=>{if(p.stage)return p.stage;const s=p.status||'';if(s==='Completed')return'clos';if(s==='Not Started')return'idea';return'exec';};
+    const preP=P.filter(p=>['idea','prop'].includes(stageOf(p))).length;
+    const ongoP=P.filter(p=>['exec','clos'].includes(stageOf(p))).length;
+    const doneP=P.filter(p=>stageOf(p)==='res').length;
+    const totalBudget=P.reduce((a,p)=>a+(+p.budget||0),0);
+    const fmtBudget=v=>v>=1000000?'฿'+(v/1000000).toFixed(1)+'M':v>=1000?'฿'+(v/1000).toFixed(0)+'K':'฿'+v;
+
+    // Category counts
+    const catCnt={};P.forEach(p=>{const k=p.pcat||'';catCnt[k]=(catCnt[k]||0)+1;});
+    const statCnt={};P.forEach(p=>{const k=p.status||'';statCnt[k]=(statCnt[k]||0)+1;});
+
+    // Build matrix
+    const CATS=Object.keys(PCAT_LBL);
+    const STAGES=[{k:'idea'},{k:'prop'},{k:'exec'},{k:'clos'},{k:'res'}];
+    const mx={};
+    CATS.forEach(c=>{mx[c]={};STAGES.forEach(s=>{mx[c][s.k]=[];});});
+    IDEAS.forEach(idea=>{
+      const cv=Object.keys(PCAT_LBL).find(k=>k.toLowerCase()===(idea.cat||'').toLowerCase())||'';
+      if(mx[cv])mx[cv]['idea'].push({name:idea.title,isIdea:true});
+    });
+    P.forEach(p=>{const cv=p.pcat||'';if(!mx[cv])return;const stk=stageOf(p);if(mx[cv][stk])mx[cv][stk].push(p);});
+    const activeCats=CATS.filter(c=>P.some(p=>p.pcat===c)||IDEAS.some(i=>i.cat&&i.cat.toUpperCase()===c));
+
+    // Donut SVG helper
+    const donut=(data,cx,cy,r)=>{
+      const tot=data.reduce((a,d)=>a+d.n,0)||1;let ang=-Math.PI/2;
+      return data.filter(d=>d.n>0).map(d=>{
+        const fr=d.n/tot,a2=ang+fr*2*Math.PI;
+        const x1=cx+r*Math.cos(ang),y1=cy+r*Math.sin(ang);
+        const x2=cx+r*Math.cos(a2),y2=cy+r*Math.sin(a2);
+        const ir=r*0.55;
+        const ix1=cx+ir*Math.cos(ang),iy1=cy+ir*Math.sin(ang);
+        const ix2=cx+ir*Math.cos(a2),iy2=cy+ir*Math.sin(a2);
+        const lg=fr>.5?1:0;
+        const path=`M${x1},${y1} A${r},${r} 0 ${lg} 1 ${x2},${y2} L${ix2},${iy2} A${ir},${ir} 0 ${lg} 0 ${ix1},${iy1} Z`;
+        ang=a2;
+        return `<path d="${path}" fill="${d.col}" opacity="0.9"/>`;
+      }).join('')+`<text x="${cx}" y="${cy+4}" text-anchor="middle" font-size="14" font-weight="700" fill="#1c2b3a" font-family="Arial">${tot}</text>`;
+    };
+
+    const catData=Object.entries(catCnt).filter(([k,n])=>k&&n).map(([k,n])=>({lbl:PCAT_LBL[k]||k,n,col:({ENE:'#c9a84c',CST:'#1a6fa8',QLT:'#1a7a4a',PRD:'#6c3483',SAF:'#c0392b',MRL:'#e91e63',ENV:'#4caf50'})[k]||'#8a9bb0'}));
+    const statData=Object.entries(statCnt).filter(([k,n])=>n).map(([k,n])=>({lbl:k,n,col:SCOL[k]||'#8a9bb0'}));
+
+    // Render matrix rows
+    const matRows=activeCats.map(cat=>`
+      <tr>
+        <td style="padding:6px 10px;font-size:9pt;font-weight:700;color:#1c2b3a;background:#eef0f5;border:0.5px solid #dde2ea;vertical-align:middle;white-space:nowrap">${PCAT_LBL[cat]||cat}</td>
+        ${STAGES.map((s,si)=>{
+          const items=mx[cat]?mx[cat][s.k]||[]:[];
+          return`<td style="padding:5px 8px;background:${['#f5f0e0','#f0ead8','#e8edf5','#dde4f0','#edf5e8'][si]};border:0.5px solid #dde2ea;vertical-align:top;font-size:8pt">
+            ${items.map(p=>p.isIdea
+              ?`<div style="color:#c9a84c;font-style:italic;margin-bottom:2px">💡 ${p.name||''}</div>`
+              :`<div style="margin-bottom:2px;color:#1c2b3a">• ${p.name||p.id||''}</div>`
+            ).join('')}
+          </td>`;
+        }).join('')}
+      </tr>`).join('');
+
+    // Full HTML document
+    const html=`<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap');
+      body{font-family:'Sarabun',Arial,sans-serif;background:#fff;margin:0;padding:20px;color:#1c2b3a;font-size:10pt;}
+      .header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #c9a84c;padding-bottom:10px;margin-bottom:16px;}
+      .org{font-size:8pt;font-weight:700;letter-spacing:2px;color:#9a7a2e;text-transform:uppercase;}
+      h1{font-size:18pt;margin:4px 0 0;color:#1c2b3a;}
+      .date-lbl{font-size:9pt;color:#8a9bb0;}
+      .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px;}
+      .kpi{border:1px solid #e0d8cc;border-radius:8px;padding:12px;text-align:center;border-bottom:3px solid var(--c);}
+      .kpi-icon{font-size:16pt;margin-bottom:4px;}
+      .kpi-num{font-size:22pt;font-weight:700;color:var(--c);line-height:1;}
+      .kpi-lbl{font-size:7pt;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8a9bb0;margin-top:3px;}
+      .charts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+      .chart-box{border:1px solid #e0d8cc;border-radius:8px;padding:14px;}
+      .chart-title{font-size:7pt;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#9a7a2e;margin-bottom:10px;}
+      .chart-inner{display:flex;align-items:center;gap:16px;}
+      .legend{display:flex;flex-direction:column;gap:4px;flex:1;}
+      .legend-item{display:flex;align-items:center;justify-content:space-between;font-size:8pt;}
+      .legend-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0;margin-right:6px;}
+      .matrix-title{background:#1c2b3a;color:#fff;text-align:center;padding:8px;font-size:11pt;font-weight:700;border-radius:4px 4px 0 0;letter-spacing:1px;}
+      table{width:100%;border-collapse:collapse;font-size:8.5pt;}
+      thead th:first-child{background:#eef0f5;color:#1c2b3a;font-weight:700;}
+      .footer{display:flex;justify-content:space-between;font-size:7pt;color:#aaa;margin-top:12px;padding-top:8px;border-top:0.5px solid #eee;}
+    </style></head><body>
+    <div class="header">
+      <div><div class="org">Executive Summary · Auto Generated</div><h1>Project Portfolio Summary</h1></div>
+      <div style="text-align:right"><div class="date-lbl">รายงาน ณ วันที่ ${dateStr}</div></div>
+    </div>
+    <div class="kpi-row">
+      <div class="kpi" style="--c:#c9a84c"><div class="kpi-icon">📁</div><div class="kpi-num">${total}</div><div class="kpi-lbl">Total Projects</div></div>
+      <div class="kpi" style="--c:#c87a00"><div class="kpi-icon">💡</div><div class="kpi-num">${preP}</div><div class="kpi-lbl">Pre-Projects</div></div>
+      <div class="kpi" style="--c:#1a6fa8"><div class="kpi-icon">⚙️</div><div class="kpi-num">${ongoP}</div><div class="kpi-lbl">On-Going Projects</div></div>
+      <div class="kpi" style="--c:#1a7a4a"><div class="kpi-icon">🏁</div><div class="kpi-num">${doneP}</div><div class="kpi-lbl">Completed</div></div>
+      <div class="kpi" style="--c:#c9a84c"><div class="kpi-icon">💰</div><div class="kpi-num">${fmtBudget(totalBudget)}</div><div class="kpi-lbl">Total Budget</div></div>
+    </div>
+    <div class="charts">
+      <div class="chart-box">
+        <div class="chart-title">📊 Project by Category</div>
+        <div class="chart-inner">
+          <svg width="100" height="100" viewBox="0 0 100 100">${donut(catData,50,50,40)}</svg>
+          <div class="legend">${catData.map(d=>`<div class="legend-item"><span style="display:flex;align-items:center"><span class="legend-dot" style="background:${d.col}"></span>${d.lbl}</span><b>${d.n}</b></div>`).join('')}</div>
+        </div>
+      </div>
+      <div class="chart-box">
+        <div class="chart-title">📊 Project by Status</div>
+        <div class="chart-inner">
+          <svg width="100" height="100" viewBox="0 0 100 100">${donut(statData,50,50,40)}</svg>
+          <div class="legend">${statData.map(d=>`<div class="legend-item"><span style="display:flex;align-items:center"><span class="legend-dot" style="background:${d.col}"></span>${d.lbl}</span><b>${d.n}</b></div>`).join('')}</div>
+        </div>
+      </div>
+    </div>
+    <div class="matrix-title">LIST OF PROJECTS : ${monthStr}</div>
+    <table>
+      <thead><tr>
+        <th style="background:#eef0f5;padding:7px 10px;width:90px;text-align:left;border:0.5px solid #dde2ea;font-size:8pt"></th>
+        ${STAGE_LBLS.map((l,i)=>`<th style="background:${STAGE_COLS[i]};color:#fff;padding:7px 12px;text-align:center;font-size:8pt;border:0.5px solid rgba(255,255,255,.2)">${l}</th>`).join('')}
+      </tr></thead>
+      <tbody>${matRows||'<tr><td colspan="6" style="padding:20px;text-align:center;color:#8a9bb0">ยังไม่มีข้อมูลโครงการ</td></tr>'}</tbody>
+    </table>
+    <div class="footer">
+      <span>Project Portfolio Summary · Confidential</span>
+      <span>รายงาน ณ วันที่ ${dateStr}</span>
+      <span>EXECUTIVE VIEW · AUTO GENERATED</span>
+    </div>
+    </body></html>`;
+
+    // Open in new window and trigger print-to-PDF
+    const win=window.open('','_blank','width=1200,height=900');
+    if(!win){alert('กรุณาอนุญาต Popup เพื่อ Export PDF');if(btn){btn.innerHTML='📄 Export PDF';btn.disabled=false;}return;}
+    win.document.write(html);
+    win.document.close();
+    await new Promise(r=>setTimeout(r,800));
+    win.focus();
+    win.print();
+    // Note: window closes after print dialog
+  }catch(e){
+    alert('Error: '+e.message);console.error(e);
   }
-  const dateStr=TODAY.toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'});
-  footer.innerHTML=`<div style="display:flex;justify-content:space-between;font-size:7pt;color:#aaa;margin-top:6mm;padding-top:2mm;border-top:0.3mm solid #ddd">
-    <span>Project Portfolio Summary · Confidential</span>
-    <span>รายงาน ณ วันที่ ${dateStr}</span>
-    <span>EXECUTIVE VIEW · AUTO GENERATED</span>
-  </div>`;
+  if(btn){btn.innerHTML='📄 Export PDF';btn.disabled=false;}
+}
 
-  // Add print-show class to footer
-  const style=document.createElement('style');
-  style.id='_pdf_footer_style';
-  style.textContent='@media print{#sumPrintFooter{display:block!important;}}';
-  document.head.appendChild(style);
-
-  // Print
-  window.print();
-
-  // Cleanup after brief delay
+function printSummary(){
+  // Switch to summary and use window.print()
+  if(!$('panel-summary').classList.contains('on')) sw('summary');
   setTimeout(()=>{
-    const s=document.getElementById('_pdf_footer_style');
-    if(s)s.remove();
-  },3000);
+    let footer=$('sumPrintFooter');
+    if(!footer){
+      footer=document.createElement('div');
+      footer.id='sumPrintFooter';
+      const wrap=$('panel-summary').querySelector('.wrap');
+      if(wrap)wrap.appendChild(footer);
+    }
+    const dateStr=TODAY.toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'});
+    footer.innerHTML=`<div id="_pf_inner" style="display:flex;justify-content:space-between;font-size:7pt;color:#aaa;margin-top:8mm;padding-top:3mm;border-top:0.5px solid #eee">
+      <span>Project Portfolio Summary · Confidential</span>
+      <span>รายงาน ณ วันที่ ${dateStr}</span>
+      <span>EXECUTIVE VIEW · AUTO GENERATED</span>
+    </div>`;
+    const s=document.createElement('style');
+    s.id='_ps';s.textContent='@media print{#sumPrintFooter{display:block!important;}}';
+    document.head.appendChild(s);
+    window.print();
+    setTimeout(()=>{const el=document.getElementById('_ps');if(el)el.remove();},3000);
+  },400);
 }
 
 
