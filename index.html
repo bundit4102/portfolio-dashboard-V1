@@ -605,6 +605,51 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
 /* Force horizontal scroll on small screens for tables */
 .tw,.gantt-card,#sumMatrix,.card{-webkit-overflow-scrolling:touch}
 
+/* ════ PRINT / PDF STYLES ════ */
+@media print{
+  @page{size:A3 landscape;margin:12mm 10mm;}
+  body{background:#fff!important;color:#000!important;font-family:'Sarabun',Arial,sans-serif;font-size:9pt;}
+  body::before{display:none!important;}
+  /* Hide everything except summary panel */
+  .auth-screen,.nav,.modal-ov,.hist-ov,#vipScreen,.ov,
+  [id^="panel-"]:not(#panel-summary){display:none!important;}
+  #panel-summary{display:block!important;padding:0!important;}
+  #panel-summary .wrap{padding:4mm 0!important;max-width:100%!important;}
+  /* Header */
+  .sum-header{margin-bottom:4mm!important;padding-bottom:2mm!important;}
+  .sum-header h1{font-size:16pt!important;color:#1c2b3a!important;}
+  /* KPI cards */
+  .sum-kpi-row{display:flex!important;gap:3mm!important;margin-bottom:4mm!important;}
+  .sum-kpi-card{flex:1!important;border:1px solid #ddd!important;border-radius:4mm!important;padding:3mm!important;text-align:center!important;break-inside:avoid;}
+  .sum-kpi-icon{font-size:14pt!important;}
+  .sum-kpi-val{font-size:18pt!important;font-weight:700!important;}
+  .sum-kpi-lbl{font-size:7pt!important;color:#666!important;letter-spacing:1px!important;}
+  /* Charts section */
+  .sum-charts{display:flex!important;gap:4mm!important;margin-bottom:4mm!important;}
+  .sum-chart-box{flex:1!important;border:1px solid #eee!important;border-radius:3mm!important;padding:3mm!important;}
+  /* Matrix table */
+  #sumMatrix table{width:100%!important;border-collapse:collapse!important;font-size:7.5pt!important;}
+  #sumMatrix th{background:#1c2b3a!important;color:#fff!important;padding:2mm 3mm!important;print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important;}
+  #sumMatrix td{border:0.3mm solid #ddd!important;padding:1.5mm 2.5mm!important;vertical-align:top!important;}
+  #sumMatrix li{margin-bottom:0.5mm!important;line-height:1.3!important;}
+  /* Stage headers */
+  .stage-head-idea{background:#c9a84c!important;print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important;}
+  .stage-head-prop{background:#b8953a!important;print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important;}
+  .stage-head-exec{background:#1c2b3a!important;print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important;}
+  .stage-head-clos{background:#162236!important;print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important;}
+  .stage-head-res{background:#6aaa3f!important;print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important;}
+  /* No page break in table rows */
+  #sumMatrix tr{break-inside:avoid!important;}
+  /* Export button hidden in print */
+  .b-pdf,.btn,.stale-nav{display:none!important;}
+  /* Page number */
+  .sum-footer{display:flex!important;justify-content:space-between!important;font-size:7pt!important;color:#999!important;margin-top:3mm!important;border-top:0.3mm solid #eee!important;padding-top:2mm!important;}
+  /* Canvas elements (charts) — force colors */
+  canvas{print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important;}
+  /* Force all colors to print */
+  *{print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important;}
+}
+
 </style>
 </head>
 <body>
@@ -2416,20 +2461,29 @@ function renderSummary(){
 async function exportSummaryPDF(){
   const btn=document.querySelector('[onclick="exportSummaryPDF()"]');
   const orig=btn?btn.innerHTML:'';
-  if(btn){btn.innerHTML='⏳ กำลังสร้าง...';btn.disabled=true;}
+  // Switch to summary panel first
   if(!$('panel-summary').classList.contains('on'))sw('summary');
-  await new Promise(r=>setTimeout(r,100));
-  if(!window.html2pdf){
-    await new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});
-  }
-  const nav=$('mainApp').querySelector('.nav');
-  const navDisp=nav?nav.style.display:'';
-  if(nav)nav.style.display='none';
+  await new Promise(r=>setTimeout(r,300)); // wait for render
+
+  // Inject a print title override
+  const titleEl=document.createElement('style');
+  titleEl.id='_print_title_override';
+  titleEl.textContent=`@media print{
+    body::after{content:'';display:none}
+    #panel-summary .sum-header .org-tag::after{content:' · Project Portfolio Summary · ${new Date().toLocaleDateString("th-TH",{day:"numeric",month:"long",year:"numeric"})}'}
+  }`;
+  document.head.appendChild(titleEl);
+
+  // Use browser print → Save as PDF
   try{
-    await html2pdf().set({margin:[8,6],filename:'Summary_'+fi(TODAY)+'.pdf',image:{type:'jpeg',quality:.97},html2canvas:{scale:2,useCORS:true,scrollY:0},jsPDF:{unit:'mm',format:'a3',orientation:'landscape'}}).from($('panel-summary')).save();
+    window.print();
   }catch(e){alert('Error: '+e.message);}
-  if(nav)nav.style.display=navDisp;
-  if(btn){btn.innerHTML=orig;btn.disabled=false;}
+
+  // Cleanup
+  setTimeout(()=>{
+    const el=document.getElementById('_print_title_override');
+    if(el)el.remove();
+  },2000);
 }
 
 
@@ -3356,15 +3410,19 @@ function _qrEncode(text){
   fp1.forEach(([r,c])=>{mat[r][c]=0;fix[r][c]=true;});
   fp2.forEach(([r,c])=>{mat[r][c]=0;fix[r][c]=true;});
 
-  // 5. Place data bits (zigzag right-to-left, up/down)
+  // 5. Place data bits — correct QR zigzag per spec
+  // Columns go right-to-left in pairs; within each pair, direction alternates up/down
   let bi=0;
+  let colPair=0; // counts column-pairs from right
   for(let right=sz-1;right>=1;right-=2){
-    if(right===6)right=5;
+    if(right===6){right=5;} // skip timing column
+    const upward=(colPair%2===0); // even pairs go upward (bottom→top)
+    colPair++;
     for(let vert=0;vert<sz;vert++){
+      const row=upward?(sz-1-vert):vert;
       for(let j=0;j<2;j++){
-        const row=((Math.floor((sz-1-right)/2))%2===0)?sz-1-vert:vert;
         const col=right-j;
-        if(!fix[row][col]){
+        if(col>=0&&!fix[row][col]){
           mat[row][col]=bi<all.length?all[bi++]:0;
         }
       }
