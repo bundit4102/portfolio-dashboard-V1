@@ -1489,12 +1489,19 @@ const ADMIN_USER = {id:'__admin__',username:'admin',password:'admin2026',name:'S
   });
 })();
 
-function getUsers(){
-  try{const r=localStorage.getItem(UK);return r?JSON.parse(r):[];}catch(e){return[];}
+function getUsers(){return USERS_CACHE.filter(u=>u.id!=='__admin__');}
+function saveUsers(us){
+  // saveUsers ใช้สำหรับ update cache เท่านั้น — API calls ทำผ่าน approveUser/rejectUser/deleteUser/changeRole
+  USERS_CACHE=[ADMIN_USER,...us];
 }
-function saveUsers(us){try{localStorage.setItem(UK,JSON.stringify(us));}catch(e){}}
-function getAllUsers(){return [ADMIN_USER,...getUsers()];}
+function getAllUsers(){return USERS_CACHE;}
 function getPendingCount(){return getUsers().filter(u=>u.status==='pending').length;}
+async function refreshUsers(){
+  try{
+    const r=await fetch('/api/users',{credentials:'same-origin'});
+    if(r.ok){const d=await r.json();USERS_CACHE=[ADMIN_USER,...d];}
+  }catch(e){}
+}
 
 let currentUser=null;
 let adminTab='pending';
@@ -1832,11 +1839,8 @@ function rejectUser(id){
   renderAdminPanel();checkAdminNotif();
 }
 function viewPassword(id){
-  const users=getUsers();
-  const u=users.find(x=>x.id===id);
+  const u=getUsers().find(x=>x.id===id);
   if(!u)return;
-  const pw=u.password||'(ไม่มีข้อมูล)';
-  // Show modal with password
   const existing=document.getElementById('_pwModal');
   if(existing)existing.remove();
   const modal=document.createElement('div');
@@ -1845,25 +1849,22 @@ function viewPassword(id){
   modal.innerHTML=`
     <div style="background:var(--white);border-radius:16px;width:100%;max-width:400px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2)">
       <div style="background:var(--navy);padding:16px 22px;display:flex;align-items:center;justify-content:space-between">
-        <div style="font-family:'Playfair Display',serif;font-size:16px;color:var(--gold)">👁 Password ของ ${u.name}</div>
+        <div style="font-family:'Playfair Display',serif;font-size:16px;color:var(--gold)">🔐 ข้อมูลผู้ใช้</div>
         <button onclick="document.getElementById('_pwModal').remove()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;line-height:1">✕</button>
       </div>
       <div style="padding:24px">
-        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Username</div>
-        <div style="font-family:'DM Mono',monospace;font-size:14px;color:var(--gold-d);background:var(--cream);padding:10px 14px;border-radius:8px;margin-bottom:16px">@${u.username}</div>
-        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Password</div>
-        <div style="display:flex;align-items:center;gap:10px">
-          <div id="_pwShow" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;color:var(--slate);background:var(--cream);padding:10px 14px;border-radius:8px;flex:1;letter-spacing:2px">${'•'.repeat(pw.length)}</div>
-          <button id="_pwToggle" onclick="
-            const el=document.getElementById('_pwShow');
-            const btn=document.getElementById('_pwToggle');
-            if(el.textContent==='${'•'.repeat(pw.length)}'){el.textContent='${pw}';btn.textContent='🙈';}
-            else{el.textContent='${'•'.repeat(pw.length)}';btn.textContent='👁';}
-          " style="background:var(--navy);border:none;color:var(--gold);border-radius:8px;padding:10px 14px;font-size:16px;cursor:pointer">👁</button>
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">ชื่อ</div>
+        <div style="font-size:14px;font-weight:700;color:var(--slate);background:var(--cream);padding:10px 14px;border-radius:8px;margin-bottom:14px">${u.name}</div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Username</div>
+        <div style="font-family:'DM Mono',monospace;font-size:14px;color:var(--gold-d);background:var(--cream);padding:10px 14px;border-radius:8px;margin-bottom:14px">@${u.username}</div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">สิทธิ์ / แผนก</div>
+        <div style="font-size:13px;color:var(--slate);background:var(--cream);padding:10px 14px;border-radius:8px;margin-bottom:20px">${u.role} · ${u.dept||'—'}</div>
+        <div style="background:rgba(200,122,0,.08);border:1px solid rgba(200,122,0,.2);border-radius:8px;padding:12px;margin-bottom:16px;font-size:12px;color:var(--amber)">
+          🔒 Password ถูกเข้ารหัสแล้ว ไม่สามารถดูได้โดยตรง<br>หากต้องการเปลี่ยน กด "Reset Password" ได้เลยครับ
         </div>
-        <div style="margin-top:12px;font-size:11px;color:var(--muted)">⚠ แจ้ง password ให้ user โดยตรงทาง Line/Email เท่านั้น</div>
-        <div style="margin-top:16px;text-align:right">
-          <button onclick="document.getElementById('_pwModal').remove()" style="background:var(--navy);color:var(--gold);border:none;border-radius:8px;padding:10px 20px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;cursor:pointer">ปิด</button>
+        <div style="display:flex;gap:10px">
+          <button onclick="document.getElementById('_pwModal').remove()" style="flex:1;background:transparent;border:1px solid var(--div);color:var(--muted);border-radius:8px;padding:9px;font-family:'Sarabun',sans-serif;font-size:13px;cursor:pointer">ปิด</button>
+          <button onclick="document.getElementById('_pwModal').remove();resetPassword('${id}')" style="flex:1;background:var(--amber);color:#fff;border:none;border-radius:8px;padding:9px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;cursor:pointer">🔑 Reset Password</button>
         </div>
       </div>
     </div>`;
@@ -1912,7 +1913,7 @@ function resetPassword(id){
   setTimeout(()=>document.getElementById('_newPw')?.focus(),100);
 }
 
-function confirmResetPw(id){
+async function confirmResetPw(id){
   const pw=document.getElementById('_newPw')?.value||'';
   const pw2=document.getElementById('_newPw2')?.value||'';
   const errEl=document.getElementById('_resetErr');
@@ -1920,12 +1921,17 @@ function confirmResetPw(id){
   if(!pw){showErr('กรุณากรอก Password ใหม่');return;}
   if(pw.length<6){showErr('Password ต้องมีอย่างน้อย 6 ตัวอักษร');return;}
   if(pw!==pw2){showErr('Password ไม่ตรงกัน');return;}
-  const users=getUsers();
-  const u=users.find(x=>x.id===id);
-  if(!u){showErr('ไม่พบผู้ใช้');return;}
-  u.password=pw;
-  saveUsers(users);
-  logActivity('🔑','rgba(200,122,0,.1)',`Reset password ให้ <strong>${u.name} (@${u.username})</strong>`);
+  try{
+    const res=await fetch(`/api/users/${id}/password`,{
+      method:'PUT',credentials:'same-origin',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({password:pw})
+    });
+    const data=await res.json();
+    if(!data.success){showErr(data.error||'เกิดข้อผิดพลาด');return;}
+  }catch(e){showErr('ไม่สามารถเชื่อมต่อ Server ได้');return;}
+  const u=getUsers().find(x=>x.id===id);
+  if(u)logActivity('🔑','rgba(200,122,0,.1)',`Reset password ให้ <strong>${u.name} (@${u.username})</strong>`);
   document.getElementById('_resetModal')?.remove();
   showToast('✅ Reset Password เรียบร้อยแล้ว! แจ้ง user ได้เลย','var(--green)');
   renderAdminPanel();
@@ -2058,13 +2064,24 @@ function staleDays(p){
 // ══════════════════════════════════════════════
 // STORAGE (data)
 // ══════════════════════════════════════════════
-function save(){try{localStorage.setItem(SK,JSON.stringify(P));localStorage.setItem(TK,fi(TODAY));localStorage.setItem(IK,JSON.stringify(IDEAS));}catch(e){}setSave('ok');}
-function load(){
+async function save(){
+  setSave('go');
   try{
-    const r=localStorage.getItem(SK);if(r&&r!=='[]')P=JSON.parse(r);
-    // TODAY always = real today (not stored), user can override manually
-    TODAY=new Date();TODAY.setHours(0,0,0,0);
-    const ir=localStorage.getItem(IK);if(ir&&ir!=='[]')IDEAS=JSON.parse(ir);
+    await fetch('/api/data',{method:'PUT',credentials:'same-origin',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({projects:P,ideas:IDEAS})});
+  }catch(e){}
+  setSave('ok');
+}
+async function load(){
+  TODAY=new Date();TODAY.setHours(0,0,0,0);
+  try{
+    const r=await fetch('/api/data',{credentials:'same-origin'});
+    if(r.ok){
+      const d=await r.json();
+      if(d.projects&&d.projects.length)P=d.projects;
+      if(d.ideas&&d.ideas.length)IDEAS=d.ideas;
+    }
   }catch(e){P=[];IDEAS=[];}
   if(!P.length)loadDemoP();if(!IDEAS.length)loadDemoI();
 }
