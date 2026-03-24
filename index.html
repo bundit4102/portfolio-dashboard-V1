@@ -608,7 +608,6 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
 /* ════ PRINT CSS (Executive PDF) ════ */
 @media print{
   @page{size:A3 landscape;margin:10mm 12mm 10mm 12mm;}
-  @page:first{margin-top:8mm;}
   /* Hide everything except summary panel */
   body>*:not(#mainApp){display:none!important;}
   .auth-screen,.modal-ov,.hist-ov,#vipScreen,.ov{display:none!important;}
@@ -616,10 +615,14 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
   [id^="panel-"]:not(#panel-summary){display:none!important;}
   #panel-summary{display:block!important;}
   #panel-summary .wrap{padding:0!important;max-width:100%!important;}
-  /* Export button hidden */
+  /* Export buttons hidden */
   .b-pdf,.btn,#btnExportPDF,#btnPrintSummary{display:none!important;}
-  /* Force colors to print */
-  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+  /* ── CRITICAL: Force ALL colors & backgrounds to print ── */
+  *{
+    -webkit-print-color-adjust:exact!important;
+    print-color-adjust:exact!important;
+    color-adjust:exact!important;
+  }
   /* Header */
   .org-tag{font-size:8pt!important;color:#9a7a2e!important;letter-spacing:2px!important;}
   h1{font-size:18pt!important;color:#1c2b3a!important;margin-bottom:0!important;}
@@ -638,8 +641,14 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
     background:#fff!important;
     break-inside:avoid!important;
     page-break-inside:avoid!important;
+    -webkit-print-color-adjust:exact!important;
+    print-color-adjust:exact!important;
   }
-  .sum-kpi-card::after{height:2mm!important;}
+  .sum-kpi-card::after{
+    height:2mm!important;
+    -webkit-print-color-adjust:exact!important;
+    print-color-adjust:exact!important;
+  }
   .sum-kpi-icon{font-size:16pt!important;margin-bottom:2mm!important;}
   .sum-kpi-num{font-size:24pt!important;font-weight:700!important;line-height:1!important;}
   .sum-kpi-lbl{font-size:7pt!important;letter-spacing:1px!important;margin-top:1mm!important;}
@@ -656,63 +665,125 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
     padding:4mm!important;
     background:#fff!important;
     break-inside:avoid!important;
+    -webkit-print-color-adjust:exact!important;
+    print-color-adjust:exact!important;
   }
   .sec-t{font-size:7pt!important;letter-spacing:1.5px!important;color:#9a7a2e!important;}
-  /* SVG donuts */
+  /* SVG donuts — keep colors */
   svg{overflow:visible!important;}
+  svg path{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
   /* Matrix table */
   #sumMatrix{page-break-before:avoid!important;}
-  #sumMatrix table{
+  #sumMatrix>div{border-radius:0!important;}
+  #sumMatrix>div>div:first-child{
+    background:#1c2b3a!important;
+    -webkit-print-color-adjust:exact!important;
+    print-color-adjust:exact!important;
+  }
+  #sumMatrix>div>div:first-child h2{color:#fff!important;}
+  .sum-matrix{
     width:100%!important;
     border-collapse:collapse!important;
-    font-size:7.5pt!important;
-    font-family:Sarabun,Arial,sans-serif!important;
-    break-inside:auto!important;
-  }
-  #sumMatrix thead tr{break-inside:avoid!important;break-after:avoid!important;}
-  #sumMatrix tr{break-inside:avoid!important;page-break-inside:avoid!important;}
-  #sumMatrix th{
-    padding:2mm 3mm!important;
-    font-size:7.5pt!important;
-    font-weight:700!important;
-    border:0.3mm solid rgba(255,255,255,.2)!important;
-  }
-  #sumMatrix td{
-    border:0.3mm solid #dde2ea!important;
-    padding:2mm 3mm!important;
-    vertical-align:top!important;
-    font-size:7.5pt!important;
-  }
-  #sumMatrix li{
-    font-size:7pt!important;
-    line-height:1.4!important;
-    margin-bottom:0.5mm!important;
-    color:#1c2b3a!important;
-  }
-  /* Category row labels */
-  #sumMatrix td:first-child{
     font-size:8pt!important;
+    font-family:Sarabun,Arial,sans-serif!important;
+  }
+  .sum-matrix thead tr{break-inside:avoid!important;break-after:avoid!important;}
+  .sum-matrix tr{break-inside:avoid!important;page-break-inside:avoid!important;}
+  /* Stage header backgrounds */
+  .sum-stage-idea{
+    background:#c9a84c!important;color:#fff!important;
+    -webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;
+  }
+  .sum-stage-prop{
+    background:#b8953a!important;color:#fff!important;opacity:1!important;
+    -webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;
+  }
+  .sum-stage-exec{
+    background:#1c2b3a!important;color:#fff!important;
+    -webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;
+  }
+  .sum-stage-clos{
+    background:#2c3e50!important;color:#fff!important;opacity:1!important;
+    -webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;
+  }
+  .sum-stage-res{
+    background:#6aaa3f!important;color:#fff!important;
+    -webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;
+  }
+  .sum-matrix th{
+    padding:6px 10px!important;
+    font-size:8pt!important;
+    font-weight:700!important;
+    -webkit-print-color-adjust:exact!important;
+    print-color-adjust:exact!important;
+  }
+  /* Stage cell backgrounds */
+  .sum-cell-idea{
+    background:#f5f0e0!important;opacity:1!important;
+    -webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;
+  }
+  .sum-cell-prop{
+    background:#f0e8cc!important;opacity:1!important;
+    -webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;
+  }
+  .sum-cell-exec{
+    background:#e8edf5!important;opacity:1!important;
+    -webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;
+  }
+  .sum-cell-clos{
+    background:#dde4f0!important;opacity:1!important;
+    -webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;
+  }
+  .sum-cell-res{
+    background:#edf5e8!important;opacity:1!important;
+    -webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;
+  }
+  .sum-cell{
+    padding:5px 8px!important;
+    vertical-align:top!important;
+    border:0.3mm solid rgba(200,200,200,.5)!important;
+    font-size:7.5pt!important;
+    -webkit-print-color-adjust:exact!important;
+    print-color-adjust:exact!important;
+  }
+  .sum-cell ul{margin:0!important;padding-left:14px!important;}
+  .sum-cell ul li{
+    margin-bottom:1.5px!important;
+    line-height:1.4!important;
+    color:#1c2b3a!important;
+    font-size:7.5pt!important;
+  }
+  /* Category row label */
+  .sum-cat-lbl{
+    padding:8px 12px!important;
+    font-size:9pt!important;
     font-weight:700!important;
     color:#1c2b3a!important;
     background:#eef0f5!important;
-    border:0.3mm solid #dde2ea!important;
+    border-bottom:0.3mm solid #dde2ea!important;
+    vertical-align:middle!important;
     white-space:nowrap!important;
-    padding:3mm 4mm!important;
+    -webkit-print-color-adjust:exact!important;
+    print-color-adjust:exact!important;
   }
-  /* Force stage header colors */
-  #sumMatrix th:nth-child(2){background:#c9a84c!important;color:#fff!important;}
-  #sumMatrix th:nth-child(3){background:#b8953a!important;color:#fff!important;}
-  #sumMatrix th:nth-child(4){background:#1c2b3a!important;color:#fff!important;}
-  #sumMatrix th:nth-child(5){background:#162236!important;color:#fff!important;}
-  #sumMatrix th:nth-child(6){background:#6aaa3f!important;color:#fff!important;}
-  /* Idea items in table — gold italic */
-  #sumMatrix li[style*="gold"]{color:#c9a84c!important;}
+  /* Idea items — gold color */
+  .sum-cell ul li[style*="c9a84c"],
+  .sum-cell ul li[style*="1a6fa8"],
+  .sum-cell ul li[style*="c87a00"],
+  .sum-cell ul li[style*="1a7a4a"],
+  .sum-cell ul li[style*="c0392b"]{
+    -webkit-print-color-adjust:exact!important;
+    print-color-adjust:exact!important;
+  }
+  /* Chevron arrows in headers — hide in print */
+  .chv{display:none!important;}
   /* Footer */
-  .sum-footer,#sumFooter{
+  #sumPrintFooter{display:block!important;}
+  .sum-footer,#sumFooter,#_pf_inner{
     display:flex!important;
     justify-content:space-between!important;
     font-size:7pt!important;
-    color:#aaa!important;
+    color:#999!important;
     margin-top:4mm!important;
     padding-top:2mm!important;
     border-top:0.3mm solid #ddd!important;
@@ -1418,12 +1489,19 @@ const ADMIN_USER = {id:'__admin__',username:'admin',password:'admin2026',name:'S
   });
 })();
 
-function getUsers(){
-  try{const r=localStorage.getItem(UK);return r?JSON.parse(r):[];}catch(e){return[];}
+function getUsers(){return USERS_CACHE.filter(u=>u.id!=='__admin__');}
+function saveUsers(us){
+  // saveUsers ใช้สำหรับ update cache เท่านั้น — API calls ทำผ่าน approveUser/rejectUser/deleteUser/changeRole
+  USERS_CACHE=[ADMIN_USER,...us];
 }
-function saveUsers(us){try{localStorage.setItem(UK,JSON.stringify(us));}catch(e){}}
-function getAllUsers(){return [ADMIN_USER,...getUsers()];}
+function getAllUsers(){return USERS_CACHE;}
 function getPendingCount(){return getUsers().filter(u=>u.status==='pending').length;}
+async function refreshUsers(){
+  try{
+    const r=await fetch('/api/users',{credentials:'same-origin'});
+    if(r.ok){const d=await r.json();USERS_CACHE=[ADMIN_USER,...d];}
+  }catch(e){}
+}
 
 let currentUser=null;
 let adminTab='pending';
@@ -1704,7 +1782,9 @@ function renderAdminPanel(){
               ${u.status==='pending'?`<button class="act-btn ab-approve" onclick="approveUser('${u.id}')">✅ อนุมัติ</button>`:''}
               ${u.status!=='rejected'&&!isBuiltin?`<button class="act-btn ab-reject" onclick="rejectUser('${u.id}')">❌ ปฏิเสธ</button>`:''}
               ${u.status==='rejected'?`<button class="act-btn ab-approve" onclick="approveUser('${u.id}')">♻️ เปิดใหม่</button>`:''}
-              <button class="act-btn ab-del" onclick="deleteUser('${u.id}')">🗑</button>
+              <button class="act-btn" style="background:rgba(26,111,168,.08);color:#1a6fa8;border-color:rgba(26,111,168,.25)" onclick="viewPassword('${u.id}')">👁 ดู PW</button>
+              <button class="act-btn" style="background:rgba(200,122,0,.08);color:var(--amber);border-color:rgba(200,122,0,.25)" onclick="resetPassword('${u.id}')">🔑 Reset PW</button>
+              <button class="act-btn ab-del" onclick="deleteUser('${u.id}')">🗑 ลบ</button>
              </div>`;
         return`<tr>
           <td style="padding:10px 10px">
@@ -1758,6 +1838,105 @@ function rejectUser(id){
   logActivity('❌','rgba(192,57,43,.1)',`ปฏิเสธบัญชี <strong>${u.name} (@${u.username})</strong>`);
   renderAdminPanel();checkAdminNotif();
 }
+function viewPassword(id){
+  const u=getUsers().find(x=>x.id===id);
+  if(!u)return;
+  const existing=document.getElementById('_pwModal');
+  if(existing)existing.remove();
+  const modal=document.createElement('div');
+  modal.id='_pwModal';
+  modal.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)';
+  modal.innerHTML=`
+    <div style="background:var(--white);border-radius:16px;width:100%;max-width:400px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+      <div style="background:var(--navy);padding:16px 22px;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-family:'Playfair Display',serif;font-size:16px;color:var(--gold)">🔐 ข้อมูลผู้ใช้</div>
+        <button onclick="document.getElementById('_pwModal').remove()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;line-height:1">✕</button>
+      </div>
+      <div style="padding:24px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">ชื่อ</div>
+        <div style="font-size:14px;font-weight:700;color:var(--slate);background:var(--cream);padding:10px 14px;border-radius:8px;margin-bottom:14px">${u.name}</div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Username</div>
+        <div style="font-family:'DM Mono',monospace;font-size:14px;color:var(--gold-d);background:var(--cream);padding:10px 14px;border-radius:8px;margin-bottom:14px">@${u.username}</div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">สิทธิ์ / แผนก</div>
+        <div style="font-size:13px;color:var(--slate);background:var(--cream);padding:10px 14px;border-radius:8px;margin-bottom:20px">${u.role} · ${u.dept||'—'}</div>
+        <div style="background:rgba(200,122,0,.08);border:1px solid rgba(200,122,0,.2);border-radius:8px;padding:12px;margin-bottom:16px;font-size:12px;color:var(--amber)">
+          🔒 Password ถูกเข้ารหัสแล้ว ไม่สามารถดูได้โดยตรง<br>หากต้องการเปลี่ยน กด "Reset Password" ได้เลยครับ
+        </div>
+        <div style="display:flex;gap:10px">
+          <button onclick="document.getElementById('_pwModal').remove()" style="flex:1;background:transparent;border:1px solid var(--div);color:var(--muted);border-radius:8px;padding:9px;font-family:'Sarabun',sans-serif;font-size:13px;cursor:pointer">ปิด</button>
+          <button onclick="document.getElementById('_pwModal').remove();resetPassword('${id}')" style="flex:1;background:var(--amber);color:#fff;border:none;border-radius:8px;padding:9px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;cursor:pointer">🔑 Reset Password</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+}
+
+function resetPassword(id){
+  const users=getUsers();
+  const u=users.find(x=>x.id===id);
+  if(!u)return;
+  const existing=document.getElementById('_resetModal');
+  if(existing)existing.remove();
+  const modal=document.createElement('div');
+  modal.id='_resetModal';
+  modal.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)';
+  modal.innerHTML=`
+    <div style="background:var(--white);border-radius:16px;width:100%;max-width:420px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+      <div style="background:var(--navy);padding:16px 22px;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-family:'Playfair Display',serif;font-size:16px;color:var(--gold)">🔑 Reset Password — ${u.name}</div>
+        <button onclick="document.getElementById('_resetModal').remove()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;line-height:1">✕</button>
+      </div>
+      <div style="padding:24px">
+        <div id="_resetErr" style="display:none;background:#fcecea;border:1px solid rgba(192,57,43,.2);border-radius:7px;padding:8px 12px;font-size:12px;color:var(--red);margin-bottom:12px"></div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">ผู้ใช้</div>
+        <div style="font-family:'DM Mono',monospace;font-size:13px;color:var(--gold-d);background:var(--cream);padding:9px 14px;border-radius:8px;margin-bottom:16px">@${u.username} · ${u.name}</div>
+        <div style="margin-bottom:12px">
+          <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:5px">Password ใหม่ *</label>
+          <div style="position:relative">
+            <input type="password" id="_newPw" placeholder="อย่างน้อย 6 ตัวอักษร" style="width:100%;border:1px solid var(--div);border-radius:8px;padding:10px 42px 10px 12px;font-family:'Sarabun',sans-serif;font-size:13px;color:var(--slate);background:var(--white);outline:none;box-sizing:border-box">
+            <button type="button" onclick="const i=document.getElementById('_newPw');i.type=i.type==='password'?'text':'password'" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px">👁</button>
+          </div>
+        </div>
+        <div style="margin-bottom:20px">
+          <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:5px">ยืนยัน Password ใหม่ *</label>
+          <input type="password" id="_newPw2" placeholder="กรอกซ้ำ" style="width:100%;border:1px solid var(--div);border-radius:8px;padding:10px 12px;font-family:'Sarabun',sans-serif;font-size:13px;color:var(--slate);background:var(--white);outline:none;box-sizing:border-box">
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button onclick="document.getElementById('_resetModal').remove()" style="background:transparent;border:1px solid var(--div);color:var(--muted);border-radius:8px;padding:9px 18px;font-family:'Sarabun',sans-serif;font-size:13px;cursor:pointer">ยกเลิก</button>
+          <button onclick="confirmResetPw('${id}')" style="background:var(--gold);color:var(--navy);border:none;border-radius:8px;padding:9px 20px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;cursor:pointer">💾 บันทึก Password ใหม่</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+  setTimeout(()=>document.getElementById('_newPw')?.focus(),100);
+}
+
+async function confirmResetPw(id){
+  const pw=document.getElementById('_newPw')?.value||'';
+  const pw2=document.getElementById('_newPw2')?.value||'';
+  const errEl=document.getElementById('_resetErr');
+  const showErr=msg=>{if(errEl){errEl.textContent=msg;errEl.style.display='block';}};
+  if(!pw){showErr('กรุณากรอก Password ใหม่');return;}
+  if(pw.length<6){showErr('Password ต้องมีอย่างน้อย 6 ตัวอักษร');return;}
+  if(pw!==pw2){showErr('Password ไม่ตรงกัน');return;}
+  try{
+    const res=await fetch(`/api/users/${id}/password`,{
+      method:'PUT',credentials:'same-origin',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({password:pw})
+    });
+    const data=await res.json();
+    if(!data.success){showErr(data.error||'เกิดข้อผิดพลาด');return;}
+  }catch(e){showErr('ไม่สามารถเชื่อมต่อ Server ได้');return;}
+  const u=getUsers().find(x=>x.id===id);
+  if(u)logActivity('🔑','rgba(200,122,0,.1)',`Reset password ให้ <strong>${u.name} (@${u.username})</strong>`);
+  document.getElementById('_resetModal')?.remove();
+  showToast('✅ Reset Password เรียบร้อยแล้ว! แจ้ง user ได้เลย','var(--green)');
+  renderAdminPanel();
+}
+
 function deleteUser(id){
   const users=getUsers();const u=users.find(x=>x.id===id);if(!u||!confirm(`ลบผู้ใช้ "${u.name}" ออกจากระบบ?\nการดำเนินการนี้ไม่สามารถย้อนกลับได้`))return;
   saveUsers(users.filter(x=>x.id!==id));
@@ -1885,13 +2064,24 @@ function staleDays(p){
 // ══════════════════════════════════════════════
 // STORAGE (data)
 // ══════════════════════════════════════════════
-function save(){try{localStorage.setItem(SK,JSON.stringify(P));localStorage.setItem(TK,fi(TODAY));localStorage.setItem(IK,JSON.stringify(IDEAS));}catch(e){}setSave('ok');}
-function load(){
+async function save(){
+  setSave('go');
   try{
-    const r=localStorage.getItem(SK);if(r&&r!=='[]')P=JSON.parse(r);
-    // TODAY always = real today (not stored), user can override manually
-    TODAY=new Date();TODAY.setHours(0,0,0,0);
-    const ir=localStorage.getItem(IK);if(ir&&ir!=='[]')IDEAS=JSON.parse(ir);
+    await fetch('/api/data',{method:'PUT',credentials:'same-origin',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({projects:P,ideas:IDEAS})});
+  }catch(e){}
+  setSave('ok');
+}
+async function load(){
+  TODAY=new Date();TODAY.setHours(0,0,0,0);
+  try{
+    const r=await fetch('/api/data',{credentials:'same-origin'});
+    if(r.ok){
+      const d=await r.json();
+      if(d.projects&&d.projects.length)P=d.projects;
+      if(d.ideas&&d.ideas.length)IDEAS=d.ideas;
+    }
   }catch(e){P=[];IDEAS=[];}
   if(!P.length)loadDemoP();if(!IDEAS.length)loadDemoI();
 }
@@ -2624,66 +2814,110 @@ async function exportSummaryPDF(){
         }).join('')}
       </tr>`).join('');
 
-    // Full HTML document
+    // Full HTML document for PDF popup window
     const html=`<!DOCTYPE html><html><head><meta charset="UTF-8">
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap');
-      body{font-family:'Sarabun',Arial,sans-serif;background:#fff;margin:0;padding:20px;color:#1c2b3a;font-size:10pt;}
-      .header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #c9a84c;padding-bottom:10px;margin-bottom:16px;}
-      .org{font-size:8pt;font-weight:700;letter-spacing:2px;color:#9a7a2e;text-transform:uppercase;}
-      h1{font-size:18pt;margin:4px 0 0;color:#1c2b3a;}
-      .date-lbl{font-size:9pt;color:#8a9bb0;}
-      .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px;}
-      .kpi{border:1px solid #e0d8cc;border-radius:8px;padding:12px;text-align:center;border-bottom:3px solid var(--c);}
-      .kpi-icon{font-size:16pt;margin-bottom:4px;}
-      .kpi-num{font-size:22pt;font-weight:700;color:var(--c);line-height:1;}
+      *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;box-sizing:border-box;}
+      @page{size:A3 landscape;margin:10mm 12mm;}
+      body{font-family:'Sarabun',Arial,sans-serif;background:#fff;margin:0;padding:16px 20px;color:#1c2b3a;font-size:10pt;}
+      /* Header */
+      .header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #c9a84c;padding-bottom:10px;margin-bottom:14px;}
+      .org{font-size:8pt;font-weight:700;letter-spacing:2px;color:#9a7a2e;text-transform:uppercase;margin-bottom:3px;}
+      h1{font-size:17pt;margin:0;color:#1c2b3a;font-family:'Playfair Display','Georgia',serif;}
+      .date-lbl{font-size:9pt;color:#8a9bb0;text-align:right;}
+      /* KPI row */
+      .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px;}
+      .kpi{border:1px solid #e0d8cc;border-radius:8px;padding:10px 8px;text-align:center;position:relative;overflow:hidden;}
+      .kpi::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--c);}
+      .kpi-icon{font-size:18pt;margin-bottom:4px;display:block;}
+      .kpi-num{font-size:22pt;font-weight:700;color:var(--c);line-height:1;font-family:'DM Mono',monospace,Arial;}
       .kpi-lbl{font-size:7pt;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8a9bb0;margin-top:3px;}
-      .charts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
-      .chart-box{border:1px solid #e0d8cc;border-radius:8px;padding:14px;}
-      .chart-title{font-size:7pt;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#9a7a2e;margin-bottom:10px;}
-      .chart-inner{display:flex;align-items:center;gap:16px;}
-      .legend{display:flex;flex-direction:column;gap:4px;flex:1;}
+      /* Charts */
+      .charts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+      .chart-box{border:1px solid #e0d8cc;border-radius:8px;padding:12px;}
+      .chart-title{font-size:7pt;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#9a7a2e;margin-bottom:8px;}
+      .chart-inner{display:flex;align-items:center;gap:14px;}
+      .legend{display:flex;flex-direction:column;gap:5px;flex:1;}
       .legend-item{display:flex;align-items:center;justify-content:space-between;font-size:8pt;}
-      .legend-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0;margin-right:6px;}
-      .matrix-title{background:#1c2b3a;color:#fff;text-align:center;padding:8px;font-size:11pt;font-weight:700;border-radius:4px 4px 0 0;letter-spacing:1px;}
-      table{width:100%;border-collapse:collapse;font-size:8.5pt;}
-      thead th:first-child{background:#eef0f5;color:#1c2b3a;font-weight:700;}
-      .footer{display:flex;justify-content:space-between;font-size:7pt;color:#aaa;margin-top:12px;padding-top:8px;border-top:0.5px solid #eee;}
+      .legend-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0;margin-right:7px;display:inline-block;}
+      /* Matrix */
+      .matrix-header{background:#1c2b3a;color:#fff;text-align:center;padding:9px 14px;font-size:11pt;font-weight:700;letter-spacing:1px;margin-bottom:0;border-radius:6px 6px 0 0;}
+      table{width:100%;border-collapse:collapse;font-size:8pt;}
+      table thead th{padding:7px 10px;font-size:8pt;font-weight:700;text-align:center;color:#fff;border:0.5px solid rgba(255,255,255,.25);}
+      table thead th.cat-head{background:#eef0f5;color:#1c2b3a;text-align:left;font-weight:700;}
+      table tbody td{border:0.5px solid rgba(200,200,200,.6);padding:6px 8px;vertical-align:top;font-size:7.5pt;}
+      table tbody td.cat-lbl{background:#eef0f5;color:#1c2b3a;font-weight:700;font-size:9pt;vertical-align:middle;white-space:nowrap;border:0.5px solid #dde2ea;}
+      .item{margin-bottom:2px;line-height:1.5;color:#1c2b3a;}
+      .item-idea{color:#c9a84c;font-style:italic;}
+      /* Stage header colors */
+      th.s-idea{background:#c9a84c;}
+      th.s-prop{background:#b8953a;}
+      th.s-exec{background:#1c2b3a;}
+      th.s-clos{background:#2c3e50;}
+      th.s-res {background:#6aaa3f;}
+      /* Stage cell backgrounds */
+      td.s-idea{background:#f5f0e0;}
+      td.s-prop{background:#f0e8cc;}
+      td.s-exec{background:#e8edf5;}
+      td.s-clos{background:#dde4f0;}
+      td.s-res {background:#edf5e8;}
+      /* Footer */
+      .footer{display:flex;justify-content:space-between;font-size:7pt;color:#aaa;margin-top:10px;padding-top:6px;border-top:0.5px solid #eee;}
     </style></head><body>
     <div class="header">
-      <div><div class="org">Executive Summary · Auto Generated</div><h1>Project Portfolio Summary</h1></div>
-      <div style="text-align:right"><div class="date-lbl">รายงาน ณ วันที่ ${dateStr}</div></div>
+      <div>
+        <div class="org">Executive Summary · Auto Generated</div>
+        <h1>Project Portfolio Summary</h1>
+      </div>
+      <div class="date-lbl">รายงาน ณ วันที่ ${dateStr}</div>
     </div>
     <div class="kpi-row">
-      <div class="kpi" style="--c:#c9a84c"><div class="kpi-icon">📁</div><div class="kpi-num">${total}</div><div class="kpi-lbl">Total Projects</div></div>
-      <div class="kpi" style="--c:#c87a00"><div class="kpi-icon">💡</div><div class="kpi-num">${preP}</div><div class="kpi-lbl">Pre-Projects</div></div>
-      <div class="kpi" style="--c:#1a6fa8"><div class="kpi-icon">⚙️</div><div class="kpi-num">${ongoP}</div><div class="kpi-lbl">On-Going Projects</div></div>
-      <div class="kpi" style="--c:#1a7a4a"><div class="kpi-icon">🏁</div><div class="kpi-num">${doneP}</div><div class="kpi-lbl">Completed</div></div>
-      <div class="kpi" style="--c:#c9a84c"><div class="kpi-icon">💰</div><div class="kpi-num">${fmtBudget(totalBudget)}</div><div class="kpi-lbl">Total Budget</div></div>
+      <div class="kpi" style="--c:#c9a84c"><span class="kpi-icon">📁</span><div class="kpi-num">${total}</div><div class="kpi-lbl">Total Projects</div></div>
+      <div class="kpi" style="--c:#c87a00"><span class="kpi-icon">💡</span><div class="kpi-num">${preP}</div><div class="kpi-lbl">Pre-Projects</div></div>
+      <div class="kpi" style="--c:#1a6fa8"><span class="kpi-icon">⚙️</span><div class="kpi-num">${ongoP}</div><div class="kpi-lbl">On-Going Projects</div></div>
+      <div class="kpi" style="--c:#1a7a4a"><span class="kpi-icon">🏁</span><div class="kpi-num">${doneP}</div><div class="kpi-lbl">Completed</div></div>
+      <div class="kpi" style="--c:#c9a84c"><span class="kpi-icon">💰</span><div class="kpi-num">${fmtBudget(totalBudget)}</div><div class="kpi-lbl">Total Budget</div></div>
     </div>
     <div class="charts">
       <div class="chart-box">
         <div class="chart-title">📊 Project by Category</div>
         <div class="chart-inner">
           <svg width="100" height="100" viewBox="0 0 100 100">${donut(catData,50,50,40)}</svg>
-          <div class="legend">${catData.map(d=>`<div class="legend-item"><span style="display:flex;align-items:center"><span class="legend-dot" style="background:${d.col}"></span>${d.lbl}</span><b>${d.n}</b></div>`).join('')}</div>
+          <div class="legend">${catData.map(d=>`<div class="legend-item"><span><span class="legend-dot" style="background:${d.col}"></span>${d.lbl}</span><b>${d.n}</b></div>`).join('')}</div>
         </div>
       </div>
       <div class="chart-box">
         <div class="chart-title">📊 Project by Status</div>
         <div class="chart-inner">
           <svg width="100" height="100" viewBox="0 0 100 100">${donut(statData,50,50,40)}</svg>
-          <div class="legend">${statData.map(d=>`<div class="legend-item"><span style="display:flex;align-items:center"><span class="legend-dot" style="background:${d.col}"></span>${d.lbl}</span><b>${d.n}</b></div>`).join('')}</div>
+          <div class="legend">${statData.map(d=>`<div class="legend-item"><span><span class="legend-dot" style="background:${d.col}"></span>${d.lbl}</span><b>${d.n}</b></div>`).join('')}</div>
         </div>
       </div>
     </div>
-    <div class="matrix-title">LIST OF PROJECTS : ${monthStr}</div>
+    <div class="matrix-header">LIST OF PROJECTS : ${monthStr}</div>
     <table>
       <thead><tr>
-        <th style="background:#eef0f5;padding:7px 10px;width:90px;text-align:left;border:0.5px solid #dde2ea;font-size:8pt"></th>
-        ${STAGE_LBLS.map((l,i)=>`<th style="background:${STAGE_COLS[i]};color:#fff;padding:7px 12px;text-align:center;font-size:8pt;border:0.5px solid rgba(255,255,255,.2)">${l}</th>`).join('')}
+        <th class="cat-head" style="width:90px"></th>
+        <th class="s-idea">Idea Pitching</th>
+        <th class="s-prop">Project Proposal</th>
+        <th class="s-exec">Execution</th>
+        <th class="s-clos">Closing</th>
+        <th class="s-res">Result Follow</th>
       </tr></thead>
-      <tbody>${matRows||'<tr><td colspan="6" style="padding:20px;text-align:center;color:#8a9bb0">ยังไม่มีข้อมูลโครงการ</td></tr>'}</tbody>
+      <tbody>
+        ${activeCats.map(cat=>`<tr>
+          <td class="cat-lbl">${PCAT_LBL[cat]||cat}</td>
+          ${['idea','prop','exec','clos','res'].map((sk,si)=>{
+            const items=mx[cat]?mx[cat][sk]||[]:[];
+            const cls=['s-idea','s-prop','s-exec','s-clos','s-res'][si];
+            return`<td class="${cls}">${items.map(p=>p.isIdea
+              ?`<div class="item item-idea">💡 ${p.name||''}</div>`
+              :`<div class="item">• ${p.name||p.id||''}</div>`
+            ).join('')}</td>`;
+          }).join('')}
+        </tr>`).join('')||'<tr><td colspan="6" style="padding:20px;text-align:center;color:#8a9bb0">ยังไม่มีข้อมูลโครงการ</td></tr>'}
+      </tbody>
     </table>
     <div class="footer">
       <span>Project Portfolio Summary · Confidential</span>
