@@ -1051,7 +1051,7 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
       <div class="tsep"></div>
       <button class="btn b-out" onclick="undoP()" id="undoBtn" title="ย้อนกลับ (Ctrl+Z)" style="min-width:36px">◀ Undo</button>
       <button class="btn b-out" onclick="redoP()" id="redoBtn" title="เดินหน้า (Ctrl+Y)" style="min-width:36px">Redo ▶</button>
-      <button class="btn b-out" onclick="fullRefresh()" title="โหลดข้อมูลใหม่ทั้งหมด">🔄 Refresh</button>
+      <button class="btn b-out" onclick="fullRefreshAndGenIds()" title="โหลดข้อมูลใหม่ + Generate ID อัตโนมัติ">🔄 Refresh & Generate ID</button>
       <div class="tsep"></div>
       <button class="btn b-out" onclick="expCSV()">⬇ Export CSV</button>
       <button class="btn b-out" onclick="$('impCSV').click()">⬆ Import CSV</button>
@@ -2207,14 +2207,21 @@ function upd(i,f,v){
   if(f==='pct')v=Math.min(100,Math.max(0,+v||0));
   pushUndo();
   P[i][f]=v;
-  // Auto-regenerate ID when pcat or owner changes (only if ID looks auto-generated or is empty)
-  if(f==='pcat'||f==='owner'){
+  // Auto-generate ID whenever data changes — if ID is missing or has ???
+  const needsId=!P[i].id||P[i].id.includes('???')||P[i].id.startsWith('PRJ-');
+  const hasEnough=P[i].pcat&&(P[i].owner||'').trim();
+  if(needsId&&hasEnough){
+    P[i].id=genProjectId(P[i].pcat,P[i].owner,i);
+    // update id cell in DOM directly
+    const idDiv=document.querySelector(`#r${i} td:nth-child(2) div[title="Project ID (auto)"]`);
+    if(idDiv)idDiv.textContent=P[i].id;
+  } else if(f==='pcat'||f==='owner'){
+    // Re-generate even if has ID (update to reflect new category/owner)
     const autoPattern=/^\d{4}_[A-Z]+_\d{3}_/;
-    if(!P[i].id||autoPattern.test(P[i].id)){
+    if(!P[i].id||autoPattern.test(P[i].id)||P[i].id.includes('???')){
       P[i].id=genProjectId(P[i].pcat,P[i].owner,i);
-      // update the id input field directly
-      const idInput=document.querySelector(`#r${i} input[placeholder="PRJ-001"]`)||document.querySelector(`#r${i} td:nth-child(2) input`);
-      if(idInput)idInput.value=P[i].id;
+      const idDiv=document.querySelector(`#r${i} td:nth-child(2) div[title="Project ID (auto)"]`);
+      if(idDiv)idDiv.textContent=P[i].id;
     }
   }
   // Auto: when rpe is set and rps is empty → rps = pe (Revised Start = Plan End)
@@ -2269,11 +2276,17 @@ function refreshIds(){
   P.forEach((p,i)=>{
     globalRun++;
     const catCode=catMap[p.pcat||'']||'GEN';
-    const firstName=(p.owner||'').trim().split(/\s+/)[0]||'???';
-    P[i].id=year+'_'+catCode+'_'+String(globalRun).padStart(3,'0')+'_'+firstName;
+    const raw=(p.owner||'').trim();
+    const firstName=raw?raw.split(/\s+/)[0]:'???';
+    // Only regenerate if ID is missing, has ???, or is old PRJ- format
+    const needRegen=!p.id||p.id.includes('???')||p.id.startsWith('PRJ-');
+    if(needRegen){
+      P[i].id=year+'_'+catCode+'_'+String(globalRun).padStart(3,'0')+'_'+firstName;
+    }
   });
   renderInput();sched();
   if($('panel-dash').classList.contains('on'))renderDash();
+  showToast('✅ Generate ID เรียบร้อยแล้ว','var(--green)');
 }
 
 // ── Undo / Redo ──────────────────────────────
@@ -2410,15 +2423,41 @@ function fullRefresh(){
   try{updateStaleNav();}catch(e){}
   try{startClock();}catch(e){}
   setSave('ok');
-  // Visual feedback
-  const btn=document.querySelector('[onclick="fullRefresh()"]');
-  if(btn){
-    const orig=btn.innerHTML;
-    btn.innerHTML='✅ Refreshed!';
-    btn.style.background='var(--green)';
-    setTimeout(()=>{btn.innerHTML=orig;btn.style.background='';},1800);
-  }
-  showToast('✅ Refresh ทุกหน้าเรียบร้อยแล้ว','var(--green)');
+}
+
+async function fullRefreshAndGenIds(){
+  const btn=document.querySelector('[onclick="fullRefreshAndGenIds()"]');
+  if(btn){btn.innerHTML='⏳ กำลัง...';btn.disabled=true;}
+  // Reload from server
+  await load();
+  TODAY=new Date();TODAY.setHours(0,0,0,0);
+  const ti=$('tdInput');if(ti)ti.value=fi(TODAY);
+  // Generate IDs for any row missing or has ???
+  const year=TODAY.getFullYear();
+  const catMap={ENE:'ENE',CST:'C',QLT:'Q',PRD:'P',SAF:'S',MRL:'M',ENV:'E','':'GEN'};
+  let fixed=0;
+  let globalRun=0;
+  P.forEach((p,i)=>{
+    globalRun++;
+    const needsId=!p.id||p.id.includes('???')||p.id.startsWith('PRJ-');
+    if(needsId){
+      const catCode=catMap[p.pcat||'']||'GEN';
+      const firstName=(p.owner||'').trim().split(/\s+/)[0]||'???';
+      P[i].id=year+'_'+catCode+'_'+String(globalRun).padStart(3,'0')+'_'+firstName;
+      fixed++;
+    }
+  });
+  if(fixed>0)await save();
+  // Re-render all
+  try{renderInput();}catch(e){}
+  try{renderDash();}catch(e){}
+  try{renderIdeas();}catch(e){}
+  try{renderSummary();}catch(e){}
+  try{checkAdminNotif();}catch(e){}
+  try{updateStaleNav();}catch(e){}
+  setSave('ok');
+  if(btn){btn.innerHTML='🔄 Refresh & Generate ID';btn.disabled=false;}
+  showToast(fixed>0?`✅ Refresh + Generate ID สำเร็จ (แก้ ${fixed} รายการ)`:'✅ Refresh เรียบร้อยแล้ว','var(--green)');
 }
 function expCSV(){const h='Project ID,Project Name,Category,Project Owner,Status,Progress %,Plan Start,Plan End,Actual Start,Actual End';const rows=P.map(p=>[p.id,p.name,p.pcat||'',p.owner,p.status,p.pct,p.ps||'',p.pe||'',p.as_||'',p.ae||''].map(v=>`"${v}"`).join(','));dl('\uFEFF'+[h,...rows].join('\n'),'text/csv','Gantt_'+fi(TODAY)+'.csv');}
 function impFromCSV(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const lines=ev.target.result.trim().split(/\r?\n/);const hdrs=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,'').toLowerCase());const ix={};hdrs.forEach((h,i)=>{if(/project.?id|^id$/i.test(h))ix.id=i;if(/project.?name|^name$/i.test(h))ix.name=i;if(/category|pcat/i.test(h))ix.pcat=i;if(/owner/i.test(h))ix.owner=i;if(/^status$/i.test(h))ix.status=i;if(/progress/i.test(h))ix.pct=i;if(/plan.?start/i.test(h))ix.ps=i;if(/plan.?end/i.test(h))ix.pe=i;if(/actual.?start/i.test(h))ix.as_=i;if(/actual.?end/i.test(h))ix.ae=i;});P=lines.slice(1).filter(l=>l.trim()).map(line=>{const v=line.split(',').map(x=>x.trim().replace(/^"|"$/g,''));const raw=parseFloat(v[ix.pct]||0);return{id:v[ix.id]||'',name:v[ix.name]||'',pcat:v[ix.pcat]||'',owner:v[ix.owner]||'',status:v[ix.status]||'Not Started',pct:raw<=1?Math.round(raw*100):Math.round(raw),ps:v[ix.ps]||'',pe:v[ix.pe]||'',as_:v[ix.as_]||'',ae:v[ix.ae]||''};}).filter(p=>p.id);renderInput();save();renderDash();}catch(err){alert('Error: '+err.message);}e.target.value='';};r.readAsText(f,'UTF-8');}
