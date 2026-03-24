@@ -205,6 +205,23 @@ def users_update(uid):
     return jsonify({'success': True, 'user': u.to_dict()})
 
 
+@app.route('/api/users/<uid>/password', methods=['PUT'])
+def users_reset_password(uid):
+    """Admin resets a user's password"""
+    if not _is_admin():
+        return jsonify({'error': 'Unauthorized'}), 403
+    u = User.query.get(uid)
+    if not u:
+        return jsonify({'error': 'Not found'}), 404
+    body = request.get_json() or {}
+    password = body.get('password') or ''
+    if len(password) < 6:
+        return jsonify({'success': False, 'error': 'Password ต้องมีอย่างน้อย 6 ตัวอักษร'})
+    u.password_hash = generate_password_hash(password)
+    db.session.commit()
+    return jsonify({'success': True})
+
+
 @app.route('/api/users/<uid>', methods=['DELETE'])
 def users_delete(uid):
     if not _is_admin():
@@ -243,13 +260,13 @@ def data_save():
     for p in projects:
         pid = p.get('id')
         if pid:
-            db.session.add(Project(id=pid, data=json.dumps(p)))
+            db.session.add(Project(id=pid, data=json.dumps(p, ensure_ascii=False)))
 
     db.session.query(Idea).delete()
     for idea in ideas:
         iid = idea.get('id')
         if iid:
-            db.session.add(Idea(id=iid, data=json.dumps(idea)))
+            db.session.add(Idea(id=iid, data=json.dumps(idea, ensure_ascii=False)))
 
     db.session.commit()
     return jsonify({'success': True})
@@ -263,3 +280,9 @@ def serve_frontend(path):
     if path and os.path.exists(os.path.join(app.static_folder, path)):
         return send_from_directory(app.static_folder, path)
     return send_from_directory(app.static_folder, 'index.html')
+
+
+# ─── Init DB ──────────────────────────────────────────────────────────────────
+
+with app.app_context():
+    db.create_all()
