@@ -140,7 +140,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 .b-pdf:hover{background:rgba(192,57,43,.22);border-color:#e87060;color:#fff}
 
 /* ── Summary Matrix ── */
-.sum-matrix{width:100%;border-collapse:separate;border-spacing:0;font-family:'Sarabun',sans-serif;font-size:12px;table-layout:fixed}
+.sum-matrix{width:100%;border-collapse:separate;border-spacing:0;font-family:'Sarabun',sans-serif;font-size:12px}
 .sum-matrix th{padding:10px 14px;font-size:10px;font-weight:700;letter-spacing:.5px;text-align:center;color:#fff;position:relative}
 .sum-stage-idea{background:#c9a84c}
 .sum-stage-prop{background:#c9a84c;opacity:.75}
@@ -150,15 +150,15 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 /* arrow chevron on stage headers */
 .sum-matrix th .chv{position:absolute;right:-11px;top:0;bottom:0;width:22px;overflow:hidden;z-index:2}
 .sum-matrix th .chv::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%) rotate(45deg);width:18px;height:18px;background:inherit}
-.sum-cat-lbl{padding:14px 16px;font-size:14px;font-weight:600;color:#1c2b3a;background:#eef0f5;border-bottom:1px solid #dde2ea;vertical-align:middle;min-width:110px;width:130px}
-.sum-cell{padding:10px 14px;vertical-align:top;border:1px solid rgba(255,255,255,.6);font-size:11px;line-height:1.6;word-break:break-word;overflow-wrap:break-word}
+.sum-cat-lbl{padding:14px 16px;font-size:14px;font-weight:600;color:#1c2b3a;background:#eef0f5;border-bottom:1px solid #dde2ea;vertical-align:middle;min-width:110px}
+.sum-cell{padding:10px 14px;vertical-align:top;border:1px solid rgba(255,255,255,.6);font-size:11px;line-height:1.6}
 .sum-cell-idea{background:#f5f0e0}
 .sum-cell-prop{background:#f5f0e0;opacity:.85}
 .sum-cell-exec{background:#e8edf5}
 .sum-cell-clos{background:#e4eaf5}
 .sum-cell-res {background:#edf5e8}
 .sum-cell ul{margin:0;padding-left:16px;list-style:disc}
-.sum-cell ul li{margin-bottom:2px;color:#1c2b3a;word-break:break-word}
+.sum-cell ul li{margin-bottom:2px;color:#1c2b3a}
 .sum-cell ul li.idea-li{color:#c9a84c;font-style:italic}
 .sum-kpi-card{background:var(--white);border:1px solid var(--div);border-radius:14px;padding:20px 22px 16px;box-shadow:var(--sh);text-align:center;position:relative;overflow:hidden}
 .sum-kpi-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:4px}
@@ -1063,7 +1063,7 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
       <div class="today-grp">
         <label>📅 Today:</label>
         <input type="date" id="tdInput" onchange="chgToday()">
-        <span class="log-clock" id="liveClock" style="margin-left:4px;padding:4px 8px;background:var(--cream);border-radius:6px;border:1px solid var(--div)"></span>
+        <span class="log-clock" id="liveClock" style="margin-left:8px;padding:5px 12px;background:var(--navy);color:var(--gold);border-radius:6px;border:1px solid rgba(201,168,76,.4);font-size:13px;font-weight:700;min-width:76px;text-align:center;letter-spacing:1px;display:inline-block"></span>
       </div>
     </div>
     <div class="tw"><table class="itable" style="min-width:980px">
@@ -1491,18 +1491,20 @@ const ADMIN_USER = {id:'__admin__',username:'admin',password:'admin2026',name:'S
 
 function getUsers(){return USERS_CACHE.filter(u=>u.id!=='__admin__');}
 function saveUsers(us){
-  // saveUsers ใช้สำหรับ update cache เท่านั้น — API calls ทำผ่าน approveUser/rejectUser/deleteUser/changeRole
   USERS_CACHE=[ADMIN_USER,...us];
+  try{localStorage.setItem(UK,JSON.stringify(us));}catch(e){}
 }
 function getAllUsers(){return USERS_CACHE;}
 function getPendingCount(){return getUsers().filter(u=>u.status==='pending').length;}
 async function refreshUsers(){
-  try{
-    const r=await fetch('/api/users',{credentials:'same-origin'});
-    if(r.ok){const d=await r.json();USERS_CACHE=[ADMIN_USER,...d];}
-  }catch(e){}
+  // Load from localStorage (GitHub Pages & Render)
+  try{const s=localStorage.getItem(UK);if(s){const d=JSON.parse(s);USERS_CACHE=[ADMIN_USER,...d];}}catch(e){}
+  // Try server (Render only)
+  try{const r=await fetch('/api/users',{credentials:'same-origin'});if(r.ok){const d=await r.json();USERS_CACHE=[ADMIN_USER,...d];}}catch(e){}
 }
 
+let USERS_CACHE=[ADMIN_USER];
+let _pendingSyncData=null;
 let currentUser=null;
 let adminTab='pending';
 
@@ -1518,20 +1520,22 @@ function showAuthTab(t){
 }
 
 // ── LOGIN ─────────────────────────────────────
-function doLogin(){
+async function doLogin(){
   const u=$('lUser').value.trim(), p=$('lPass').value;
   const remember=$('rememberMe')?.checked||false;
   if(!u||!p){showErr('loginErr','กรุณากรอก username และ password');return;}
 
-  // Check built-in admin FIRST — cannot be overridden by localStorage
+  // Check built-in admin FIRST
   if(u===ADMIN_USER.username && p===ADMIN_USER.password){
     saveRemembered(u,p,remember);
     currentUser=ADMIN_USER;
-    showAdminBox();
+    try{await fetch('/api/auth/login',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});}catch(e){}
+    await showAdminBox();
     return;
   }
 
-  // Check registered users
+  // Check registered users (localStorage)
+  await refreshUsers();
   const users=getUsers();
   const found=users.find(x=>x.username===u && x.password===p);
   if(!found){showErr('loginErr','Username หรือ Password ไม่ถูกต้อง');return;}
@@ -1548,9 +1552,9 @@ function doLogin(){
   saveRemembered(u,p,remember);
   currentUser=found;
   if(found.role==='Admin'){
-    showAdminBox();
+    await showAdminBox();
   } else {
-    enterApp();
+    await enterApp();
   }
 }
 
@@ -1574,27 +1578,30 @@ function clearConflict(){
   }catch(e){alert('Error: '+e.message);}
 }
 
-function showAdminBox(){
+async function showAdminBox(){
   try{
+    await refreshUsers();
     $('authScreen').classList.add('hidden');
     $('mainApp').classList.add('show');
     applyRole();
-    load();
+    await load();
     $('tdInput').value=fi(TODAY);
     renderInput();
     renderDash();
     renderIdeas();
     startClock();
     sw('summary');
+    renderAdminPanel();
   }catch(e){console.error('showAdminBox error:',e);}
 }
 
-function enterApp(){
+async function enterApp(){
   try{
+    await refreshUsers();
     $('authScreen').classList.add('hidden');
     $('mainApp').classList.add('show');
     applyRole();
-    load();
+    await load();
     $('tdInput').value=fi(TODAY);
     renderInput();
     renderDash();
@@ -1611,13 +1618,20 @@ function startClock(){
   if(_clockStarted)return;
   _clockStarted=true;
   function tick(){
-    const el=$('liveClock');if(!el)return;
+    const el=document.getElementById('liveClock');
+    if(!el){setTimeout(tick,300);return;}
     const now=new Date();
     const pad=n=>String(n).padStart(2,'0');
     el.textContent=pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
   }
   tick();
-  setInterval(tick,1000);
+  setInterval(()=>{
+    const el=document.getElementById('liveClock');
+    if(!el)return;
+    const now=new Date();
+    const pad=n=>String(n).padStart(2,'0');
+    el.textContent=pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
+  },1000);
 }
 
 // ── REGISTER ─────────────────────────────────
@@ -2066,23 +2080,22 @@ function staleDays(p){
 // ══════════════════════════════════════════════
 async function save(){
   setSave('go');
-  try{
-    await fetch('/api/data',{method:'PUT',credentials:'same-origin',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({projects:P,ideas:IDEAS})});
-  }catch(e){}
+  // บันทึก localStorage เสมอ (ทำงานทั้ง GitHub Pages และ Render)
+  try{localStorage.setItem(SK,JSON.stringify(P));localStorage.setItem(IK,JSON.stringify(IDEAS));}catch(e){}
+  // ลอง server (Render) — ถ้าไม่มีก็ไม่เป็นไร
+  try{await fetch('/api/data',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({projects:P,ideas:IDEAS})});}catch(e){}
   setSave('ok');
 }
 async function load(){
   TODAY=new Date();TODAY.setHours(0,0,0,0);
+  // ลอง server ก่อน (Render)
   try{
     const r=await fetch('/api/data',{credentials:'same-origin'});
-    if(r.ok){
-      const d=await r.json();
-      if(d.projects&&d.projects.length)P=d.projects;
-      if(d.ideas&&d.ideas.length)IDEAS=d.ideas;
-    }
-  }catch(e){P=[];IDEAS=[];}
+    if(r.ok){const d=await r.json();if(d.projects&&d.projects.length)P=d.projects;if(d.ideas&&d.ideas.length)IDEAS=d.ideas;}
+  }catch(e){}
+  // localStorage fallback (GitHub Pages)
+  if(!P.length){try{const s=localStorage.getItem(SK);if(s)P=JSON.parse(s);}catch(e){}}
+  if(!IDEAS.length){try{const s=localStorage.getItem(IK);if(s)IDEAS=JSON.parse(s);}catch(e){}}
   if(!P.length)loadDemoP();if(!IDEAS.length)loadDemoI();
 }
 function loadDemoP(){P=[
@@ -2135,6 +2148,7 @@ function sw(t){
   try{if(t==='summary')renderSummary();}catch(e){console.error('renderSummary:',e);}
   try{if(t==='idea')renderIdeas();}catch(e){console.error('renderIdeas:',e);}
   try{if(t==='admin')renderAdminPanel();}catch(e){console.error('renderAdminPanel:',e);}
+  if(t==='inp')startClock();
 }
 
 // ══════════════════════════════════════════════
@@ -2701,7 +2715,7 @@ function renderSummary(){
     {icon:'💡',num:preP,lbl:'Pre-Projects',col:'var(--amber)'},
     {icon:'⚙️',num:ongoingP,lbl:'On-Going Projects',col:'var(--blue)'},
     {icon:'🏁',num:doneP,lbl:'Completed',col:'var(--green)'},
-    {icon:'💰',num:totalBudget?'฿'+Number(Math.round(totalBudget/1000)).toLocaleString('en-US')+'K':'—',lbl:'Total Budget',col:'var(--gold-d)',raw:true},
+    {icon:'💰',num:totalBudget?'฿'+Math.round(totalBudget/1000)+'K':'—',lbl:'Total Budget',col:'var(--gold-d)',raw:true},
   ];
   const kr=$('sumKpiRow');
   if(kr)kr.innerHTML=kpiData.map((k,i)=>{
@@ -2821,7 +2835,7 @@ async function exportSummaryPDF(){
     const ongoP=P.filter(p=>['exec','clos'].includes(stageOf(p))).length;
     const doneP=P.filter(p=>stageOf(p)==='res').length;
     const totalBudget=P.reduce((a,p)=>a+(+p.budget||0),0);
-    const fmtBudget=v=>v>=1000000?'฿'+(v/1000000).toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1})+'M':v>=1000?'฿'+Math.round(v/1000).toLocaleString('en-US')+'K':'฿'+v.toLocaleString('en-US');
+    const fmtBudget=v=>v>=1000000?'฿'+(v/1000000).toFixed(1)+'M':v>=1000?'฿'+(v/1000).toFixed(0)+'K':'฿'+v;
 
     // Category counts
     const catCnt={};P.forEach(p=>{const k=p.pcat||'';catCnt[k]=(catCnt[k]||0)+1;});
