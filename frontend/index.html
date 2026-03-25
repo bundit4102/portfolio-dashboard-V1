@@ -1063,7 +1063,7 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
       <div class="today-grp">
         <label>📅 Today:</label>
         <input type="date" id="tdInput" onchange="chgToday()">
-        <span class="log-clock" id="liveClock" style="margin-left:4px;padding:4px 8px;background:var(--cream);border-radius:6px;border:1px solid var(--div)"></span>
+        <span class="log-clock" id="liveClock" style="margin-left:6px;padding:5px 10px;background:var(--navy);color:var(--gold);border-radius:6px;border:1px solid rgba(201,168,76,.3);font-size:12px;font-weight:700;min-width:72px;text-align:center;letter-spacing:1px"></span>
       </div>
     </div>
     <div class="tw"><table class="itable" style="min-width:980px">
@@ -1492,18 +1492,21 @@ const ADMIN_USER = {id:'__admin__',username:'admin',password:'admin2026',name:'S
 function getUsers(){return USERS_CACHE.filter(u=>u.id!=='__admin__');}
 function saveUsers(us){
   USERS_CACHE=[ADMIN_USER,...us];
-  // Persist to localStorage (works on GitHub Pages and Render)
   try{localStorage.setItem(UK,JSON.stringify(us));}catch(e){}
 }
 function getAllUsers(){return USERS_CACHE;}
 function getPendingCount(){return getUsers().filter(u=>u.status==='pending').length;}
 async function refreshUsers(){
-  // GitHub Pages mode: load from localStorage
+  // Load from localStorage first (works on GitHub Pages)
   try{
     const stored=localStorage.getItem(UK);
-    const users=stored?JSON.parse(stored):[];
-    USERS_CACHE=[ADMIN_USER,...users];
-  }catch(e){USERS_CACHE=[ADMIN_USER];}
+    if(stored){const d=JSON.parse(stored);USERS_CACHE=[ADMIN_USER,...d];}
+  }catch(e){}
+  // Try server too (Render) — update cache if available
+  try{
+    const r=await fetch('/api/users',{credentials:'same-origin'});
+    if(r.ok){const d=await r.json();USERS_CACHE=[ADMIN_USER,...d];}
+  }catch(e){}
 }
 
 let currentUser=null;
@@ -1614,7 +1617,8 @@ function startClock(){
   if(_clockStarted)return;
   _clockStarted=true;
   function tick(){
-    const el=$('liveClock');if(!el)return;
+    const el=document.getElementById('liveClock');
+    if(!el){setTimeout(tick,500);return;}
     const now=new Date();
     const pad=n=>String(n).padStart(2,'0');
     el.textContent=pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
@@ -1745,12 +1749,13 @@ function setAdmFilter(f){
 }
 
 function renderAdminPanel(){
-  const all=getAllUsers();
+  const all=getAllUsers(); // includes __admin__
   const query=($('userSearch')?.value||'').toLowerCase();
-  // KPIs
-  const pend=all.filter(u=>u.status==='pending').length;
-  const appr=all.filter(u=>u.status==='approved').length;
-  const rejd=all.filter(u=>u.status==='rejected').length;
+  // KPIs — count non-admin users only for pending/approved/rejected
+  const nonAdmin=all.filter(u=>u.id!=='__admin__');
+  const pend=nonAdmin.filter(u=>u.status==='pending').length;
+  const appr=nonAdmin.filter(u=>u.status==='approved').length;
+  const rejd=nonAdmin.filter(u=>u.status==='rejected').length;
   $('au-total').textContent=all.length;
   $('au-pending').textContent=pend;
   $('au-approved').textContent=appr;
@@ -1920,27 +1925,23 @@ async function confirmResetPw(id){
   const pw=document.getElementById('_newPw')?.value||'';
   const pw2=document.getElementById('_newPw2')?.value||'';
   const errEl=document.getElementById('_resetErr');
-  const showErrMsg=msg=>{if(errEl){errEl.textContent=msg;errEl.style.display='block';}};
-  if(!pw){showErrMsg('กรุณากรอก Password ใหม่');return;}
-  if(pw.length<6){showErrMsg('Password ต้องมีอย่างน้อย 6 ตัวอักษร');return;}
-  if(pw!==pw2){showErrMsg('Password ไม่ตรงกัน');return;}
-  // Update in localStorage
-  const users=getUsers();
-  const u=users.find(x=>x.id===id);
-  if(!u){showErrMsg('ไม่พบผู้ใช้');return;}
-  u.password=pw;
-  saveUsers(users);
-  // Try server too (Render) — ignore if fails
+  const showErr=msg=>{if(errEl){errEl.textContent=msg;errEl.style.display='block';}};
+  if(!pw){showErr('กรุณากรอก Password ใหม่');return;}
+  if(pw.length<6){showErr('Password ต้องมีอย่างน้อย 6 ตัวอักษร');return;}
+  if(pw!==pw2){showErr('Password ไม่ตรงกัน');return;}
   try{
-    await fetch(`/api/users/${id}/password`,{
+    const res=await fetch(`/api/users/${id}/password`,{
       method:'PUT',credentials:'same-origin',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({password:pw})
     });
-  }catch(e){}
-  logActivity('🔑','rgba(200,122,0,.1)',`Reset password ให้ <strong>${u.name} (@${u.username})</strong>`);
+    const data=await res.json();
+    if(!data.success){showErr(data.error||'เกิดข้อผิดพลาด');return;}
+  }catch(e){showErr('ไม่สามารถเชื่อมต่อ Server ได้');return;}
+  const u=getUsers().find(x=>x.id===id);
+  if(u)logActivity('🔑','rgba(200,122,0,.1)',`Reset password ให้ <strong>${u.name} (@${u.username})</strong>`);
   document.getElementById('_resetModal')?.remove();
-  showToast('✅ Reset Password เรียบร้อยแล้ว!','var(--green)');
+  showToast('✅ Reset Password เรียบร้อยแล้ว! แจ้ง user ได้เลย','var(--green)');
   renderAdminPanel();
 }
 
@@ -2074,32 +2075,23 @@ function staleDays(p){
 async function save(){
   setSave('go');
   try{
-    localStorage.setItem(SK,JSON.stringify(P));
-    localStorage.setItem(IK,JSON.stringify(IDEAS));
-    // Try server too (Render) — ignore if fails (GitHub Pages)
     await fetch('/api/data',{method:'PUT',credentials:'same-origin',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({projects:P,ideas:IDEAS})}).catch(()=>{});
+      body:JSON.stringify({projects:P,ideas:IDEAS})});
   }catch(e){}
   setSave('ok');
 }
 async function load(){
   TODAY=new Date();TODAY.setHours(0,0,0,0);
-  // Try server first (Render), fallback to localStorage (GitHub Pages)
-  let loaded=false;
   try{
     const r=await fetch('/api/data',{credentials:'same-origin'});
     if(r.ok){
       const d=await r.json();
-      if(d.projects&&d.projects.length){P=d.projects;loaded=true;}
-      if(d.ideas&&d.ideas.length){IDEAS=d.ideas;loaded=true;}
+      if(d.projects&&d.projects.length)P=d.projects;
+      if(d.ideas&&d.ideas.length)IDEAS=d.ideas;
     }
-  }catch(e){}
-  // localStorage fallback
-  if(!P.length){try{const s=localStorage.getItem(SK);if(s){P=JSON.parse(s);loaded=true;}}catch(e){}}
-  if(!IDEAS.length){try{const s=localStorage.getItem(IK);if(s){IDEAS=JSON.parse(s);loaded=true;}}catch(e){}}
-  if(!P.length)loadDemoP();
-  if(!IDEAS.length)loadDemoI();
+  }catch(e){P=[];IDEAS=[];}
+  if(!P.length)loadDemoP();if(!IDEAS.length)loadDemoI();
 }
 function loadDemoP(){P=[
   {id:'PRJ-001',name:'Project Alpha',  pcat:'ENE',owner:'สมชาย ใจดี', status:'On Track',  pct:15,ps:'2026-03-01',pe:'2026-05-26',as_:'2026-03-01',ae:''},
@@ -2480,7 +2472,10 @@ async function fullRefreshAndGenIds(){
 }
 function expCSV(){const h='Project ID,Project Name,Category,Project Owner,Status,Progress %,Plan Start,Plan End,Actual Start,Actual End';const rows=P.map(p=>[p.id,p.name,p.pcat||'',p.owner,p.status,p.pct,p.ps||'',p.pe||'',p.as_||'',p.ae||''].map(v=>`"${v}"`).join(','));dl('\uFEFF'+[h,...rows].join('\n'),'text/csv','Gantt_'+fi(TODAY)+'.csv');}
 function impFromCSV(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const lines=ev.target.result.trim().split(/\r?\n/);const hdrs=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,'').toLowerCase());const ix={};hdrs.forEach((h,i)=>{if(/project.?id|^id$/i.test(h))ix.id=i;if(/project.?name|^name$/i.test(h))ix.name=i;if(/category|pcat/i.test(h))ix.pcat=i;if(/owner/i.test(h))ix.owner=i;if(/^status$/i.test(h))ix.status=i;if(/progress/i.test(h))ix.pct=i;if(/plan.?start/i.test(h))ix.ps=i;if(/plan.?end/i.test(h))ix.pe=i;if(/actual.?start/i.test(h))ix.as_=i;if(/actual.?end/i.test(h))ix.ae=i;});P=lines.slice(1).filter(l=>l.trim()).map(line=>{const v=line.split(',').map(x=>x.trim().replace(/^"|"$/g,''));const raw=parseFloat(v[ix.pct]||0);return{id:v[ix.id]||'',name:v[ix.name]||'',pcat:v[ix.pcat]||'',owner:v[ix.owner]||'',status:v[ix.status]||'Not Started',pct:raw<=1?Math.round(raw*100):Math.round(raw),ps:v[ix.ps]||'',pe:v[ix.pe]||'',as_:v[ix.as_]||'',ae:v[ix.ae]||''};}).filter(p=>p.id);renderInput();save();renderDash();}catch(err){alert('Error: '+err.message);}e.target.value='';};r.readAsText(f,'UTF-8');}
-function expJSON(){dl(JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY)},null,2),'application/json','Backup_'+fi(TODAY)+'.json');}
+function expJSON(){
+  const users=getUsers(); // non-admin users with passwords for restore
+  dl(JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY),users:users},null,2),'application/json','Backup_'+fi(TODAY)+'.json');
+}
 function impFromJSON(e){
   const f=e.target.files[0];if(!f)return;
   const r=new FileReader();
@@ -2490,11 +2485,22 @@ function impFromJSON(e){
       if(d.projects)P=d.projects;
       if(d.ideas)IDEAS=d.ideas;
       if(d.today){TODAY=new Date(d.today);TODAY.setHours(0,0,0,0);const ti=$('tdInput');if(ti)ti.value=d.today;}
+      // Restore users if present
+      if(d.users&&d.users.length){
+        const existing=getUsers();
+        const merged=[...existing];
+        d.users.forEach(u=>{
+          if(!merged.find(x=>x.username===u.username))merged.push(u);
+          else{const idx=merged.findIndex(x=>x.username===u.username);if(idx>=0){merged[idx]={...merged[idx],...u};}}
+        });
+        saveUsers(merged);
+        await refreshUsers();
+      }
       renderInput();renderDash();renderIdeas();
-      // Save ขึ้น Server ทันที
+      try{renderAdminPanel();}catch(e){}
       setSave('go');
       await save();
-      showToast('✅ Restore + บันทึกขึ้น Server สำเร็จ! ทุกเครื่องจะเห็นข้อมูลนี้','var(--green)');
+      showToast('✅ Restore สำเร็จ! (โครงการ + Users)','var(--green)');
     }catch(err){alert('Restore error: '+err.message);}
     e.target.value='';
   };
