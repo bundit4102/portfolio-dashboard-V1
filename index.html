@@ -1574,8 +1574,9 @@ function clearConflict(){
   }catch(e){alert('Error: '+e.message);}
 }
 
-function showAdminBox(){
+ async function showAdminBox(){
   try{
+     await refreshUsers();
     $('authScreen').classList.add('hidden');
     $('mainApp').classList.add('show');
     applyRole();
@@ -1589,8 +1590,9 @@ function showAdminBox(){
   }catch(e){console.error('showAdminBox error:',e);}
 }
 
-function enterApp(){
+ async function enterApp(){
   try{
+    await refreshUsers();
     $('authScreen').classList.add('hidden');
     $('mainApp').classList.add('show');
     applyRole();
