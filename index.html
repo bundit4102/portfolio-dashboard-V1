@@ -1491,16 +1491,19 @@ const ADMIN_USER = {id:'__admin__',username:'admin',password:'admin2026',name:'S
 
 function getUsers(){return USERS_CACHE.filter(u=>u.id!=='__admin__');}
 function saveUsers(us){
-  // saveUsers ใช้สำหรับ update cache เท่านั้น — API calls ทำผ่าน approveUser/rejectUser/deleteUser/changeRole
   USERS_CACHE=[ADMIN_USER,...us];
+  // Persist to localStorage (works on GitHub Pages and Render)
+  try{localStorage.setItem(UK,JSON.stringify(us));}catch(e){}
 }
 function getAllUsers(){return USERS_CACHE;}
 function getPendingCount(){return getUsers().filter(u=>u.status==='pending').length;}
 async function refreshUsers(){
+  // GitHub Pages mode: load from localStorage
   try{
-    const r=await fetch('/api/users',{credentials:'same-origin'});
-    if(r.ok){const d=await r.json();USERS_CACHE=[ADMIN_USER,...d];}
-  }catch(e){}
+    const stored=localStorage.getItem(UK);
+    const users=stored?JSON.parse(stored):[];
+    USERS_CACHE=[ADMIN_USER,...users];
+  }catch(e){USERS_CACHE=[ADMIN_USER];}
 }
 
 let currentUser=null;
@@ -1917,23 +1920,27 @@ async function confirmResetPw(id){
   const pw=document.getElementById('_newPw')?.value||'';
   const pw2=document.getElementById('_newPw2')?.value||'';
   const errEl=document.getElementById('_resetErr');
-  const showErr=msg=>{if(errEl){errEl.textContent=msg;errEl.style.display='block';}};
-  if(!pw){showErr('กรุณากรอก Password ใหม่');return;}
-  if(pw.length<6){showErr('Password ต้องมีอย่างน้อย 6 ตัวอักษร');return;}
-  if(pw!==pw2){showErr('Password ไม่ตรงกัน');return;}
+  const showErrMsg=msg=>{if(errEl){errEl.textContent=msg;errEl.style.display='block';}};
+  if(!pw){showErrMsg('กรุณากรอก Password ใหม่');return;}
+  if(pw.length<6){showErrMsg('Password ต้องมีอย่างน้อย 6 ตัวอักษร');return;}
+  if(pw!==pw2){showErrMsg('Password ไม่ตรงกัน');return;}
+  // Update in localStorage
+  const users=getUsers();
+  const u=users.find(x=>x.id===id);
+  if(!u){showErrMsg('ไม่พบผู้ใช้');return;}
+  u.password=pw;
+  saveUsers(users);
+  // Try server too (Render) — ignore if fails
   try{
-    const res=await fetch(`/api/users/${id}/password`,{
+    await fetch(`/api/users/${id}/password`,{
       method:'PUT',credentials:'same-origin',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({password:pw})
     });
-    const data=await res.json();
-    if(!data.success){showErr(data.error||'เกิดข้อผิดพลาด');return;}
-  }catch(e){showErr('ไม่สามารถเชื่อมต่อ Server ได้');return;}
-  const u=getUsers().find(x=>x.id===id);
-  if(u)logActivity('🔑','rgba(200,122,0,.1)',`Reset password ให้ <strong>${u.name} (@${u.username})</strong>`);
+  }catch(e){}
+  logActivity('🔑','rgba(200,122,0,.1)',`Reset password ให้ <strong>${u.name} (@${u.username})</strong>`);
   document.getElementById('_resetModal')?.remove();
-  showToast('✅ Reset Password เรียบร้อยแล้ว! แจ้ง user ได้เลย','var(--green)');
+  showToast('✅ Reset Password เรียบร้อยแล้ว!','var(--green)');
   renderAdminPanel();
 }
 
@@ -2067,23 +2074,32 @@ function staleDays(p){
 async function save(){
   setSave('go');
   try{
+    localStorage.setItem(SK,JSON.stringify(P));
+    localStorage.setItem(IK,JSON.stringify(IDEAS));
+    // Try server too (Render) — ignore if fails (GitHub Pages)
     await fetch('/api/data',{method:'PUT',credentials:'same-origin',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({projects:P,ideas:IDEAS})});
+      body:JSON.stringify({projects:P,ideas:IDEAS})}).catch(()=>{});
   }catch(e){}
   setSave('ok');
 }
 async function load(){
   TODAY=new Date();TODAY.setHours(0,0,0,0);
+  // Try server first (Render), fallback to localStorage (GitHub Pages)
+  let loaded=false;
   try{
     const r=await fetch('/api/data',{credentials:'same-origin'});
     if(r.ok){
       const d=await r.json();
-      if(d.projects&&d.projects.length)P=d.projects;
-      if(d.ideas&&d.ideas.length)IDEAS=d.ideas;
+      if(d.projects&&d.projects.length){P=d.projects;loaded=true;}
+      if(d.ideas&&d.ideas.length){IDEAS=d.ideas;loaded=true;}
     }
-  }catch(e){P=[];IDEAS=[];}
-  if(!P.length)loadDemoP();if(!IDEAS.length)loadDemoI();
+  }catch(e){}
+  // localStorage fallback
+  if(!P.length){try{const s=localStorage.getItem(SK);if(s){P=JSON.parse(s);loaded=true;}}catch(e){}}
+  if(!IDEAS.length){try{const s=localStorage.getItem(IK);if(s){IDEAS=JSON.parse(s);loaded=true;}}catch(e){}}
+  if(!P.length)loadDemoP();
+  if(!IDEAS.length)loadDemoI();
 }
 function loadDemoP(){P=[
   {id:'PRJ-001',name:'Project Alpha',  pcat:'ENE',owner:'สมชาย ใจดี', status:'On Track',  pct:15,ps:'2026-03-01',pe:'2026-05-26',as_:'2026-03-01',ae:''},
