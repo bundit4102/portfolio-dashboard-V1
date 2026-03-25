@@ -1063,7 +1063,7 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
       <div class="today-grp">
         <label>📅 Today:</label>
         <input type="date" id="tdInput" onchange="chgToday()">
-        <span class="log-clock" id="liveClock" style="margin-left:6px;padding:5px 10px;background:var(--navy);color:var(--gold);border-radius:6px;border:1px solid rgba(201,168,76,.3);font-size:12px;font-weight:700;min-width:72px;text-align:center;letter-spacing:1px"></span>
+        <span class="log-clock" id="liveClock" style="margin-left:6px;padding:5px 12px;background:var(--navy);color:var(--gold);border-radius:6px;border:1px solid rgba(201,168,76,.4);font-size:13px;font-weight:700;min-width:76px;text-align:center;letter-spacing:1.5px;display:inline-block"></span>
       </div>
     </div>
     <div class="tw"><table class="itable" style="min-width:980px">
@@ -1491,18 +1491,12 @@ const ADMIN_USER = {id:'__admin__',username:'admin',password:'admin2026',name:'S
 
 function getUsers(){return USERS_CACHE.filter(u=>u.id!=='__admin__');}
 function saveUsers(us){
+  // saveUsers ใช้สำหรับ update cache เท่านั้น — API calls ทำผ่าน approveUser/rejectUser/deleteUser/changeRole
   USERS_CACHE=[ADMIN_USER,...us];
-  try{localStorage.setItem(UK,JSON.stringify(us));}catch(e){}
 }
 function getAllUsers(){return USERS_CACHE;}
 function getPendingCount(){return getUsers().filter(u=>u.status==='pending').length;}
 async function refreshUsers(){
-  // Load from localStorage first (works on GitHub Pages)
-  try{
-    const stored=localStorage.getItem(UK);
-    if(stored){const d=JSON.parse(stored);USERS_CACHE=[ADMIN_USER,...d];}
-  }catch(e){}
-  // Try server too (Render) — update cache if available
   try{
     const r=await fetch('/api/users',{credentials:'same-origin'});
     if(r.ok){const d=await r.json();USERS_CACHE=[ADMIN_USER,...d];}
@@ -1618,13 +1612,19 @@ function startClock(){
   _clockStarted=true;
   function tick(){
     const el=document.getElementById('liveClock');
-    if(!el){setTimeout(tick,500);return;}
+    if(!el){setTimeout(tick,300);return;}
     const now=new Date();
     const pad=n=>String(n).padStart(2,'0');
     el.textContent=pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
   }
   tick();
-  setInterval(tick,1000);
+  setInterval(()=>{
+    const el=document.getElementById('liveClock');
+    if(!el)return;
+    const now=new Date();
+    const pad=n=>String(n).padStart(2,'0');
+    el.textContent=pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
+  },1000);
 }
 
 // ── REGISTER ─────────────────────────────────
@@ -1749,13 +1749,12 @@ function setAdmFilter(f){
 }
 
 function renderAdminPanel(){
-  const all=getAllUsers(); // includes __admin__
+  const all=getAllUsers();
   const query=($('userSearch')?.value||'').toLowerCase();
-  // KPIs — count non-admin users only for pending/approved/rejected
-  const nonAdmin=all.filter(u=>u.id!=='__admin__');
-  const pend=nonAdmin.filter(u=>u.status==='pending').length;
-  const appr=nonAdmin.filter(u=>u.status==='approved').length;
-  const rejd=nonAdmin.filter(u=>u.status==='rejected').length;
+  // KPIs
+  const pend=all.filter(u=>u.status==='pending').length;
+  const appr=all.filter(u=>u.status==='approved').length;
+  const rejd=all.filter(u=>u.status==='rejected').length;
   $('au-total').textContent=all.length;
   $('au-pending').textContent=pend;
   $('au-approved').textContent=appr;
@@ -2143,6 +2142,8 @@ function sw(t){
   try{if(t==='summary')renderSummary();}catch(e){console.error('renderSummary:',e);}
   try{if(t==='idea')renderIdeas();}catch(e){console.error('renderIdeas:',e);}
   try{if(t==='admin')renderAdminPanel();}catch(e){console.error('renderAdminPanel:',e);}
+  // เมื่อเปิดหน้ากรอกข้อมูล ให้เริ่มนาฬิกาทันที
+  if(t==='inp'){startClock();}
 }
 
 // ══════════════════════════════════════════════
@@ -2472,10 +2473,7 @@ async function fullRefreshAndGenIds(){
 }
 function expCSV(){const h='Project ID,Project Name,Category,Project Owner,Status,Progress %,Plan Start,Plan End,Actual Start,Actual End';const rows=P.map(p=>[p.id,p.name,p.pcat||'',p.owner,p.status,p.pct,p.ps||'',p.pe||'',p.as_||'',p.ae||''].map(v=>`"${v}"`).join(','));dl('\uFEFF'+[h,...rows].join('\n'),'text/csv','Gantt_'+fi(TODAY)+'.csv');}
 function impFromCSV(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const lines=ev.target.result.trim().split(/\r?\n/);const hdrs=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,'').toLowerCase());const ix={};hdrs.forEach((h,i)=>{if(/project.?id|^id$/i.test(h))ix.id=i;if(/project.?name|^name$/i.test(h))ix.name=i;if(/category|pcat/i.test(h))ix.pcat=i;if(/owner/i.test(h))ix.owner=i;if(/^status$/i.test(h))ix.status=i;if(/progress/i.test(h))ix.pct=i;if(/plan.?start/i.test(h))ix.ps=i;if(/plan.?end/i.test(h))ix.pe=i;if(/actual.?start/i.test(h))ix.as_=i;if(/actual.?end/i.test(h))ix.ae=i;});P=lines.slice(1).filter(l=>l.trim()).map(line=>{const v=line.split(',').map(x=>x.trim().replace(/^"|"$/g,''));const raw=parseFloat(v[ix.pct]||0);return{id:v[ix.id]||'',name:v[ix.name]||'',pcat:v[ix.pcat]||'',owner:v[ix.owner]||'',status:v[ix.status]||'Not Started',pct:raw<=1?Math.round(raw*100):Math.round(raw),ps:v[ix.ps]||'',pe:v[ix.pe]||'',as_:v[ix.as_]||'',ae:v[ix.ae]||''};}).filter(p=>p.id);renderInput();save();renderDash();}catch(err){alert('Error: '+err.message);}e.target.value='';};r.readAsText(f,'UTF-8');}
-function expJSON(){
-  const users=getUsers(); // non-admin users with passwords for restore
-  dl(JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY),users:users},null,2),'application/json','Backup_'+fi(TODAY)+'.json');
-}
+function expJSON(){dl(JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY)},null,2),'application/json','Backup_'+fi(TODAY)+'.json');}
 function impFromJSON(e){
   const f=e.target.files[0];if(!f)return;
   const r=new FileReader();
@@ -2485,22 +2483,11 @@ function impFromJSON(e){
       if(d.projects)P=d.projects;
       if(d.ideas)IDEAS=d.ideas;
       if(d.today){TODAY=new Date(d.today);TODAY.setHours(0,0,0,0);const ti=$('tdInput');if(ti)ti.value=d.today;}
-      // Restore users if present
-      if(d.users&&d.users.length){
-        const existing=getUsers();
-        const merged=[...existing];
-        d.users.forEach(u=>{
-          if(!merged.find(x=>x.username===u.username))merged.push(u);
-          else{const idx=merged.findIndex(x=>x.username===u.username);if(idx>=0){merged[idx]={...merged[idx],...u};}}
-        });
-        saveUsers(merged);
-        await refreshUsers();
-      }
       renderInput();renderDash();renderIdeas();
-      try{renderAdminPanel();}catch(e){}
+      // Save ขึ้น Server ทันที
       setSave('go');
       await save();
-      showToast('✅ Restore สำเร็จ! (โครงการ + Users)','var(--green)');
+      showToast('✅ Restore + บันทึกขึ้น Server สำเร็จ! ทุกเครื่องจะเห็นข้อมูลนี้','var(--green)');
     }catch(err){alert('Restore error: '+err.message);}
     e.target.value='';
   };
