@@ -1051,7 +1051,7 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
       <div class="tsep"></div>
       <button class="btn b-out" onclick="undoP()" id="undoBtn" title="ย้อนกลับ (Ctrl+Z)" style="min-width:36px">◀ Undo</button>
       <button class="btn b-out" onclick="redoP()" id="redoBtn" title="เดินหน้า (Ctrl+Y)" style="min-width:36px">Redo ▶</button>
-      <button class="btn b-out" onclick="fullRefresh()" title="โหลดข้อมูลใหม่ทั้งหมด">🔄 Refresh</button>
+      <button class="btn b-out" onclick="fullRefreshAndGenIds()" title="โหลดข้อมูลใหม่ + Generate ID อัตโนมัติ">🔄 Refresh & Generate ID</button>
       <div class="tsep"></div>
       <button class="btn b-out" onclick="expCSV()">⬇ Export CSV</button>
       <button class="btn b-out" onclick="$('impCSV').click()">⬆ Import CSV</button>
@@ -1354,10 +1354,10 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
 
       <!-- Section 2: Sync -->
       <div>
-        <div style="font-size:12px;font-weight:700;color:var(--slate);margin-bottom:6px">🔄 Sync ข้อมูล+Users ให้ทีม</div>
-        <p style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6">ดาวน์โหลดไฟล์ข้อมูล → ส่งให้ทีมทาง Line/Email → ทีมกด Restore เพื่อโหลด</p>
+        <div style="font-size:12px;font-weight:700;color:var(--slate);margin-bottom:6px">🔄 Sync ข้อมูลให้ทีม</div>
+        <p style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6">Download ไฟล์ → ส่งให้ทีมทาง Line/Email → ทีมกด <b>📂 Restore</b> → ข้อมูลจะ <b>upload ขึ้น Server</b> ให้ทุกคนเห็นพร้อมกัน</p>
         <button class="btn b-out" onclick="downloadSyncFile()" style="width:100%;margin-bottom:6px;color:var(--blue);border-color:rgba(26,111,168,.3)">📥 Download ไฟล์ข้อมูล (ส่งให้ทีม)</button>
-        <div style="font-size:10px;color:var(--muted);text-align:center">ทีมได้รับไฟล์ → กด 📂 Restore ในหน้ากรอกข้อมูล</div>
+        <div style="font-size:10px;color:var(--muted);text-align:center">ทีมกด 📂 Restore → ระบบ Save ขึ้น Server อัตโนมัติ → ทุกเครื่องเห็นข้อมูลเดียวกัน ✅</div>
       </div>
 
     </div>
@@ -1489,12 +1489,19 @@ const ADMIN_USER = {id:'__admin__',username:'admin',password:'admin2026',name:'S
   });
 })();
 
-function getUsers(){
-  try{const r=localStorage.getItem(UK);return r?JSON.parse(r):[];}catch(e){return[];}
+function getUsers(){return USERS_CACHE.filter(u=>u.id!=='__admin__');}
+function saveUsers(us){
+  // saveUsers ใช้สำหรับ update cache เท่านั้น — API calls ทำผ่าน approveUser/rejectUser/deleteUser/changeRole
+  USERS_CACHE=[ADMIN_USER,...us];
 }
-function saveUsers(us){try{localStorage.setItem(UK,JSON.stringify(us));}catch(e){}}
-function getAllUsers(){return [ADMIN_USER,...getUsers()];}
+function getAllUsers(){return USERS_CACHE;}
 function getPendingCount(){return getUsers().filter(u=>u.status==='pending').length;}
+async function refreshUsers(){
+  try{
+    const r=await fetch('/api/users',{credentials:'same-origin'});
+    if(r.ok){const d=await r.json();USERS_CACHE=[ADMIN_USER,...d];}
+  }catch(e){}
+}
 
 let currentUser=null;
 let adminTab='pending';
@@ -1832,11 +1839,8 @@ function rejectUser(id){
   renderAdminPanel();checkAdminNotif();
 }
 function viewPassword(id){
-  const users=getUsers();
-  const u=users.find(x=>x.id===id);
+  const u=getUsers().find(x=>x.id===id);
   if(!u)return;
-  const pw=u.password||'(ไม่มีข้อมูล)';
-  // Show modal with password
   const existing=document.getElementById('_pwModal');
   if(existing)existing.remove();
   const modal=document.createElement('div');
@@ -1845,25 +1849,22 @@ function viewPassword(id){
   modal.innerHTML=`
     <div style="background:var(--white);border-radius:16px;width:100%;max-width:400px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2)">
       <div style="background:var(--navy);padding:16px 22px;display:flex;align-items:center;justify-content:space-between">
-        <div style="font-family:'Playfair Display',serif;font-size:16px;color:var(--gold)">👁 Password ของ ${u.name}</div>
+        <div style="font-family:'Playfair Display',serif;font-size:16px;color:var(--gold)">🔐 ข้อมูลผู้ใช้</div>
         <button onclick="document.getElementById('_pwModal').remove()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;line-height:1">✕</button>
       </div>
       <div style="padding:24px">
-        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Username</div>
-        <div style="font-family:'DM Mono',monospace;font-size:14px;color:var(--gold-d);background:var(--cream);padding:10px 14px;border-radius:8px;margin-bottom:16px">@${u.username}</div>
-        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Password</div>
-        <div style="display:flex;align-items:center;gap:10px">
-          <div id="_pwShow" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;color:var(--slate);background:var(--cream);padding:10px 14px;border-radius:8px;flex:1;letter-spacing:2px">${'•'.repeat(pw.length)}</div>
-          <button id="_pwToggle" onclick="
-            const el=document.getElementById('_pwShow');
-            const btn=document.getElementById('_pwToggle');
-            if(el.textContent==='${'•'.repeat(pw.length)}'){el.textContent='${pw}';btn.textContent='🙈';}
-            else{el.textContent='${'•'.repeat(pw.length)}';btn.textContent='👁';}
-          " style="background:var(--navy);border:none;color:var(--gold);border-radius:8px;padding:10px 14px;font-size:16px;cursor:pointer">👁</button>
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">ชื่อ</div>
+        <div style="font-size:14px;font-weight:700;color:var(--slate);background:var(--cream);padding:10px 14px;border-radius:8px;margin-bottom:14px">${u.name}</div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Username</div>
+        <div style="font-family:'DM Mono',monospace;font-size:14px;color:var(--gold-d);background:var(--cream);padding:10px 14px;border-radius:8px;margin-bottom:14px">@${u.username}</div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">สิทธิ์ / แผนก</div>
+        <div style="font-size:13px;color:var(--slate);background:var(--cream);padding:10px 14px;border-radius:8px;margin-bottom:20px">${u.role} · ${u.dept||'—'}</div>
+        <div style="background:rgba(200,122,0,.08);border:1px solid rgba(200,122,0,.2);border-radius:8px;padding:12px;margin-bottom:16px;font-size:12px;color:var(--amber)">
+          🔒 Password ถูกเข้ารหัสแล้ว ไม่สามารถดูได้โดยตรง<br>หากต้องการเปลี่ยน กด "Reset Password" ได้เลยครับ
         </div>
-        <div style="margin-top:12px;font-size:11px;color:var(--muted)">⚠ แจ้ง password ให้ user โดยตรงทาง Line/Email เท่านั้น</div>
-        <div style="margin-top:16px;text-align:right">
-          <button onclick="document.getElementById('_pwModal').remove()" style="background:var(--navy);color:var(--gold);border:none;border-radius:8px;padding:10px 20px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;cursor:pointer">ปิด</button>
+        <div style="display:flex;gap:10px">
+          <button onclick="document.getElementById('_pwModal').remove()" style="flex:1;background:transparent;border:1px solid var(--div);color:var(--muted);border-radius:8px;padding:9px;font-family:'Sarabun',sans-serif;font-size:13px;cursor:pointer">ปิด</button>
+          <button onclick="document.getElementById('_pwModal').remove();resetPassword('${id}')" style="flex:1;background:var(--amber);color:#fff;border:none;border-radius:8px;padding:9px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;cursor:pointer">🔑 Reset Password</button>
         </div>
       </div>
     </div>`;
@@ -1912,7 +1913,7 @@ function resetPassword(id){
   setTimeout(()=>document.getElementById('_newPw')?.focus(),100);
 }
 
-function confirmResetPw(id){
+async function confirmResetPw(id){
   const pw=document.getElementById('_newPw')?.value||'';
   const pw2=document.getElementById('_newPw2')?.value||'';
   const errEl=document.getElementById('_resetErr');
@@ -1920,12 +1921,17 @@ function confirmResetPw(id){
   if(!pw){showErr('กรุณากรอก Password ใหม่');return;}
   if(pw.length<6){showErr('Password ต้องมีอย่างน้อย 6 ตัวอักษร');return;}
   if(pw!==pw2){showErr('Password ไม่ตรงกัน');return;}
-  const users=getUsers();
-  const u=users.find(x=>x.id===id);
-  if(!u){showErr('ไม่พบผู้ใช้');return;}
-  u.password=pw;
-  saveUsers(users);
-  logActivity('🔑','rgba(200,122,0,.1)',`Reset password ให้ <strong>${u.name} (@${u.username})</strong>`);
+  try{
+    const res=await fetch(`/api/users/${id}/password`,{
+      method:'PUT',credentials:'same-origin',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({password:pw})
+    });
+    const data=await res.json();
+    if(!data.success){showErr(data.error||'เกิดข้อผิดพลาด');return;}
+  }catch(e){showErr('ไม่สามารถเชื่อมต่อ Server ได้');return;}
+  const u=getUsers().find(x=>x.id===id);
+  if(u)logActivity('🔑','rgba(200,122,0,.1)',`Reset password ให้ <strong>${u.name} (@${u.username})</strong>`);
   document.getElementById('_resetModal')?.remove();
   showToast('✅ Reset Password เรียบร้อยแล้ว! แจ้ง user ได้เลย','var(--green)');
   renderAdminPanel();
@@ -2058,13 +2064,24 @@ function staleDays(p){
 // ══════════════════════════════════════════════
 // STORAGE (data)
 // ══════════════════════════════════════════════
-function save(){try{localStorage.setItem(SK,JSON.stringify(P));localStorage.setItem(TK,fi(TODAY));localStorage.setItem(IK,JSON.stringify(IDEAS));}catch(e){}setSave('ok');}
-function load(){
+async function save(){
+  setSave('go');
   try{
-    const r=localStorage.getItem(SK);if(r&&r!=='[]')P=JSON.parse(r);
-    // TODAY always = real today (not stored), user can override manually
-    TODAY=new Date();TODAY.setHours(0,0,0,0);
-    const ir=localStorage.getItem(IK);if(ir&&ir!=='[]')IDEAS=JSON.parse(ir);
+    await fetch('/api/data',{method:'PUT',credentials:'same-origin',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({projects:P,ideas:IDEAS})});
+  }catch(e){}
+  setSave('ok');
+}
+async function load(){
+  TODAY=new Date();TODAY.setHours(0,0,0,0);
+  try{
+    const r=await fetch('/api/data',{credentials:'same-origin'});
+    if(r.ok){
+      const d=await r.json();
+      if(d.projects&&d.projects.length)P=d.projects;
+      if(d.ideas&&d.ideas.length)IDEAS=d.ideas;
+    }
   }catch(e){P=[];IDEAS=[];}
   if(!P.length)loadDemoP();if(!IDEAS.length)loadDemoI();
 }
@@ -2190,14 +2207,21 @@ function upd(i,f,v){
   if(f==='pct')v=Math.min(100,Math.max(0,+v||0));
   pushUndo();
   P[i][f]=v;
-  // Auto-regenerate ID when pcat or owner changes (only if ID looks auto-generated or is empty)
-  if(f==='pcat'||f==='owner'){
+  // Auto-generate ID ทุกครั้งที่มีการแก้ไข — ถ้า ID ยังเป็น ??? หรือว่างอยู่
+  const needsId=!P[i].id||P[i].id.includes('???')||P[i].id.startsWith('PRJ-');
+  // ต้องมี category เท่านั้น (ไม่บังคับ owner)
+  const hasEnough=!!P[i].pcat;
+  if(needsId&&hasEnough){
+    P[i].id=genProjectId(P[i].pcat,P[i].owner,i);
+    const idDiv=document.querySelector(`#r${i} td:nth-child(2) div[title="Project ID (auto)"]`);
+    if(idDiv)idDiv.textContent=P[i].id;
+  } else if(f==='pcat'||f==='owner'){
+    // Re-generate เมื่อ category หรือ owner เปลี่ยน
     const autoPattern=/^\d{4}_[A-Z]+_\d{3}_/;
-    if(!P[i].id||autoPattern.test(P[i].id)){
+    if(!P[i].id||autoPattern.test(P[i].id)||P[i].id.includes('???')){
       P[i].id=genProjectId(P[i].pcat,P[i].owner,i);
-      // update the id input field directly
-      const idInput=document.querySelector(`#r${i} input[placeholder="PRJ-001"]`)||document.querySelector(`#r${i} td:nth-child(2) input`);
-      if(idInput)idInput.value=P[i].id;
+      const idDiv=document.querySelector(`#r${i} td:nth-child(2) div[title="Project ID (auto)"]`);
+      if(idDiv)idDiv.textContent=P[i].id;
     }
   }
   // Auto: when rpe is set and rps is empty → rps = pe (Revised Start = Plan End)
@@ -2225,13 +2249,13 @@ function genProjectId(pcat, owner, excludeIdx){
   const catMap = {ENE:'ENE',CST:'C',QLT:'Q',PRD:'P',SAF:'S',MRL:'M',ENV:'E','':'GEN'};
   const catCode = catMap[pcat||''] || 'GEN';
   const rawName = (owner||'').trim();
-  const firstName = rawName ? rawName.split(/\s+/)[0] : '';
-  if(!pcat && !rawName) return year+'_???_???_???';
-  // Run number = total projects in same YEAR (global, not per category), excluding current row
+  const firstName = rawName ? rawName.split(/\s+/)[0] : 'TBD';
+  // Generate even with just category — no longer require both
+  if(!pcat) return year+'_???_???_???';
   const yearPrefix = String(year)+'_';
-  const existingThisYear = P.filter((p,i)=>i!==excludeIdx && (p.id||'').startsWith(yearPrefix));
+  const existingThisYear = P.filter((p,i)=>i!==excludeIdx && (p.id||'').startsWith(yearPrefix) && !(p.id||'').includes('???'));
   const runNum = (existingThisYear.length+1).toString().padStart(3,'0');
-  return year+'_'+catCode+'_'+runNum+'_'+(firstName||'???');
+  return year+'_'+catCode+'_'+runNum+'_'+firstName;
 }
 // Regenerate ID for a specific row
 function regenId(i){
@@ -2252,11 +2276,17 @@ function refreshIds(){
   P.forEach((p,i)=>{
     globalRun++;
     const catCode=catMap[p.pcat||'']||'GEN';
-    const firstName=(p.owner||'').trim().split(/\s+/)[0]||'???';
-    P[i].id=year+'_'+catCode+'_'+String(globalRun).padStart(3,'0')+'_'+firstName;
+    const raw=(p.owner||'').trim();
+    const firstName=raw?raw.split(/\s+/)[0]:'???';
+    // Only regenerate if ID is missing, has ???, or is old PRJ- format
+    const needRegen=!p.id||p.id.includes('???')||p.id.startsWith('PRJ-');
+    if(needRegen){
+      P[i].id=year+'_'+catCode+'_'+String(globalRun).padStart(3,'0')+'_'+firstName;
+    }
   });
   renderInput();sched();
   if($('panel-dash').classList.contains('on'))renderDash();
+  showToast('✅ Generate ID เรียบร้อยแล้ว','var(--green)');
 }
 
 // ── Undo / Redo ──────────────────────────────
@@ -2393,20 +2423,67 @@ function fullRefresh(){
   try{updateStaleNav();}catch(e){}
   try{startClock();}catch(e){}
   setSave('ok');
-  // Visual feedback
-  const btn=document.querySelector('[onclick="fullRefresh()"]');
-  if(btn){
-    const orig=btn.innerHTML;
-    btn.innerHTML='✅ Refreshed!';
-    btn.style.background='var(--green)';
-    setTimeout(()=>{btn.innerHTML=orig;btn.style.background='';},1800);
-  }
-  showToast('✅ Refresh ทุกหน้าเรียบร้อยแล้ว','var(--green)');
+}
+
+async function fullRefreshAndGenIds(){
+  const btn=document.querySelector('[onclick="fullRefreshAndGenIds()"]');
+  if(btn){btn.innerHTML='⏳ กำลัง...';btn.disabled=true;}
+  // Reload from server
+  await load();
+  TODAY=new Date();TODAY.setHours(0,0,0,0);
+  const ti=$('tdInput');if(ti)ti.value=fi(TODAY);
+  // Generate IDs for any row missing or has ???
+  const year=TODAY.getFullYear();
+  const catMap={ENE:'ENE',CST:'C',QLT:'Q',PRD:'P',SAF:'S',MRL:'M',ENV:'E','':'GEN'};
+  let fixed=0;
+  let globalRun=0;
+  // นับเฉพาะ row ที่มี ID ดีแล้ว เพื่อ run number ถูกต้อง
+  const goodIds=P.filter(p=>p.id&&!p.id.includes('???')&&!p.id.startsWith('PRJ-')).length;
+  let runStart=goodIds;
+  P.forEach((p,i)=>{
+    const needsId=!p.id||p.id.includes('???')||p.id.startsWith('PRJ-');
+    if(needsId&&p.pcat){
+      runStart++;
+      const catCode=catMap[p.pcat||'']||'GEN';
+      const firstName=(p.owner||'').trim().split(/\s+/)[0]||'TBD';
+      P[i].id=year+'_'+catCode+'_'+String(runStart).padStart(3,'0')+'_'+firstName;
+      fixed++;
+    }
+  });
+  if(fixed>0)await save();
+  // Re-render all
+  try{renderInput();}catch(e){}
+  try{renderDash();}catch(e){}
+  try{renderIdeas();}catch(e){}
+  try{renderSummary();}catch(e){}
+  try{checkAdminNotif();}catch(e){}
+  try{updateStaleNav();}catch(e){}
+  setSave('ok');
+  if(btn){btn.innerHTML='🔄 Refresh & Generate ID';btn.disabled=false;}
+  showToast(fixed>0?`✅ Generate ID สำเร็จ ${fixed} รายการ — กรอก Owner แล้ว ID จะ update อัตโนมัติ`:'✅ Refresh เรียบร้อยแล้ว','var(--green)');
 }
 function expCSV(){const h='Project ID,Project Name,Category,Project Owner,Status,Progress %,Plan Start,Plan End,Actual Start,Actual End';const rows=P.map(p=>[p.id,p.name,p.pcat||'',p.owner,p.status,p.pct,p.ps||'',p.pe||'',p.as_||'',p.ae||''].map(v=>`"${v}"`).join(','));dl('\uFEFF'+[h,...rows].join('\n'),'text/csv','Gantt_'+fi(TODAY)+'.csv');}
 function impFromCSV(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const lines=ev.target.result.trim().split(/\r?\n/);const hdrs=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,'').toLowerCase());const ix={};hdrs.forEach((h,i)=>{if(/project.?id|^id$/i.test(h))ix.id=i;if(/project.?name|^name$/i.test(h))ix.name=i;if(/category|pcat/i.test(h))ix.pcat=i;if(/owner/i.test(h))ix.owner=i;if(/^status$/i.test(h))ix.status=i;if(/progress/i.test(h))ix.pct=i;if(/plan.?start/i.test(h))ix.ps=i;if(/plan.?end/i.test(h))ix.pe=i;if(/actual.?start/i.test(h))ix.as_=i;if(/actual.?end/i.test(h))ix.ae=i;});P=lines.slice(1).filter(l=>l.trim()).map(line=>{const v=line.split(',').map(x=>x.trim().replace(/^"|"$/g,''));const raw=parseFloat(v[ix.pct]||0);return{id:v[ix.id]||'',name:v[ix.name]||'',pcat:v[ix.pcat]||'',owner:v[ix.owner]||'',status:v[ix.status]||'Not Started',pct:raw<=1?Math.round(raw*100):Math.round(raw),ps:v[ix.ps]||'',pe:v[ix.pe]||'',as_:v[ix.as_]||'',ae:v[ix.ae]||''};}).filter(p=>p.id);renderInput();save();renderDash();}catch(err){alert('Error: '+err.message);}e.target.value='';};r.readAsText(f,'UTF-8');}
 function expJSON(){dl(JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY)},null,2),'application/json','Backup_'+fi(TODAY)+'.json');}
-function impFromJSON(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(d.projects)P=d.projects;if(d.ideas)IDEAS=d.ideas;if(d.today){TODAY=new Date(d.today);TODAY.setHours(0,0,0,0);$('tdInput').value=d.today;}renderInput();save();renderDash();renderIdeas();}catch(err){alert('Restore error: '+err.message);}e.target.value='';};r.readAsText(f,'UTF-8');}
+function impFromJSON(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=async ev=>{
+    try{
+      const d=JSON.parse(ev.target.result);
+      if(d.projects)P=d.projects;
+      if(d.ideas)IDEAS=d.ideas;
+      if(d.today){TODAY=new Date(d.today);TODAY.setHours(0,0,0,0);const ti=$('tdInput');if(ti)ti.value=d.today;}
+      renderInput();renderDash();renderIdeas();
+      // Save ขึ้น Server ทันที
+      setSave('go');
+      await save();
+      showToast('✅ Restore + บันทึกขึ้น Server สำเร็จ! ทุกเครื่องจะเห็นข้อมูลนี้','var(--green)');
+    }catch(err){alert('Restore error: '+err.message);}
+    e.target.value='';
+  };
+  r.readAsText(f,'UTF-8');
+}
 function dl(c,t,fn){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([c],{type:t}));a.download=fn;a.click();URL.revokeObjectURL(a.href);}
 
 // ══════════════════════════════════════════════
@@ -3748,18 +3825,16 @@ async function showQR(){
   const qc=$('qrCanvas');
   const qs=$('qrStatus');
   if(qc)qc.innerHTML='<div style="font-size:11px;color:var(--muted);padding:12px">กำลังสร้าง QR...</div>';
+
+  // VIP URL = เว็บเดิม + #vip-open (โหลดข้อมูลจาก Server)
   const base=location.href.split('#')[0].split('?')[0];
-  try{
-    const full=JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY)});
-    const enc=btoa(unescape(encodeURIComponent(full)));
-    modal.dataset.vipUrl=base+'#vip:'+enc;
-  }catch(e){modal.dataset.vipUrl=base+'#vip-open';}
-  try{localStorage.setItem('ptk_vip_snap',JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY)}));}catch(e){}
-  const qrUrl=base+'#vip-open';
+  const vipUrl=base+'#vip-open';
+  modal.dataset.vipUrl=vipUrl;
+
   if(qc)qc.innerHTML='';
   if(qs)qs.innerHTML='';
   try{
-    const qr=_QrCode.encodeText(qrUrl,_QrCode.Ecc.MEDIUM);
+    const qr=_QrCode.encodeText(vipUrl,_QrCode.Ecc.MEDIUM);
     const sz=qr.size, sc=Math.max(2,Math.floor(220/sz)), margin=4;
     const total=sz*sc+margin*2;
     const cv=document.createElement('canvas');
@@ -3975,10 +4050,9 @@ function copyVipLink(){
 }
 
 function downloadSyncFile(){
-  // Include users in sync file
-  const data={projects:P,ideas:IDEAS,today:fi(TODAY),users:getUsers()};
-  dl(JSON.stringify(data,null,2),'application/json','Sync_Data_'+fi(TODAY)+'.json');
-  showToast('📥 Download ไฟล์ข้อมูลแล้ว! ส่งให้ทีมได้เลย','#1a6fa8');
+  const data={projects:P,ideas:IDEAS,today:fi(TODAY)};
+  dl(JSON.stringify(data,null,2),'application/json','Portfolio_Data_'+fi(TODAY)+'.json');
+  showToast('📥 Download ไฟล์ข้อมูลแล้ว! ทีมกด 📂 Restore แล้ว Save ได้เลยครับ','#1a6fa8');
 }
 
 // Legacy aliases
@@ -4090,60 +4164,47 @@ function initVipModeFromSnap(snap){
   renderVipContent();
 }
 
-function initVipMode(){
+async function initVipMode(){
   let snap=null;
   const hash=location.hash||'';
 
-  // Case 1: #vip: full embedded data
+  // Case 1: #vip: full embedded data (legacy)
   if(hash.startsWith('#vip:')){
     try{snap=JSON.parse(decodeURIComponent(escape(atob(hash.slice(5)))));}
     catch(e){try{snap=JSON.parse(decodeURIComponent(atob(hash.slice(5))));}catch(e2){}}
   }
 
-  // Case 2: #vipq: ultra-compact QR format → expand
-  if(!snap && hash.startsWith('#vipq:')){
-    try{
-      const c=JSON.parse(decodeURIComponent(escape(atob(hash.slice(6)))));
-      // Expand compact format: p=[[id,name,pcat,status_abbr,pct,pe_short,owner]]
-      const statusMap={'On':'On Track','De':'Delay','Co':'Completed','At':'At Risk','NS':'Not Started','No':'Not Started'};
-      snap={
-        today:c.t||fi(new Date()),
-        projects:(c.p||[]).map(r=>({
-          id:r[0]||'',name:r[1]||'',pcat:r[2]||'',
-          status:statusMap[r[3]]||r[3]||'Not Started',
-          pct:r[4]||0,
-          pe:r[5]?'2026-'+r[5]:'',
-          owner:r[6]||''
-        })),
-        ideas:(c.i||[]).map(r=>({title:r[0]||'',cat:r[1]||'',status:r[2]==='app'?'approved':r[2]==='rej'?'rejected':r[2]==='rev'?'review':'new'}))
-      };
-    }catch(e){console.warn('vipq parse error:',e);}
-  }
-
-  // Case 3: #vip-open → load from localStorage
+  // Case 2: #vip-open → load from SERVER (ใหม่ — ไม่ใช้ localStorage แล้ว)
   if(!snap && (hash==='#vip-open'||hash.startsWith('#vip-open'))){
-    try{const s=localStorage.getItem('ptk_vip_snap');if(s)snap=JSON.parse(s);}catch(e){}
-    if(!snap){
-      try{
-        const pj=localStorage.getItem('ptk_proj_v5');
-        const id=localStorage.getItem('ptk_ideas_v5');
-        const td=localStorage.getItem('ptk_today_v5');
-        snap={projects:pj?JSON.parse(pj):[],ideas:id?JSON.parse(id):[],today:td||fi(new Date())};
-      }catch(e){snap={projects:[],ideas:[],today:fi(new Date())};}
-    }
-  }
-
-  // Case 4: localStorage fallback
-  if(!snap){
-    try{const s=localStorage.getItem('ptk_vip_snap');if(s)snap=JSON.parse(s);}catch(e){}
+    // แสดง loading ก่อน
+    const auth=document.getElementById('authScreen');
+    const mainApp=document.getElementById('mainApp');
+    if(auth)auth.style.display='none';
+    if(mainApp)mainApp.style.display='none';
+    document.body.insertAdjacentHTML('beforeend',`
+      <div id="_vipLoading" style="position:fixed;inset:0;background:#0f0a1e;display:flex;align-items:center;justify-content:center;z-index:9999;font-family:'Sarabun',sans-serif">
+        <div style="text-align:center;color:#fff">
+          <div style="font-size:36px;margin-bottom:12px;animation:spin 1s linear infinite;display:inline-block">⚙️</div>
+          <div style="font-size:14px;color:rgba(255,255,255,.6);margin-top:8px">กำลังโหลดข้อมูล...</div>
+        </div>
+      </div>
+      <style>@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}</style>`);
+    try{
+      const r=await fetch('/api/data',{credentials:'same-origin'});
+      if(r.ok){
+        const d=await r.json();
+        snap={projects:d.projects||[],ideas:d.ideas||[],today:fi(new Date())};
+      }
+    }catch(e){}
+    document.getElementById('_vipLoading')?.remove();
   }
 
   if(!snap){
     document.body.innerHTML=`<div style="background:#0f0a1e;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'Sarabun',sans-serif">
       <div style="text-align:center;color:#fff;padding:40px">
         <div style="font-size:56px;margin-bottom:16px">🔒</div>
-        <div style="font-size:20px;font-weight:700;color:#a87cc7;margin-bottom:8px">ไม่พบข้อมูล VIP</div>
-        <div style="font-size:13px;color:rgba(255,255,255,.5);line-height:1.7">QR Code หรือ Link นี้หมดอายุแล้ว<br>กรุณาขอ QR Code ใหม่จาก Admin</div>
+        <div style="font-size:20px;font-weight:700;color:#a87cc7;margin-bottom:8px">ไม่พบข้อมูล</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.5);line-height:1.7">ไม่สามารถโหลดข้อมูลได้<br>กรุณาลองใหม่อีกครั้ง</div>
         <a href="${location.href.split('#')[0].split('?')[0]}" style="display:inline-block;margin-top:20px;padding:10px 24px;background:#a87cc7;color:#fff;border-radius:8px;text-decoration:none;font-size:13px;font-weight:700">← กลับหน้าหลัก</a>
       </div>
     </div>`;
