@@ -1611,7 +1611,7 @@ function startClock(){
   if(_clockStarted)return;
   _clockStarted=true;
   function tick(){
-    const el=$('liveClock');if(!el)return;
+    const el=document.getElementById('liveClock');if(!el)return;
     const now=new Date();
     const pad=n=>String(n).padStart(2,'0');
     el.textContent=pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
@@ -1953,20 +1953,28 @@ function changeRole(id,role){
 // Create user by admin
 function openCreateUserModal(){$('createErr').classList.remove('show');$('cu-name').value='';$('cu-dept').value='';$('cu-user').value='';$('cu-pass').value='';$('cu-pass2').value='';$('cu-role').value='Viewer';$('cu-status').value='approved';$('createUserModal').classList.remove('hidden');}
 function closeCreateUserModal(){$('createUserModal').classList.add('hidden');}
-function createUserByAdmin(){
+async function createUserByAdmin(){
   const name=$('cu-name').value.trim(),dept=$('cu-dept').value.trim();
   const user=$('cu-user').value.trim(),pass=$('cu-pass').value,pass2=$('cu-pass2').value;
   const role=$('cu-role').value,status=$('cu-status').value;
   const errEl=$('createErr');
-  if(!name||!user||!pass){errEl.textContent='กรุณากรอกข้อมูลที่จำเป็น (ชื่อ, Username, Password)';errEl.classList.add('show');return;}
+  if(!name||!user||!pass){errEl.textContent='กรุณากรอกข้อมูลที่จำเป็น';errEl.classList.add('show');return;}
   if(pass.length<6){errEl.textContent='Password ต้องมีอย่างน้อย 6 ตัวอักษร';errEl.classList.add('show');return;}
   if(pass!==pass2){errEl.textContent='Password ไม่ตรงกัน';errEl.classList.add('show');return;}
   if(/\s/.test(user)){errEl.textContent='Username ต้องไม่มีช่องว่าง';errEl.classList.add('show');return;}
-  if(getAllUsers().find(x=>x.username===user)){errEl.textContent='Username นี้ถูกใช้แล้ว';errEl.classList.add('show');return;}
-  const newUser={id:'u'+Date.now(),username:user,password:pass,name,dept,role,status,createdAt:new Date().toISOString()};
-  const users=getUsers();users.push(newUser);saveUsers(users);
-  logActivity('➕','rgba(201,168,76,.1)',`สร้างผู้ใช้ใหม่ <strong>${name} (@${user})</strong> — ${role} [${status==='approved'?'อนุมัติทันที':'รอการอนุมัติ'}]`);
+  try{
+    const res=await fetch('/api/users',{
+      method:'POST',credentials:'same-origin',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:user,password:pass,name,dept,role,status})
+    });
+    const data=await res.json();
+    if(!data.success){errEl.textContent=data.error||'เกิดข้อผิดพลาด';errEl.classList.add('show');return;}
+    await refreshUsers();
+  }catch(e){errEl.textContent='ไม่สามารถเชื่อมต่อ Server ได้';errEl.classList.add('show');return;}
+  logActivity('➕','rgba(201,168,76,.1)',`สร้างผู้ใช้ใหม่ <strong>${name} (@${user})</strong> — ${role}`);
   closeCreateUserModal();renderAdminPanel();checkAdminNotif();
+  showToast('✅ สร้างผู้ใช้สำเร็จ!','var(--green)');
 }
 
 function showAdminPanel(){sw('admin');}
