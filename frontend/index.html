@@ -1497,13 +1497,10 @@ function saveUsers(us){
 function getAllUsers(){return USERS_CACHE;}
 function getPendingCount(){return getUsers().filter(u=>u.status==='pending').length;}
 async function refreshUsers(){
-  // โหลด localStorage ก่อน
   let local=[];
   try{const s=localStorage.getItem(UK);if(s)local=JSON.parse(s);}catch(e){}
-  // ลอง server (Render)
   let server=[];
   try{const r=await fetch('/api/users',{credentials:'same-origin'});if(r.ok)server=await r.json();}catch(e){}
-  // Merge: server + local ที่ไม่ซ้ำกัน
   const merged=[...server];
   local.forEach(u=>{if(!merged.find(x=>x.username===u.username))merged.push(u);});
   USERS_CACHE=[ADMIN_USER,...merged];
@@ -1647,25 +1644,11 @@ async function doRegister(){
   if(pass.length<6){showErr('regErr','Password ต้องมีอย่างน้อย 6 ตัวอักษร');return;}
   if(pass!==pass2){showErr('regErr','Password ไม่ตรงกัน');return;}
   if(/\s/.test(user)){showErr('regErr','Username ต้องไม่มีช่องว่าง');return;}
-
-  // เช็ค username ซ้ำใน localStorage
-  await refreshUsers();
   const all=getAllUsers();
   if(all.find(x=>x.username===user)){showErr('regErr','Username นี้ถูกใช้แล้ว กรุณาเลือก username อื่น');return;}
-
-  // บันทึก localStorage ก่อน (ทำงานทั้ง GitHub Pages และ Render)
   const newUser={id:'u'+Date.now(),username:user,password:pass,name,dept,role,status:'pending',createdAt:new Date().toISOString()};
   const users=getUsers();users.push(newUser);saveUsers(users);
-
-  // ส่งไป Server ด้วย (Render) — ถ้า server ไม่มีก็ไม่เป็นไร
-  try{
-    await fetch('/api/auth/register',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({username:user,password:pass,name,dept,role})
-    });
-  }catch(e){}
-
+  try{await fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:pass,name,dept,role})});}catch(e){}
   $('regOk').textContent='✅ ส่งคำขอเรียบร้อย! กรุณารอ Admin ตรวจสอบและอนุมัติบัญชีของคุณ';
   $('regOk').classList.add('show');
   ['rName','rDept','rUser','rPass','rPass2'].forEach(id=>$(id).value='');
@@ -1755,10 +1738,25 @@ function copyRegLink(){
 }
 
 // ── Admin Refresh ─────────────────────────────
-function refreshAdminPanel(){
-  renderAdminPanel();
+async function refreshAdminPanel(){
   const btn=document.querySelector('[onclick="refreshAdminPanel()"]');
-  if(btn){const o=btn.textContent;btn.textContent='✅ Updated!';setTimeout(()=>btn.textContent=o,1500);}
+  if(btn){btn.textContent='⏳ กำลังโหลด...';btn.disabled=true;}
+  try{
+    // Re-login อัตโนมัติถ้า session หมด
+    if(currentUser?.id==='__admin__'){
+      try{
+        await fetch('/api/auth/login',{
+          method:'POST',credentials:'same-origin',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({username:'admin',password:'admin2026'})
+        });
+      }catch(e){}
+    }
+    await refreshUsers();
+  }catch(e){}
+  renderAdminPanel();
+  checkAdminNotif();
+  if(btn){btn.textContent='✅ Updated!';btn.disabled=false;setTimeout(()=>{btn.textContent='🔄 Refresh';},1500);}
 }
 
 
