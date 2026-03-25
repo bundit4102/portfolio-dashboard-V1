@@ -1503,6 +1503,8 @@ async function refreshUsers(){
   }catch(e){}
 }
 
+let USERS_CACHE=[ADMIN_USER];
+let _pendingSyncData=null;
 let currentUser=null;
 let adminTab='pending';
 
@@ -1527,7 +1529,7 @@ function doLogin(){
   if(u===ADMIN_USER.username && p===ADMIN_USER.password){
     saveRemembered(u,p,remember);
     currentUser=ADMIN_USER;
-    showAdminBox();
+    await showAdminBox();
     return;
   }
 
@@ -1547,10 +1549,10 @@ function doLogin(){
   if(found.status==='rejected'){showErr('loginErr','บัญชีของคุณถูกปฏิเสธ กรุณาติดต่อ Admin');return;}
   saveRemembered(u,p,remember);
   currentUser=found;
-  if(found.role==='Admin'){
-    showAdminBox();
+if(found.role==='Admin'){
+    await showAdminBox();
   } else {
-    enterApp();
+    await enterApp();
   }
 }
 
