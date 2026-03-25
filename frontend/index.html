@@ -1529,6 +1529,8 @@ async function doLogin(){
   if(u===ADMIN_USER.username && p===ADMIN_USER.password){
     saveRemembered(u,p,remember);
     currentUser=ADMIN_USER;
+    // บอก backend ว่า login แล้ว
+    try{await fetch('/api/auth/login',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p}),});}catch(e){}
     await showAdminBox();
     return;
   }
@@ -1615,7 +1617,8 @@ function startClock(){
   if(_clockStarted)return;
   _clockStarted=true;
   function tick(){
-    const el=document.getElementById('liveClock');if(!el)return;
+    const el=document.getElementById('liveClock');
+    if(!el){setTimeout(tick,500);return;}
     const now=new Date();
     const pad=n=>String(n).padStart(2,'0');
     el.textContent=pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
@@ -1830,10 +1833,11 @@ function logActivity(icon,bg,msg){
   actLog.push({icon,bg,msg,time:new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})});
 }
 
-function approveUser(id){
-  const users=getUsers();const u=users.find(x=>x.id===id);if(!u)return;
-  u.status='approved';saveUsers(users);
-  logActivity('✅','rgba(26,122,74,.12)',`อนุมัติบัญชี <strong>${u.name} (@${u.username})</strong> — ${u.role}`);
+async function rejectUser(id){
+  try{await fetch(`/api/users/${id}`,{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'rejected'})});}catch(e){}
+  await refreshUsers();
+  const u=getUsers().find(x=>x.id===id)||{name:id,username:id};
+  logActivity('❌','rgba(192,57,43,.1)',`ปฏิเสธบัญชี <strong>${u.name} (@${u.username})</strong>`);
   renderAdminPanel();checkAdminNotif();
 }
 function rejectUser(id){
@@ -1941,11 +1945,13 @@ async function confirmResetPw(id){
   renderAdminPanel();
 }
 
-function deleteUser(id){
-  const users=getUsers();const u=users.find(x=>x.id===id);if(!u||!confirm(`ลบผู้ใช้ "${u.name}" ออกจากระบบ?\nการดำเนินการนี้ไม่สามารถย้อนกลับได้`))return;
-  saveUsers(users.filter(x=>x.id!==id));
-  logActivity('🗑','rgba(138,155,176,.12)',`ลบผู้ใช้ <strong>${u.name} (@${u.username})</strong> ออกจากระบบ`);
-  renderAdminPanel();checkAdminNotif();
+async function changeRole(id,role){
+  const users=getUsers();const u=users.find(x=>x.id===id);if(!u)return;
+  const old=u.role;
+  try{await fetch(`/api/users/${id}`,{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({role})});}catch(e){}
+  await refreshUsers();
+  logActivity('🔄','rgba(201,168,76,.1)',`เปลี่ยนสิทธิ์ <strong>${u.name}</strong>: ${old} → ${role}`);
+  renderAdminPanel();
 }
 function changeRole(id,role){
   const users=getUsers();const u=users.find(x=>x.id===id);if(!u)return;
