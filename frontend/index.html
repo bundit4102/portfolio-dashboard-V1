@@ -24,7 +24,8 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
    AUTH SCREEN (shared bg)
 ════════════════════════════════════ */
 .auth-screen{position:fixed;inset:0;z-index:999;background:var(--navy);
-  display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+  display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;
+  flex-direction:column;gap:16px}
 .auth-screen.hidden{display:none}
 .auth-screen::before{content:'';position:absolute;inset:0;pointer-events:none;
   background:radial-gradient(circle at 30% 70%,rgba(201,168,76,.12) 0%,transparent 55%),
@@ -37,6 +38,22 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
   animation:slideUp .4s ease both}
 .auth-box-wide{max-width:900px}
 @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* Mobile responsive */
+@media(max-width:600px){
+  .auth-screen{padding:16px 12px;align-items:flex-start;padding-top:24px}
+  .auth-box{max-width:100%;border-radius:16px}
+  .auth-logo{padding:24px 20px 18px}
+  .auth-logo-title{font-size:20px}
+  .auth-body{padding:20px 20px 24px}
+  .wait-body{padding:28px 20px}
+  .wait-icon{font-size:40px;margin-bottom:12px}
+  .wait-title{font-size:18px}
+  .wait-user{width:100%;box-sizing:border-box;justify-content:center}
+  .lf label{font-size:10px}
+  .auth-btn{padding:13px;font-size:13px}
+  .auth-tab{font-size:11px;padding:10px 8px}
+}
 
 /* logo */
 .auth-logo{text-align:center;padding:36px 40px 28px}
@@ -71,10 +88,11 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 
 /* waiting screen */
 .wait-body{padding:36px;text-align:center}
-.wait-icon{font-size:48px;margin-bottom:16px}
-.wait-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--gold);margin-bottom:8px}
-.wait-msg{font-size:13px;color:rgba(255,255,255,.5);line-height:1.7;margin-bottom:20px}
-.wait-user{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px 18px;display:inline-flex;align-items:center;gap:10px;margin-bottom:20px}
+.wait-icon{font-size:52px;margin-bottom:12px;display:block;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.wait-title{font-family:'Playfair Display',serif;font-size:22px;color:var(--gold);margin-bottom:8px;font-weight:700}
+.wait-msg{font-size:13px;color:rgba(255,255,255,.5);line-height:1.8;margin-bottom:20px}
+.wait-user{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px 18px;display:inline-flex;align-items:center;gap:10px;margin-bottom:16px}
 .wait-user .wname{font-size:14px;font-weight:600;color:rgba(255,255,255,.8)}
 .wait-user .wrole{font-size:10px;color:rgba(255,255,255,.35);margin-top:2px}
 .auth-btn-outline{width:100%;background:transparent;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);border-radius:9px;padding:11px;font-family:'Sarabun',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;margin-top:8px}
@@ -159,7 +177,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 .sum-cell-res {background:#edf5e8}
 .sum-cell ul{margin:0;padding-left:16px;list-style:disc}
 .sum-cell ul li{margin-bottom:2px;color:#1c2b3a}
-.sum-cell ul li.idea-li{color:#c9a84c;font-style:italic;word-break:break-word}
+.sum-cell ul li.idea-li{color:#c9a84c;font-style:italic}
 .sum-kpi-card{background:var(--white);border:1px solid var(--div);border-radius:14px;padding:20px 22px 16px;box-shadow:var(--sh);text-align:center;position:relative;overflow:hidden}
 .sum-kpi-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:4px}
 .sum-kpi-icon{font-size:28px;margin-bottom:6px}
@@ -881,6 +899,11 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
           <div class="wrole" id="waitRole">—</div>
           <div class="wrole" id="waitUser" style="font-family:'DM Mono',monospace;margin-top:2px"></div>
         </div>
+      </div>
+      <div style="background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:12px;color:rgba(255,255,255,.5);line-height:1.6;text-align:left">
+        📌 <strong style="color:rgba(201,168,76,.7)">ขั้นตอนถัดไป</strong><br>
+        Admin จะได้รับการแจ้งเตือนและอนุมัติบัญชีของคุณ<br>
+        หลังจากนั้นกลับมา Login ด้วย Username และ Password ที่ตั้งไว้
       </div>
       <button class="auth-btn-outline" onclick="doLogout()">← กลับหน้าเข้าสู่ระบบ</button>
     </div>
@@ -2869,8 +2892,8 @@ async function exportSummaryPDF(){
           const items=mx[cat]?mx[cat][s.k]||[]:[];
           return`<td style="padding:5px 8px;background:${['#f5f0e0','#f0ead8','#e8edf5','#dde4f0','#edf5e8'][si]};border:0.5px solid #dde2ea;vertical-align:top;font-size:8pt">
             ${items.map(p=>p.isIdea
-              ?`<div class="item item-idea">💡 ${p.name||''}</div>`
-              :`<div class="item">• ${p.name||p.id||''}</div>`
+              ?`<div style="color:#c9a84c;font-style:italic;margin-bottom:2px">💡 ${p.name||''}</div>`
+              :`<div style="margin-bottom:2px;color:#1c2b3a">• ${p.name||p.id||''}</div>`
             ).join('')}
           </td>`;
         }).join('')}
@@ -2880,8 +2903,7 @@ async function exportSummaryPDF(){
     const html=`<!DOCTYPE html><html><head><meta charset="UTF-8">
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap');
-      *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important;box-sizing:border-box;}
-      body{-webkit-print-color-adjust:exact!important;}
+      *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;box-sizing:border-box;}
       @page{size:A3 landscape;margin:10mm 12mm;}
       body{font-family:'Sarabun',Arial,sans-serif;background:#fff;margin:0;padding:16px 20px;color:#1c2b3a;font-size:10pt;}
       /* Header */
@@ -3619,62 +3641,11 @@ async function buildPptx(){
     });
   }
 
-  /* ════ SLIDE 7 — SUMMARY MATRIX ════ */
-  const s7=[]; let id7=1100;
-  s7.push(spRect(id7++,'hdr',0,0,13.33,.7,C.navy,C.navy));
-  s7.push(spRect(id7++,'goldBar',0,0,.1,7.5,C.gold,C.gold));
-  s7.push(spText(id7++,'title',.28,.12,9,.46,'SUMMARY MATRIX — LIST OF PROJECTS',14,true,C.gold,'l','Calibri'));
-  s7.push(spText(id7++,'dt',9.5,.16,3.7,.35,dateStr,9,false,C.goldL,'r','Calibri'));
-
-  const STAGE_LBLS7=['Idea Pitching','Project Proposal','Execution','Closing','Result Follow'];
-  const STAGE_COLS7=[C.gold,'C9A03A',C.navy,'2C3E50','6AAA3F'];
-  const STAGE_BG7=['FFF8DC','F5EDD0','E8EDF5','DDE4F0','EDF5E8'];
-  const PCAT_LBL7={ENE:'Energy',CST:'Cost',QLT:'Quality',PRD:'Productivity',SAF:'Safety',MRL:'Morale',ENV:'Environment'};
-
-  // stageOf helper
-  const stageOf7=p=>{if(p.stage)return p.stage;const s=p.status||'';if(s==='Completed')return'clos';if(s==='Not Started')return'idea';return'exec';};
-  const stageKeys7=['idea','prop','exec','clos','res'];
-
-  // Build matrix
-  const mx7={};
-  Object.keys(PCAT_LBL7).forEach(c=>{mx7[c]={};stageKeys7.forEach(s=>{mx7[c][s]=[];});});
-  P.forEach(p=>{const cv=p.pcat||'';if(mx7[cv])mx7[cv][stageOf7(p)].push(p.name||p.id||'');});
-  IDEAS.forEach(idea=>{const cv=(idea.cat||'').toUpperCase();if(mx7[cv])mx7[cv]['idea'].push('💡 '+(idea.title||''));});
-
-  const activeCats7=Object.keys(PCAT_LBL7).filter(c=>Object.values(mx7[c]).some(a=>a.length>0));
-
-  // Draw table header
-  const colW7=[1.6,2.2,2.2,2.2,2.2,2.2];
-  const colX7=[.1];colW7.slice(0,-1).forEach((_,i)=>colX7.push(colX7[i]+colW7[i]));
-  const rowH7=.38; const startY7=.85;
-
-  // Header row
-  s7.push(spRect(id7++,'ch0',.1,startY7,colW7[0],rowH7,'EEF0F5','D0D5DE'));
-  s7.push(spText(id7++,'chl0',.1,startY7,colW7[0],rowH7,'Category',9,true,C.slate,'c','Calibri'));
-  STAGE_LBLS7.forEach((lbl,i)=>{
-    s7.push(spRect(id7++,'ch'+(i+1),colX7[i+1],startY7,colW7[i+1],rowH7,STAGE_COLS7[i],STAGE_COLS7[i]));
-    s7.push(spText(id7++,'chT'+(i+1),colX7[i+1],startY7,colW7[i+1],rowH7,lbl,8,true,C.white,'c','Calibri'));
-  });
-
-  // Data rows
-  activeCats7.forEach((cat,ri)=>{
-    const ry=startY7+rowH7*(ri+1);
-    if(ry>7.2)return; // prevent overflow
-    s7.push(spRect(id7++,'rc'+ri,colX7[0],ry,colW7[0],rowH7,'EEF0F5','D0D5DE'));
-    s7.push(spText(id7++,'rct'+ri,colX7[0]+.05,ry,colW7[0]-.05,rowH7,PCAT_LBL7[cat]||cat,9,true,C.navy,'l','Calibri'));
-    stageKeys7.forEach((sk,si)=>{
-      const items=mx7[cat][sk]||[];
-      const cellText=items.slice(0,3).join(' / ')+(items.length>3?` (+${items.length-3})`:'');
-      s7.push(spRect(id7++,'rc'+ri+'_'+si,colX7[si+1],ry,colW7[si+1],rowH7,STAGE_BG7[si],'D8D0C2',3175));
-      if(cellText)s7.push(spText(id7++,'rT'+ri+'_'+si,colX7[si+1]+.04,ry,colW7[si+1]-.08,rowH7,cellText,7,false,si===0?'9A7A2E':C.slate,'l','Calibri'));
-    });
-  });
-
   /* ═══════════════════════════════════════
      BUILD ZIP (PPTX = ZIP with OOXML)
   ═══════════════════════════════════════ */
-  const slides=[s1,s2,s3,s4,s5,s6,s7];
-  const slideBgs=[C.navy,C.paper,C.paper,C.paper,C.paper,C.paper,C.paper];
+  const slides=[s1,s2,s3,s4,s5,s6];
+  const slideBgs=[C.navy,C.paper,C.paper,C.paper,C.paper,C.paper];
 
   // relationships
   const slideRels=slides.map((_,i)=>
