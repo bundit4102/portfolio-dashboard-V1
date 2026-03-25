@@ -140,7 +140,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 .b-pdf:hover{background:rgba(192,57,43,.22);border-color:#e87060;color:#fff}
 
 /* ── Summary Matrix ── */
-.sum-matrix{width:100%;border-collapse:separate;border-spacing:0;font-family:'Sarabun',sans-serif;font-size:12px}
+.sum-matrix{width:100%;border-collapse:separate;border-spacing:0;font-family:'Sarabun',sans-serif;font-size:12px;table-layout:fixed}
 .sum-matrix th{padding:10px 14px;font-size:10px;font-weight:700;letter-spacing:.5px;text-align:center;color:#fff;position:relative}
 .sum-stage-idea{background:#c9a84c}
 .sum-stage-prop{background:#c9a84c;opacity:.75}
@@ -151,7 +151,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 .sum-matrix th .chv{position:absolute;right:-11px;top:0;bottom:0;width:22px;overflow:hidden;z-index:2}
 .sum-matrix th .chv::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%) rotate(45deg);width:18px;height:18px;background:inherit}
 .sum-cat-lbl{padding:14px 16px;font-size:14px;font-weight:600;color:#1c2b3a;background:#eef0f5;border-bottom:1px solid #dde2ea;vertical-align:middle;min-width:110px}
-.sum-cell{padding:10px 14px;vertical-align:top;border:1px solid rgba(255,255,255,.6);font-size:11px;line-height:1.6}
+.sum-cell{padding:10px 14px;vertical-align:top;border:1px solid rgba(255,255,255,.6);font-size:11px;line-height:1.6;word-break:break-word;overflow-wrap:break-word}
 .sum-cell-idea{background:#f5f0e0}
 .sum-cell-prop{background:#f5f0e0;opacity:.85}
 .sum-cell-exec{background:#e8edf5}
@@ -1497,9 +1497,7 @@ function saveUsers(us){
 function getAllUsers(){return USERS_CACHE;}
 function getPendingCount(){return getUsers().filter(u=>u.status==='pending').length;}
 async function refreshUsers(){
-  // Load from localStorage (GitHub Pages & Render)
-  try{const s=localStorage.getItem(UK);if(s){const d=JSON.parse(s);USERS_CACHE=[ADMIN_USER,...d];}}catch(e){}
-  // Try server (Render only)
+  try{const s=localStorage.getItem(UK);if(s)USERS_CACHE=[ADMIN_USER,...JSON.parse(s)];}catch(e){}
   try{const r=await fetch('/api/users',{credentials:'same-origin'});if(r.ok){const d=await r.json();USERS_CACHE=[ADMIN_USER,...d];}}catch(e){}
 }
 
@@ -1525,7 +1523,7 @@ async function doLogin(){
   const remember=$('rememberMe')?.checked||false;
   if(!u||!p){showErr('loginErr','กรุณากรอก username และ password');return;}
 
-  // Check built-in admin FIRST
+  // Check built-in admin FIRST — cannot be overridden by localStorage
   if(u===ADMIN_USER.username && p===ADMIN_USER.password){
     saveRemembered(u,p,remember);
     currentUser=ADMIN_USER;
@@ -1534,8 +1532,7 @@ async function doLogin(){
     return;
   }
 
-  // Check registered users (localStorage)
-  await refreshUsers();
+  // Check registered users
   const users=getUsers();
   const found=users.find(x=>x.username===u && x.password===p);
   if(!found){showErr('loginErr','Username หรือ Password ไม่ถูกต้อง');return;}
@@ -1589,9 +1586,9 @@ async function showAdminBox(){
     renderInput();
     renderDash();
     renderIdeas();
+    renderAdminPanel();
     startClock();
     sw('summary');
-    renderAdminPanel();
   }catch(e){console.error('showAdminBox error:',e);}
 }
 
@@ -1626,10 +1623,8 @@ function startClock(){
   }
   tick();
   setInterval(()=>{
-    const el=document.getElementById('liveClock');
-    if(!el)return;
-    const now=new Date();
-    const pad=n=>String(n).padStart(2,'0');
+    const el=document.getElementById('liveClock');if(!el)return;
+    const now=new Date();const pad=n=>String(n).padStart(2,'0');
     el.textContent=pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
   },1000);
 }
@@ -2080,20 +2075,13 @@ function staleDays(p){
 // ══════════════════════════════════════════════
 async function save(){
   setSave('go');
-  // บันทึก localStorage เสมอ (ทำงานทั้ง GitHub Pages และ Render)
   try{localStorage.setItem(SK,JSON.stringify(P));localStorage.setItem(IK,JSON.stringify(IDEAS));}catch(e){}
-  // ลอง server (Render) — ถ้าไม่มีก็ไม่เป็นไร
   try{await fetch('/api/data',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({projects:P,ideas:IDEAS})});}catch(e){}
   setSave('ok');
 }
 async function load(){
   TODAY=new Date();TODAY.setHours(0,0,0,0);
-  // ลอง server ก่อน (Render)
-  try{
-    const r=await fetch('/api/data',{credentials:'same-origin'});
-    if(r.ok){const d=await r.json();if(d.projects&&d.projects.length)P=d.projects;if(d.ideas&&d.ideas.length)IDEAS=d.ideas;}
-  }catch(e){}
-  // localStorage fallback (GitHub Pages)
+  try{const r=await fetch('/api/data',{credentials:'same-origin'});if(r.ok){const d=await r.json();if(d.projects&&d.projects.length)P=d.projects;if(d.ideas&&d.ideas.length)IDEAS=d.ideas;}}catch(e){}
   if(!P.length){try{const s=localStorage.getItem(SK);if(s)P=JSON.parse(s);}catch(e){}}
   if(!IDEAS.length){try{const s=localStorage.getItem(IK);if(s)IDEAS=JSON.parse(s);}catch(e){}}
   if(!P.length)loadDemoP();if(!IDEAS.length)loadDemoI();
@@ -2715,7 +2703,7 @@ function renderSummary(){
     {icon:'💡',num:preP,lbl:'Pre-Projects',col:'var(--amber)'},
     {icon:'⚙️',num:ongoingP,lbl:'On-Going Projects',col:'var(--blue)'},
     {icon:'🏁',num:doneP,lbl:'Completed',col:'var(--green)'},
-    {icon:'💰',num:totalBudget?'฿'+Math.round(totalBudget/1000)+'K':'—',lbl:'Total Budget',col:'var(--gold-d)',raw:true},
+    {icon:'💰',num:totalBudget?'฿'+Number(Math.round(totalBudget/1000)).toLocaleString('en-US')+'K':'—',lbl:'Total Budget',col:'var(--gold-d)',raw:true},
   ];
   const kr=$('sumKpiRow');
   if(kr)kr.innerHTML=kpiData.map((k,i)=>{
