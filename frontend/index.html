@@ -1502,7 +1502,9 @@ async function refreshUsers(){
     if(r.ok){const d=await r.json();USERS_CACHE=[ADMIN_USER,...d];}
   }catch(e){}
 }
-
+let USERS_CACHE=[ADMIN_USER];
+let _pendingSyncData=null;
+let currentUser=null;
 let currentUser=null;
 let adminTab='pending';
 
