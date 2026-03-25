@@ -9,9 +9,23 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(BASE_DIR)
 
 app = Flask(__name__, static_folder=os.path.join(ROOT_DIR, 'frontend'))
-CORS(app, supports_credentials=True)
+CORS(app,
+     supports_credentials=True,
+     origins=[
+         'https://bundit4102.github.io',
+         'https://portfolio-dashboard-v1.onrender.com',
+         'http://localhost:5000',
+         'http://127.0.0.1:5000',
+     ],
+     allow_headers=['Content-Type','Authorization'],
+     methods=['GET','POST','PUT','DELETE','OPTIONS'])
 
 app.secret_key = 'portfolio-secret-2026-change-in-production'
+# ✅ สำคัญ: รองรับ cross-origin session บน Render (HTTPS)
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # 24 ชั่วโมง
 
 # รองรับทั้ง SQLite (local/Render free) และ PostgreSQL (Render paid)
 if os.environ.get("DATABASE_URL"):
@@ -113,6 +127,7 @@ def auth_login():
 
     # Built-in admin — hardcoded (ไม่เก็บใน DB)
     if username == 'admin' and password == 'admin2026':
+        session.permanent = True
         session['uid'] = '__admin__'
         return jsonify({'success': True, 'user': {
             'id': '__admin__', 'username': 'admin', 'name': 'System Admin',
@@ -127,6 +142,7 @@ def auth_login():
     if user.status == 'rejected':
         return jsonify({'success': False, 'error': 'บัญชีของคุณถูกปฏิเสธ กรุณาติดต่อ Admin'})
 
+    session.permanent = True
     session['uid'] = user.id
     return jsonify({'success': True, 'pending': user.status == 'pending', 'user': user.to_dict()})
 
