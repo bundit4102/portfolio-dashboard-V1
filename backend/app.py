@@ -301,6 +301,16 @@ def data_save():
     return jsonify({'success': True})
 
 
+# ─── Public Data (VIP view — no login required) ──────────────────────────────
+
+@app.route('/api/data/public', methods=['GET'])
+def data_public():
+    """Public read-only endpoint for VIP dashboard — no auth required"""
+    projects = [p.to_dict() for p in Project.query.all()]
+    ideas    = [i.to_dict() for i in Idea.query.all()]
+    return jsonify({'projects': projects, 'ideas': ideas})
+
+
 # ─── Serve Frontend (GitHub Pages จะไม่ใช้ส่วนนี้) ────────────────────────────
 
 @app.route('/', defaults={'path': ''})
