@@ -1520,7 +1520,7 @@ function showAuthTab(t){
 }
 
 // ── LOGIN ─────────────────────────────────────
-function doLogin(){
+async function doLogin(){
   const u=$('lUser').value.trim(), p=$('lPass').value;
   const remember=$('rememberMe')?.checked||false;
   if(!u||!p){showErr('loginErr','กรุณากรอก username และ password');return;}
