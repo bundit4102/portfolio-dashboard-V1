@@ -2207,16 +2207,16 @@ function upd(i,f,v){
   if(f==='pct')v=Math.min(100,Math.max(0,+v||0));
   pushUndo();
   P[i][f]=v;
-  // Auto-generate ID whenever data changes — if ID is missing or has ???
+  // Auto-generate ID ทุกครั้งที่มีการแก้ไข — ถ้า ID ยังเป็น ??? หรือว่างอยู่
   const needsId=!P[i].id||P[i].id.includes('???')||P[i].id.startsWith('PRJ-');
-  const hasEnough=P[i].pcat&&(P[i].owner||'').trim();
+  // ต้องมี category เท่านั้น (ไม่บังคับ owner)
+  const hasEnough=!!P[i].pcat;
   if(needsId&&hasEnough){
     P[i].id=genProjectId(P[i].pcat,P[i].owner,i);
-    // update id cell in DOM directly
     const idDiv=document.querySelector(`#r${i} td:nth-child(2) div[title="Project ID (auto)"]`);
     if(idDiv)idDiv.textContent=P[i].id;
   } else if(f==='pcat'||f==='owner'){
-    // Re-generate even if has ID (update to reflect new category/owner)
+    // Re-generate เมื่อ category หรือ owner เปลี่ยน
     const autoPattern=/^\d{4}_[A-Z]+_\d{3}_/;
     if(!P[i].id||autoPattern.test(P[i].id)||P[i].id.includes('???')){
       P[i].id=genProjectId(P[i].pcat,P[i].owner,i);
@@ -2249,13 +2249,13 @@ function genProjectId(pcat, owner, excludeIdx){
   const catMap = {ENE:'ENE',CST:'C',QLT:'Q',PRD:'P',SAF:'S',MRL:'M',ENV:'E','':'GEN'};
   const catCode = catMap[pcat||''] || 'GEN';
   const rawName = (owner||'').trim();
-  const firstName = rawName ? rawName.split(/\s+/)[0] : '';
-  if(!pcat && !rawName) return year+'_???_???_???';
-  // Run number = total projects in same YEAR (global, not per category), excluding current row
+  const firstName = rawName ? rawName.split(/\s+/)[0] : 'TBD';
+  // Generate even with just category — no longer require both
+  if(!pcat) return year+'_???_???_???';
   const yearPrefix = String(year)+'_';
-  const existingThisYear = P.filter((p,i)=>i!==excludeIdx && (p.id||'').startsWith(yearPrefix));
+  const existingThisYear = P.filter((p,i)=>i!==excludeIdx && (p.id||'').startsWith(yearPrefix) && !(p.id||'').includes('???'));
   const runNum = (existingThisYear.length+1).toString().padStart(3,'0');
-  return year+'_'+catCode+'_'+runNum+'_'+(firstName||'???');
+  return year+'_'+catCode+'_'+runNum+'_'+firstName;
 }
 // Regenerate ID for a specific row
 function regenId(i){
@@ -2437,13 +2437,16 @@ async function fullRefreshAndGenIds(){
   const catMap={ENE:'ENE',CST:'C',QLT:'Q',PRD:'P',SAF:'S',MRL:'M',ENV:'E','':'GEN'};
   let fixed=0;
   let globalRun=0;
+  // นับเฉพาะ row ที่มี ID ดีแล้ว เพื่อ run number ถูกต้อง
+  const goodIds=P.filter(p=>p.id&&!p.id.includes('???')&&!p.id.startsWith('PRJ-')).length;
+  let runStart=goodIds;
   P.forEach((p,i)=>{
-    globalRun++;
     const needsId=!p.id||p.id.includes('???')||p.id.startsWith('PRJ-');
-    if(needsId){
+    if(needsId&&p.pcat){
+      runStart++;
       const catCode=catMap[p.pcat||'']||'GEN';
-      const firstName=(p.owner||'').trim().split(/\s+/)[0]||'???';
-      P[i].id=year+'_'+catCode+'_'+String(globalRun).padStart(3,'0')+'_'+firstName;
+      const firstName=(p.owner||'').trim().split(/\s+/)[0]||'TBD';
+      P[i].id=year+'_'+catCode+'_'+String(runStart).padStart(3,'0')+'_'+firstName;
       fixed++;
     }
   });
@@ -2457,7 +2460,7 @@ async function fullRefreshAndGenIds(){
   try{updateStaleNav();}catch(e){}
   setSave('ok');
   if(btn){btn.innerHTML='🔄 Refresh & Generate ID';btn.disabled=false;}
-  showToast(fixed>0?`✅ Refresh + Generate ID สำเร็จ (แก้ ${fixed} รายการ)`:'✅ Refresh เรียบร้อยแล้ว','var(--green)');
+  showToast(fixed>0?`✅ Generate ID สำเร็จ ${fixed} รายการ — กรอก Owner แล้ว ID จะ update อัตโนมัติ`:'✅ Refresh เรียบร้อยแล้ว','var(--green)');
 }
 function expCSV(){const h='Project ID,Project Name,Category,Project Owner,Status,Progress %,Plan Start,Plan End,Actual Start,Actual End';const rows=P.map(p=>[p.id,p.name,p.pcat||'',p.owner,p.status,p.pct,p.ps||'',p.pe||'',p.as_||'',p.ae||''].map(v=>`"${v}"`).join(','));dl('\uFEFF'+[h,...rows].join('\n'),'text/csv','Gantt_'+fi(TODAY)+'.csv');}
 function impFromCSV(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const lines=ev.target.result.trim().split(/\r?\n/);const hdrs=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,'').toLowerCase());const ix={};hdrs.forEach((h,i)=>{if(/project.?id|^id$/i.test(h))ix.id=i;if(/project.?name|^name$/i.test(h))ix.name=i;if(/category|pcat/i.test(h))ix.pcat=i;if(/owner/i.test(h))ix.owner=i;if(/^status$/i.test(h))ix.status=i;if(/progress/i.test(h))ix.pct=i;if(/plan.?start/i.test(h))ix.ps=i;if(/plan.?end/i.test(h))ix.pe=i;if(/actual.?start/i.test(h))ix.as_=i;if(/actual.?end/i.test(h))ix.ae=i;});P=lines.slice(1).filter(l=>l.trim()).map(line=>{const v=line.split(',').map(x=>x.trim().replace(/^"|"$/g,''));const raw=parseFloat(v[ix.pct]||0);return{id:v[ix.id]||'',name:v[ix.name]||'',pcat:v[ix.pcat]||'',owner:v[ix.owner]||'',status:v[ix.status]||'Not Started',pct:raw<=1?Math.round(raw*100):Math.round(raw),ps:v[ix.ps]||'',pe:v[ix.pe]||'',as_:v[ix.as_]||'',ae:v[ix.ae]||''};}).filter(p=>p.id);renderInput();save();renderDash();}catch(err){alert('Error: '+err.message);}e.target.value='';};r.readAsText(f,'UTF-8');}
