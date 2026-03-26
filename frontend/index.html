@@ -1497,13 +1497,9 @@ function saveUsers(us){
 function getAllUsers(){return USERS_CACHE;}
 function getPendingCount(){return getUsers().filter(u=>u.status==='pending').length;}
 async function refreshUsers(){
-  let local=[];
-  try{const s=localStorage.getItem(UK);if(s)local=JSON.parse(s);}catch(e){}
   let server=[];
-  try{const r=await fetch('/api/users',{credentials:'same-origin'});if(r.ok)server=await r.json();}catch(e){}
-  const merged=[...server];
-  local.forEach(u=>{if(!merged.find(x=>x.username===u.username))merged.push(u);});
-  USERS_CACHE=[ADMIN_USER,...merged];
+  try{const r=await fetch(API+'/api/users',{credentials:'include'});if(r.ok)server=await r.json();}catch(e){}
+  USERS_CACHE=[ADMIN_USER,...server];
 }
 
 let USERS_CACHE=[ADMIN_USER];
@@ -1523,40 +1519,46 @@ function showAuthTab(t){
 }
 
 // ── LOGIN ─────────────────────────────────────
+const API='https://portfolio-dashboard-v1.onrender.com';
 async function doLogin(){
   const u=$('lUser').value.trim(), p=$('lPass').value;
   const remember=$('rememberMe')?.checked||false;
   if(!u||!p){showErr('loginErr','กรุณากรอก username และ password');return;}
 
-  // Check built-in admin FIRST — cannot be overridden by localStorage
-  if(u===ADMIN_USER.username && p===ADMIN_USER.password){
+  const btn=document.querySelector('.auth-btn[onclick="doLogin()"]');
+  if(btn){btn.disabled=true;btn.textContent='⏳ กำลังเข้าสู่ระบบ...';}
+  try{
+    const res=await fetch(API+'/api/auth/login',{
+      method:'POST',
+      credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:u,password:p})
+    });
+    const data=await res.json();
+    if(data.pending){
+      currentUser=data.user||{username:u,name:u,role:'Viewer'};
+      $('waitName').textContent=currentUser.name||u;
+      $('waitRole').textContent='ขอสิทธิ์: '+(currentUser.role||'Viewer');
+      $('waitUser').textContent='@'+u;
+      $('authBox').classList.add('hidden');
+      $('waitBox').classList.remove('hidden');
+      return;
+    }
+    if(!data.success){
+      showErr('loginErr',data.error||'Username หรือ Password ไม่ถูกต้อง');
+      return;
+    }
+    currentUser=data.user||{username:u,name:u,role:'Viewer',status:'approved'};
     saveRemembered(u,p,remember);
-    currentUser=ADMIN_USER;
-    try{await fetch('/api/auth/login',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});}catch(e){}
-    await showAdminBox();
-    return;
-  }
-
-  // Check registered users
-  const users=getUsers();
-  const found=users.find(x=>x.username===u && x.password===p);
-  if(!found){showErr('loginErr','Username หรือ Password ไม่ถูกต้อง');return;}
-  if(found.status==='pending'){
-    currentUser=found;
-    $('waitName').textContent=found.name;
-    $('waitRole').textContent='ขอสิทธิ์: '+found.role;
-    $('waitUser').textContent='@'+found.username;
-    $('authBox').classList.add('hidden');
-    $('waitBox').classList.remove('hidden');
-    return;
-  }
-  if(found.status==='rejected'){showErr('loginErr','บัญชีของคุณถูกปฏิเสธ กรุณาติดต่อ Admin');return;}
-  saveRemembered(u,p,remember);
-  currentUser=found;
-  if(found.role==='Admin'){
-    await showAdminBox();
-  } else {
-    await enterApp();
+    if(currentUser.role==='Admin'){
+      await showAdminBox();
+    } else {
+      await enterApp();
+    }
+  }catch(e){
+    showErr('loginErr','ไม่สามารถเชื่อมต่อ Server ได้ กรุณารอสักครู่แล้วลองใหม่ (Server อาจกำลังเริ่มต้น ~30 วิ)');
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='เข้าสู่ระบบ →';}
   }
 }
 
@@ -1644,24 +1646,22 @@ async function doRegister(){
   if(pass.length<6){showErr('regErr','Password ต้องมีอย่างน้อย 6 ตัวอักษร');return;}
   if(pass!==pass2){showErr('regErr','Password ไม่ตรงกัน');return;}
   if(/\s/.test(user)){showErr('regErr','Username ต้องไม่มีช่องว่าง');return;}
-  const btn=document.querySelector('.auth-btn[onclick="doRegister()"]');
-  if(btn){btn.disabled=true;btn.textContent='⏳ กำลังส่งข้อมูล...';}
+  const all=getAllUsers();
+  if(all.find(x=>x.username===user)){showErr('regErr','Username นี้ถูกใช้แล้ว กรุณาเลือก username อื่น');return;}
+  const newUser={id:'u'+Date.now(),username:user,password:pass,name,dept,role,status:'pending',createdAt:new Date().toISOString()};
+  const users=getUsers();users.push(newUser);saveUsers(users);
+  // ส่งไป Server (Render) ด้วย
+  const btn2=document.querySelector('.auth-btn[onclick="doRegister()"]');
+  if(btn2){btn2.disabled=true;btn2.textContent='⏳ กำลังส่งข้อมูล...';}
   try{
-    const res=await fetch('https://portfolio-dashboard-v1.onrender.com/api/auth/register',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({username:user,password:pass,name,dept,role})
-    });
+    const res=await fetch(API+'/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:pass,name,dept,role})});
     const data=await res.json();
-    if(!data.success){showErr('regErr',data.error||'เกิดข้อผิดพลาด กรุณาลองใหม่');return;}
-    $('regOk').textContent='✅ ส่งคำขอเรียบร้อย! กรุณารอ Admin ตรวจสอบและอนุมัติบัญชีของคุณ';
-    $('regOk').classList.add('show');
-    ['rName','rDept','rUser','rPass','rPass2'].forEach(id=>$(id).value='');
-  }catch(e){
-    showErr('regErr','ไม่สามารถเชื่อมต่อ Server ได้ กรุณารอสักครู่แล้วลองใหม่ (Server อาจกำลังเริ่มต้น)');
-  }finally{
-    if(btn){btn.disabled=false;btn.textContent='ส่งคำขอสมัคร →';}
-  }
+    if(!data.success){showErr('regErr',data.error||'เกิดข้อผิดพลาด');if(btn2){btn2.disabled=false;btn2.textContent='ส่งคำขอสมัคร →';}return;}
+  }catch(e){showErr('regErr','ไม่สามารถเชื่อมต่อ Server ได้ กรุณาลองใหม่');if(btn2){btn2.disabled=false;btn2.textContent='ส่งคำขอสมัคร →';}return;}
+  if(btn2){btn2.disabled=false;btn2.textContent='ส่งคำขอสมัคร →';}
+  $('regOk').textContent='✅ ส่งคำขอเรียบร้อย! กรุณารอ Admin ตรวจสอบและอนุมัติบัญชีของคุณ';
+  $('regOk').classList.add('show');
+  ['rName','rDept','rUser','rPass','rPass2'].forEach(id=>$(id).value='');
 }
 
 // ── LOGOUT ───────────────────────────────────
@@ -1753,7 +1753,7 @@ async function refreshAdminPanel(){
   if(btn){btn.textContent='⏳ กำลังโหลด...';btn.disabled=true;}
   try{
     if(currentUser?.id==='__admin__'){
-      try{await fetch('/api/auth/login',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'admin',password:'admin2026'})});}catch(e){}
+      try{await fetch(API+'/api/auth/login',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'admin',password:'admin2026'})});}catch(e){}
     }
     await refreshUsers();
   }catch(e){}
@@ -1859,17 +1859,26 @@ function logActivity(icon,bg,msg){
   actLog.push({icon,bg,msg,time:new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})});
 }
 
-function approveUser(id){
-  const users=getUsers();const u=users.find(x=>x.id===id);if(!u)return;
-  u.status='approved';saveUsers(users);
+async function approveUser(id){
+  const all=getAllUsers();const u=all.find(x=>x.id===id);if(!u)return;
+  try{
+    const res=await fetch(API+'/api/users/'+id,{method:'PUT',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'approved'})});
+    const data=await res.json();
+    if(!data.success){showToast('❌ อนุมัติไม่สำเร็จ: '+(data.error||'เกิดข้อผิดพลาด'),'var(--red)');return;}
+  }catch(e){showToast('❌ ไม่สามารถเชื่อมต่อ Server ได้','var(--red)');return;}
   logActivity('✅','rgba(26,122,74,.12)',`อนุมัติบัญชี <strong>${u.name} (@${u.username})</strong> — ${u.role}`);
-  renderAdminPanel();checkAdminNotif();
+  showToast('✅ อนุมัติบัญชี '+u.name+' เรียบร้อยแล้ว','var(--green)');
+  await refreshUsers();renderAdminPanel();checkAdminNotif();
 }
-function rejectUser(id){
-  const users=getUsers();const u=users.find(x=>x.id===id);if(!u)return;
-  u.status='rejected';saveUsers(users);
+async function rejectUser(id){
+  const all=getAllUsers();const u=all.find(x=>x.id===id);if(!u)return;
+  try{
+    const res=await fetch(API+'/api/users/'+id,{method:'PUT',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'rejected'})});
+    const data=await res.json();
+    if(!data.success){showToast('❌ ปฏิเสธไม่สำเร็จ: '+(data.error||'เกิดข้อผิดพลาด'),'var(--red)');return;}
+  }catch(e){showToast('❌ ไม่สามารถเชื่อมต่อ Server ได้','var(--red)');return;}
   logActivity('❌','rgba(192,57,43,.1)',`ปฏิเสธบัญชี <strong>${u.name} (@${u.username})</strong>`);
-  renderAdminPanel();checkAdminNotif();
+  await refreshUsers();renderAdminPanel();checkAdminNotif();
 }
 function viewPassword(id){
   const u=getUsers().find(x=>x.id===id);
@@ -1955,8 +1964,8 @@ async function confirmResetPw(id){
   if(pw.length<6){showErr('Password ต้องมีอย่างน้อย 6 ตัวอักษร');return;}
   if(pw!==pw2){showErr('Password ไม่ตรงกัน');return;}
   try{
-    const res=await fetch(`/api/users/${id}/password`,{
-      method:'PUT',credentials:'same-origin',
+    const res=await fetch(API+`/api/users/${id}/password`,{
+      method:'PUT',credentials:'include',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({password:pw})
     });
@@ -1970,23 +1979,32 @@ async function confirmResetPw(id){
   renderAdminPanel();
 }
 
-function deleteUser(id){
+async function deleteUser(id){
   const users=getUsers();const u=users.find(x=>x.id===id);if(!u||!confirm(`ลบผู้ใช้ "${u.name}" ออกจากระบบ?\nการดำเนินการนี้ไม่สามารถย้อนกลับได้`))return;
-  saveUsers(users.filter(x=>x.id!==id));
+  try{
+    const res=await fetch(API+'/api/users/'+id,{method:'DELETE',credentials:'include'});
+    const data=await res.json();
+    if(!data.success){showToast('❌ ลบไม่สำเร็จ: '+(data.error||'เกิดข้อผิดพลาด'),'var(--red)');return;}
+  }catch(e){showToast('❌ ไม่สามารถเชื่อมต่อ Server ได้','var(--red)');return;}
   logActivity('🗑','rgba(138,155,176,.12)',`ลบผู้ใช้ <strong>${u.name} (@${u.username})</strong> ออกจากระบบ`);
-  renderAdminPanel();checkAdminNotif();
+  await refreshUsers();renderAdminPanel();checkAdminNotif();
 }
-function changeRole(id,role){
-  const users=getUsers();const u=users.find(x=>x.id===id);if(!u)return;
-  const old=u.role;u.role=role;saveUsers(users);
+async function changeRole(id,role){
+  const all=getAllUsers();const u=all.find(x=>x.id===id);if(!u)return;
+  const old=u.role;
+  try{
+    const res=await fetch(API+'/api/users/'+id,{method:'PUT',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({role})});
+    const data=await res.json();
+    if(!data.success){showToast('❌ เปลี่ยนสิทธิ์ไม่สำเร็จ','var(--red)');return;}
+  }catch(e){showToast('❌ ไม่สามารถเชื่อมต่อ Server ได้','var(--red)');return;}
   logActivity('🔄','rgba(201,168,76,.1)',`เปลี่ยนสิทธิ์ <strong>${u.name}</strong>: ${old} → ${role}`);
-  renderAdminPanel();
+  await refreshUsers();renderAdminPanel();
 }
 
 // Create user by admin
 function openCreateUserModal(){$('createErr').classList.remove('show');$('cu-name').value='';$('cu-dept').value='';$('cu-user').value='';$('cu-pass').value='';$('cu-pass2').value='';$('cu-role').value='Viewer';$('cu-status').value='approved';$('createUserModal').classList.remove('hidden');}
 function closeCreateUserModal(){$('createUserModal').classList.add('hidden');}
-function createUserByAdmin(){
+async function createUserByAdmin(){
   const name=$('cu-name').value.trim(),dept=$('cu-dept').value.trim();
   const user=$('cu-user').value.trim(),pass=$('cu-pass').value,pass2=$('cu-pass2').value;
   const role=$('cu-role').value,status=$('cu-status').value;
@@ -1995,11 +2013,14 @@ function createUserByAdmin(){
   if(pass.length<6){errEl.textContent='Password ต้องมีอย่างน้อย 6 ตัวอักษร';errEl.classList.add('show');return;}
   if(pass!==pass2){errEl.textContent='Password ไม่ตรงกัน';errEl.classList.add('show');return;}
   if(/\s/.test(user)){errEl.textContent='Username ต้องไม่มีช่องว่าง';errEl.classList.add('show');return;}
-  if(getAllUsers().find(x=>x.username===user)){errEl.textContent='Username นี้ถูกใช้แล้ว';errEl.classList.add('show');return;}
-  const newUser={id:'u'+Date.now(),username:user,password:pass,name,dept,role,status,createdAt:new Date().toISOString()};
-  const users=getUsers();users.push(newUser);saveUsers(users);
+  try{
+    const res=await fetch(API+'/api/users',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:pass,name,dept,role,status})});
+    const data=await res.json();
+    if(!data.success){errEl.textContent=data.error||'เกิดข้อผิดพลาด';errEl.classList.add('show');return;}
+  }catch(e){errEl.textContent='ไม่สามารถเชื่อมต่อ Server ได้';errEl.classList.add('show');return;}
   logActivity('➕','rgba(201,168,76,.1)',`สร้างผู้ใช้ใหม่ <strong>${name} (@${user})</strong> — ${role} [${status==='approved'?'อนุมัติทันที':'รอการอนุมัติ'}]`);
-  closeCreateUserModal();renderAdminPanel();checkAdminNotif();
+  closeCreateUserModal();
+  await refreshUsers();renderAdminPanel();checkAdminNotif();
 }
 
 function showAdminPanel(){sw('admin');}
@@ -2100,12 +2121,12 @@ function staleDays(p){
 async function save(){
   setSave('go');
   try{localStorage.setItem(SK,JSON.stringify(P));localStorage.setItem(IK,JSON.stringify(IDEAS));}catch(e){}
-  try{await fetch('/api/data',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({projects:P,ideas:IDEAS})});}catch(e){}
+  try{await fetch(API+'/api/data',{method:'PUT',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({projects:P,ideas:IDEAS})});}catch(e){}
   setSave('ok');
 }
 async function load(){
   TODAY=new Date();TODAY.setHours(0,0,0,0);
-  try{const r=await fetch('/api/data',{credentials:'same-origin'});if(r.ok){const d=await r.json();if(d.projects&&d.projects.length)P=d.projects;if(d.ideas&&d.ideas.length)IDEAS=d.ideas;}}catch(e){}
+  try{const r=await fetch(API+'/api/data',{credentials:'include'});if(r.ok){const d=await r.json();if(d.projects&&d.projects.length)P=d.projects;if(d.ideas&&d.ideas.length)IDEAS=d.ideas;}}catch(e){}
   if(!P.length){try{const s=localStorage.getItem(SK);if(s)P=JSON.parse(s);}catch(e){}}
   if(!IDEAS.length){try{const s=localStorage.getItem(IK);if(s)IDEAS=JSON.parse(s);}catch(e){}}
   if(!P.length)loadDemoP();if(!IDEAS.length)loadDemoI();
@@ -4216,7 +4237,7 @@ async function initVipMode(){
       </div>
       <style>@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}</style>`);
     try{
-      const r=await fetch('/api/data',{credentials:'same-origin'});
+      const r=await fetch(API+'/api/data',{credentials:'include'});
       if(r.ok){
         const d=await r.json();
         snap={projects:d.projects||[],ideas:d.ideas||[],today:fi(new Date())};
