@@ -1535,6 +1535,12 @@ async function doLogin(){
       body:JSON.stringify({username:u,password:p})
     });
     const data=await res.json();
+    // ถ้า login ไม่สำเร็จ (password ผิด / rejected)
+    if(!data.success && !data.pending){
+      showErr('loginErr',data.error||'Username หรือ Password ไม่ถูกต้อง');
+      return;
+    }
+    // ถ้ายัง pending (รอ admin อนุมัติ)
     if(data.pending){
       currentUser=data.user||{username:u,name:u,role:'Viewer'};
       $('waitName').textContent=currentUser.name||u;
@@ -1544,10 +1550,7 @@ async function doLogin(){
       $('waitBox').classList.remove('hidden');
       return;
     }
-    if(!data.success){
-      showErr('loginErr',data.error||'Username หรือ Password ไม่ถูกต้อง');
-      return;
-    }
+    // success = true และ pending = false → เข้าได้
     currentUser=data.user||{username:u,name:u,role:'Viewer',status:'approved'};
     saveRemembered(u,p,remember);
     if(currentUser.role==='Admin'){
