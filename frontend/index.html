@@ -1644,15 +1644,24 @@ async function doRegister(){
   if(pass.length<6){showErr('regErr','Password ต้องมีอย่างน้อย 6 ตัวอักษร');return;}
   if(pass!==pass2){showErr('regErr','Password ไม่ตรงกัน');return;}
   if(/\s/.test(user)){showErr('regErr','Username ต้องไม่มีช่องว่าง');return;}
-  const all=getAllUsers();
-  if(all.find(x=>x.username===user)){showErr('regErr','Username นี้ถูกใช้แล้ว กรุณาเลือก username อื่น');return;}
-  const newUser={id:'u'+Date.now(),username:user,password:pass,name,dept,role,status:'pending',createdAt:new Date().toISOString()};
-  const users=getUsers();users.push(newUser);saveUsers(users);
-  // ส่งไป Server (Render) ด้วย
-  try{await fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:pass,name,dept,role})});}catch(e){}
-  $('regOk').textContent='✅ ส่งคำขอเรียบร้อย! กรุณารอ Admin ตรวจสอบและอนุมัติบัญชีของคุณ';
-  $('regOk').classList.add('show');
-  ['rName','rDept','rUser','rPass','rPass2'].forEach(id=>$(id).value='');
+  const btn=document.querySelector('.auth-btn[onclick="doRegister()"]');
+  if(btn){btn.disabled=true;btn.textContent='⏳ กำลังส่งข้อมูล...';}
+  try{
+    const res=await fetch('https://portfolio-dashboard-v1.onrender.com/api/auth/register',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:user,password:pass,name,dept,role})
+    });
+    const data=await res.json();
+    if(!data.success){showErr('regErr',data.error||'เกิดข้อผิดพลาด กรุณาลองใหม่');return;}
+    $('regOk').textContent='✅ ส่งคำขอเรียบร้อย! กรุณารอ Admin ตรวจสอบและอนุมัติบัญชีของคุณ';
+    $('regOk').classList.add('show');
+    ['rName','rDept','rUser','rPass','rPass2'].forEach(id=>$(id).value='');
+  }catch(e){
+    showErr('regErr','ไม่สามารถเชื่อมต่อ Server ได้ กรุณารอสักครู่แล้วลองใหม่ (Server อาจกำลังเริ่มต้น)');
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='ส่งคำขอสมัคร →';}
+  }
 }
 
 // ── LOGOUT ───────────────────────────────────
