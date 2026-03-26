@@ -140,7 +140,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 .b-pdf:hover{background:rgba(192,57,43,.22);border-color:#e87060;color:#fff}
 
 /* ── Summary Matrix ── */
-.sum-matrix{width:100%;border-collapse:separate;border-spacing:0;font-family:'Sarabun',sans-serif;font-size:12px}
+.sum-matrix{width:100%;border-collapse:separate;border-spacing:0;font-family:'Sarabun',sans-serif;font-size:12px;table-layout:fixed}
 .sum-matrix th{padding:10px 14px;font-size:10px;font-weight:700;letter-spacing:.5px;text-align:center;color:#fff;position:relative}
 .sum-stage-idea{background:#c9a84c}
 .sum-stage-prop{background:#c9a84c;opacity:.75}
@@ -151,7 +151,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 .sum-matrix th .chv{position:absolute;right:-11px;top:0;bottom:0;width:22px;overflow:hidden;z-index:2}
 .sum-matrix th .chv::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%) rotate(45deg);width:18px;height:18px;background:inherit}
 .sum-cat-lbl{padding:14px 16px;font-size:14px;font-weight:600;color:#1c2b3a;background:#eef0f5;border-bottom:1px solid #dde2ea;vertical-align:middle;min-width:110px}
-.sum-cell{padding:10px 14px;vertical-align:top;border:1px solid rgba(255,255,255,.6);font-size:11px;line-height:1.6}
+.sum-cell{padding:10px 14px;vertical-align:top;border:1px solid rgba(255,255,255,.6);font-size:11px;line-height:1.6;word-break:break-word;overflow-wrap:break-word}
 .sum-cell-idea{background:#f5f0e0}
 .sum-cell-prop{background:#f5f0e0;opacity:.85}
 .sum-cell-exec{background:#e8edf5}
@@ -1648,6 +1648,7 @@ async function doRegister(){
   if(all.find(x=>x.username===user)){showErr('regErr','Username นี้ถูกใช้แล้ว กรุณาเลือก username อื่น');return;}
   const newUser={id:'u'+Date.now(),username:user,password:pass,name,dept,role,status:'pending',createdAt:new Date().toISOString()};
   const users=getUsers();users.push(newUser);saveUsers(users);
+  // ส่งไป Server (Render) ด้วย
   try{await fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:pass,name,dept,role})});}catch(e){}
   $('regOk').textContent='✅ ส่งคำขอเรียบร้อย! กรุณารอ Admin ตรวจสอบและอนุมัติบัญชีของคุณ';
   $('regOk').classList.add('show');
@@ -1742,15 +1743,8 @@ async function refreshAdminPanel(){
   const btn=document.querySelector('[onclick="refreshAdminPanel()"]');
   if(btn){btn.textContent='⏳ กำลังโหลด...';btn.disabled=true;}
   try{
-    // Re-login อัตโนมัติถ้า session หมด
     if(currentUser?.id==='__admin__'){
-      try{
-        await fetch('/api/auth/login',{
-          method:'POST',credentials:'same-origin',
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({username:'admin',password:'admin2026'})
-        });
-      }catch(e){}
+      try{await fetch('/api/auth/login',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'admin',password:'admin2026'})});}catch(e){}
     }
     await refreshUsers();
   }catch(e){}
