@@ -8,6 +8,7 @@ if __name__ == '__main__':
         db.create_all()
         print('  Database ready: portfolio.db')
 
-    print('\n  Portfolio Dashboard')
-    print('  Open http://localhost:5051 in your browser\n')
-    app.run(debug=True, host='0.0.0.0', port=5051)
+    port = int(os.environ.get('PORT', 5000))
+    print(f'\n  Portfolio Dashboard')
+    print(f'  Open http://localhost:{port} in your browser\n')
+    app.run(debug=False, host='0.0.0.0', port=port)
