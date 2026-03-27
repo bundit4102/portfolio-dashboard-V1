@@ -1810,7 +1810,7 @@ function renderAdminPanel(){
     ? `<tr><td colspan="8" style="text-align:center;padding:28px;color:var(--muted);font-size:13px">ไม่พบผู้ใช้ที่ตรงกัน</td></tr>`
     : list.map(u=>{
         const isBuiltin=(u.id==='__admin__');
-        const dt=new Date(u.createdAt).toLocaleDateString('th-TH',{day:'2-digit',month:'short',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+        const _d=new Date(u.createdAt);const dt=_d.toLocaleDateString('th-TH',{day:'2-digit',month:'short',year:'2-digit',timeZone:'Asia/Bangkok'})+' '+_d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Bangkok'});
         const roleOpts=['Viewer','Manager','Admin'].map(r=>`<option value="${r}"${u.role===r?' selected':''}>${r}</option>`).join('');
         const actions=isBuiltin
           ? `<span style="font-size:11px;color:var(--muted);font-style:italic">Built-in Admin</span>`
@@ -2129,32 +2129,9 @@ async function save(){
 }
 async function load(){
   TODAY=new Date();TODAY.setHours(0,0,0,0);
-  // ลองดึงจาก /api/data (ต้องการ session) ก่อน
-  // ถ้าไม่ได้ (เช่น mobile บล็อก cookie) ให้ใช้ /api/data/public แทน
-  let loaded=false;
-  try{
-    const r=await fetch(API+'/api/data',{credentials:'include'});
-    if(r.ok){
-      const d=await r.json();
-      if(d.projects){P=d.projects;loaded=true;}
-      if(d.ideas){IDEAS=d.ideas;}
-    }
-  }catch(e){}
-  if(!loaded){
-    try{
-      const r=await fetch(API+'/api/data/public');
-      if(r.ok){
-        const d=await r.json();
-        if(d.projects&&d.projects.length){P=d.projects;}
-        if(d.ideas&&d.ideas.length){IDEAS=d.ideas;}
-        loaded=true;
-      }
-    }catch(e){}
-  }
-  if(!loaded){
-    if(!P.length){try{const s=localStorage.getItem(SK);if(s)P=JSON.parse(s);}catch(e){}}
-    if(!IDEAS.length){try{const s=localStorage.getItem(IK);if(s)IDEAS=JSON.parse(s);}catch(e){}}
-  }
+  try{const r=await fetch(API+'/api/data',{credentials:'include'});if(r.ok){const d=await r.json();if(d.projects&&d.projects.length)P=d.projects;if(d.ideas&&d.ideas.length)IDEAS=d.ideas;}}catch(e){}
+  if(!P.length){try{const s=localStorage.getItem(SK);if(s)P=JSON.parse(s);}catch(e){}}
+  if(!IDEAS.length){try{const s=localStorage.getItem(IK);if(s)IDEAS=JSON.parse(s);}catch(e){}}
   if(!P.length)loadDemoP();if(!IDEAS.length)loadDemoI();
 }
 function loadDemoP(){P=[
@@ -4263,8 +4240,7 @@ async function initVipMode(){
       </div>
       <style>@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}</style>`);
     try{
-      let r=await fetch(API+'/api/data',{credentials:'include'});
-      if(!r.ok) r=await fetch(API+'/api/data/public');
+      const r=await fetch(API+'/api/data',{credentials:'include'});
       if(r.ok){
         const d=await r.json();
         snap={projects:d.projects||[],ideas:d.ideas||[],today:fi(new Date())};
