@@ -2099,7 +2099,6 @@ function rem(p){if(p.ae)return-1;if(!p.pe)return null;return Math.max(0,Math.rou
 function iScore(x){return Math.round(((+x.impact||5)+(+x.feasibility||5)+(+x.strategic||5))/3*10);}
 function scoreColor(sc){return sc>=70?'var(--green)':sc>=50?'var(--amber)':'var(--red)';}
 const isViewer=()=>currentUser?.role==='Viewer';
-const isScoreEditor=()=>currentUser?.role==='Admin';  // เฉพาะ Admin เท่านั้นแก้ score/status/note ได้
 
 // Returns days since last log update; null if completed/no start
 function staleDays(p){
@@ -3180,7 +3179,6 @@ function updIdeaUndoBtns(){
 
 function renderIdeaTable(){
   const ro=isViewer();const dis=ro?'disabled':'';
-  const roSc=!isScoreEditor();const disSc=roSc?'disabled':'';
   $('ideaBody').innerHTML=IDEAS.map((x,i)=>{
     const sc=iScore(x),bc=scoreColor(sc);
     return`<tr id="ir${i}" class="pop">
@@ -3199,17 +3197,17 @@ function renderIdeaTable(){
       <td><input class="ci mo" type="date" value="${x.date||''}" onchange="updI(${i},'date',this.value)" ${dis}></td>
       <td><input class="ci mo" type="number" min="0" value="${x.budget||''}" onchange="updI(${i},'budget',+this.value)" placeholder="0" ${dis}></td>
       <td><input class="ci" value="${esc(x.desc)}" onchange="updI(${i},'desc',this.value)" placeholder="รายละเอียดโดยย่อ" ${dis}></td>
-      <td><div class="score-mini"><input type="range" id="si${i}imp" min="1" max="10" value="${x.impact||5}" oninput="updIScore(${i})" ${disSc}><span id="sv${i}imp">${x.impact||5}</span></div></td>
-      <td><div class="score-mini"><input type="range" id="si${i}feas" min="1" max="10" value="${x.feasibility||5}" oninput="updIScore(${i})" ${disSc}><span id="sv${i}feas">${x.feasibility||5}</span></div></td>
-      <td><div class="score-mini"><input type="range" id="si${i}str" min="1" max="10" value="${x.strategic||5}" oninput="updIScore(${i})" ${disSc}><span id="sv${i}str">${x.strategic||5}</span></div></td>
+      <td><div class="score-mini"><input type="range" id="si${i}imp" min="1" max="10" value="${x.impact||5}" oninput="updIScore(${i})" ${dis}><span id="sv${i}imp">${x.impact||5}</span></div></td>
+      <td><div class="score-mini"><input type="range" id="si${i}feas" min="1" max="10" value="${x.feasibility||5}" oninput="updIScore(${i})" ${dis}><span id="sv${i}feas">${x.feasibility||5}</span></div></td>
+      <td><div class="score-mini"><input type="range" id="si${i}str" min="1" max="10" value="${x.strategic||5}" oninput="updIScore(${i})" ${dis}><span id="sv${i}str">${x.strategic||5}</span></div></td>
       <td class="total-badge" id="sc${i}" style="color:${bc}">${sc}</td>
-      <td><select class="ci" onchange="updI(${i},'status',this.value)" ${disSc}>
+      <td><select class="ci" onchange="updI(${i},'status',this.value)" ${dis}>
         <option value="new" ${x.status==='new'?'selected':''}>🆕 New</option>
         <option value="review" ${x.status==='review'?'selected':''}>🔍 Review</option>
         <option value="approved" ${x.status==='approved'?'selected':''}>✅ Approved</option>
         <option value="rejected" ${x.status==='rejected'?'selected':''}>❌ Rejected</option>
       </select></td>
-      <td><input class="ci" value="${esc(x.note)}" onchange="updI(${i},'note',this.value)" placeholder="ความเห็น" ${disSc}></td>
+      <td><input class="ci" value="${esc(x.note)}" onchange="updI(${i},'note',this.value)" placeholder="ความเห็น" ${dis}></td>
       <td>${ro?'':('<button class="del" onclick="delIdea('+i+')">✕</button>')}</td>
     </tr>`;
   }).join('');
@@ -3217,7 +3215,6 @@ function renderIdeaTable(){
 }
 function updI(i,f,v){
   if(isViewer())return;
-  if(['status','note'].includes(f)&&!isScoreEditor())return;
   pushIdeaUndo();
   IDEAS[i][f]=v;
   // Auto-regen ID when cat or owner changes
@@ -3231,7 +3228,6 @@ function updI(i,f,v){
   sched();renderKanban();renderIdeaKPIs();
 }
 function updIScore(i){
-  if(!isScoreEditor())return;
   const imp=+$('si'+i+'imp').value,feas=+$('si'+i+'feas').value,str=+$('si'+i+'str').value;
   $('sv'+i+'imp').textContent=imp;$('sv'+i+'feas').textContent=feas;$('sv'+i+'str').textContent=str;
   IDEAS[i].impact=imp;IDEAS[i].feasibility=feas;IDEAS[i].strategic=str;
@@ -3880,10 +3876,11 @@ async function showQR(){
   const qs=$('qrStatus');
   if(qc)qc.innerHTML='<div style="font-size:11px;color:var(--muted);padding:12px">กำลังสร้าง QR...</div>';
 
-  // VIP URL = เว็บเดิม + #vip-open (โหลดข้อมูลจาก Server)
-  const base=location.href.split('#')[0].split('?')[0];
-  const vipUrl=base+'#vip-open';
+  // VIP URL — ชี้ไป Render โดยตรงเสมอ (ไม่ใช้ location.href เพราะอาจเป็น GitHub Pages)
+  const vipUrl='https://bundit4102.github.io/portfolio-dashboard-V1/#vip-open';
   modal.dataset.vipUrl=vipUrl;
+  // Update copy button
+  const vl=$('btnVipLink');if(vl)vl.onclick=()=>copyVipLink(vipUrl);
 
   if(qc)qc.innerHTML='';
   if(qs)qs.innerHTML='';
@@ -4095,12 +4092,9 @@ QrCode.MIN_VERSION=1;QrCode.MAX_VERSION=40;
 return QrCode;
 })();
 
-function copyVipLink(){
-  const modal=$('qrModal');
-  const url=modal?.dataset.vipUrl;
-  if(!url){showToast('กรุณาเปิด QR modal ก่อน','var(--red)');return;}
-  _copyText(url,'#btnVipLink');
-  showToast('✅ Copy Link VIP แล้ว! ส่ง Line ได้เลย','#1a7a4a');
+function copyVipLink(url){
+  const vipUrl=url||'https://bundit4102.github.io/portfolio-dashboard-V1/#vip-open';
+  navigator.clipboard?.writeText(vipUrl).then(()=>showToast('✅ Copy Link VIP แล้ว! ส่งให้ผู้บริหารได้เลย','var(--green)')).catch(()=>{});
 }
 
 function downloadSyncFile(){
@@ -4188,6 +4182,7 @@ function showToast(msg,color){
 }
 
 // ── VIP Viewer Mode — reads data from URL hash or bin ─
+let _isVipMode=false;
 function initVipModeFromSnap(snap){
   // Handle both full format {projects,ideas,today} and compact format {p,i,t}
   if(snap.p){
@@ -4211,6 +4206,7 @@ function initVipModeFromSnap(snap){
   const vip=$('vipScreen');
   if(!vip)return;
   vip.classList.remove('hidden');
+  _isVipMode=true;
 
   const dl=$('vipDateLbl');
   if(dl)dl.textContent='ข้อมูล ณ วันที่ '+TODAY.toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'});
@@ -4243,13 +4239,25 @@ async function initVipMode(){
         </div>
       </div>
       <style>@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}</style>`);
-    try{
-      const r=await fetch(API+'/api/data',{credentials:'include'});
-      if(r.ok){
-        const d=await r.json();
-        snap={projects:d.projects||[],ideas:d.ideas||[],today:fi(new Date())};
+    // VIP ไม่มี session — ใช้ public endpoint พร้อม retry (Render อาจ spin down)
+    const loadingDiv=document.getElementById('_vipLoading');
+    const loadingMsg=loadingDiv?.querySelector('div>div:last-child');
+    for(let attempt=1;attempt<=3;attempt++){
+      try{
+        if(loadingMsg)loadingMsg.textContent=attempt>1?`⏳ กำลังเชื่อมต่อ... (ครั้งที่ ${attempt}/3)`:'กำลังโหลดข้อมูล...';
+        const controller=new AbortController();
+        const timer=setTimeout(()=>controller.abort(),20000);
+        const r=await fetch(API+'/api/data/public',{signal:controller.signal});
+        clearTimeout(timer);
+        if(r.ok){
+          const d=await r.json();
+          snap={projects:d.projects||[],ideas:d.ideas||[],today:fi(new Date())};
+          break;
+        }
+      }catch(e){
+        if(attempt<3)await new Promise(res=>setTimeout(res,3000));
       }
-    }catch(e){}
+    }
     document.getElementById('_vipLoading')?.remove();
   }
 
@@ -4322,31 +4330,93 @@ function renderVipGantt(){
   el.innerHTML=html;
 }
 
+function vipUpdIdea(realIdx,field,val){
+  // update IDEAS array by real index
+  IDEAS[realIdx][field]=isNaN(+val)?val:+val;
+  // update score display
+  const sc=Math.round(((+IDEAS[realIdx].impact||5)+(+IDEAS[realIdx].feasibility||5)+(+IDEAS[realIdx].strategic||5))/3*10);
+  const scol=sc>=70?'#1a7a4a':sc>=50?'#c87a00':'#c0392b';
+  const scEl=document.getElementById('vsc'+realIdx);
+  if(scEl){scEl.textContent=sc;scEl.style.color=scol;}
+  // update slider label
+  if(['impact','feasibility','strategic'].includes(field)){
+    const lbl=document.getElementById('vsl_'+field+'_'+realIdx);
+    if(lbl)lbl.textContent=val;
+  }
+}
+async function vipSaveIdeas(){
+  const btn=document.getElementById('vipSaveBtn');
+  if(btn){btn.disabled=true;btn.textContent='⏳ กำลังบันทึก...';}
+  try{
+    const res=await fetch(API+'/api/data',{method:'PUT',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({projects:P,ideas:IDEAS})});
+    if(res.ok){
+      if(btn){btn.style.background='#1a7a4a';btn.textContent='✅ บันทึกแล้ว!';}
+      setTimeout(()=>{if(btn){btn.style.background='#c9a84c';btn.disabled=false;btn.textContent='💾 บันทึกคะแนน';}},2000);
+    } else {
+      if(btn){btn.style.background='#c0392b';btn.textContent='❌ ไม่สำเร็จ';btn.disabled=false;}
+    }
+  }catch(e){
+    if(btn){btn.style.background='#c0392b';btn.textContent='❌ เชื่อมต่อไม่ได้';btn.disabled=false;}
+  }
+}
 function renderVipIdeas(){
   const el=$('vipIdeas');if(!el)return;
   const SCOL2={new:'#1a6fa8',review:'#c87a00',approved:'#1a7a4a',rejected:'#c0392b'};
-  let html=`<h3 style="font-family:'Playfair Display',serif;font-size:16px;color:#1c2b3a;margin-bottom:16px">💡 Idea Pitching</h3>`;
+  let html=`
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <h3 style="font-family:'Playfair Display',serif;font-size:16px;color:#1c2b3a;margin:0">💡 Idea Pitching</h3>
+    <button id="vipSaveBtn" onclick="vipSaveIdeas()" style="background:#c9a84c;color:#1c2b3a;border:none;border-radius:8px;padding:8px 20px;font-family:'Sarabun',sans-serif;font-size:12px;font-weight:700;cursor:pointer">💾 บันทึกคะแนน</button>
+  </div>`;
   if(!IDEAS.length){el.innerHTML=html+'<div style="color:#8a9bb0;text-align:center;padding:24px">ยังไม่มีข้อมูล Idea</div>';return;}
-  const sorted=[...IDEAS].sort((a,b)=>{const sa=((+a.impact||5)+(+a.feasibility||5)+(+a.strategic||5));const sb=((+b.impact||5)+(+b.feasibility||5)+(+b.strategic||5));return sb-sa;});
-  html+=`<table style="width:100%;border-collapse:collapse;font-size:11px">
+  const sorted=[...IDEAS].map((x,realIdx)=>({...x,_realIdx:realIdx})).sort((a,b)=>{
+    const sa=((+a.impact||5)+(+a.feasibility||5)+(+a.strategic||5));
+    const sb=((+b.impact||5)+(+b.feasibility||5)+(+b.strategic||5));
+    return sb-sa;
+  });
+  html+=`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px">
     <thead><tr style="background:#1c2b3a;color:#fff">
       <th style="padding:8px 10px;text-align:left">Idea</th>
-      <th style="padding:8px 10px">Category</th>
-      <th style="padding:8px 10px">Status</th>
+      <th style="padding:8px 10px">Impact</th>
+      <th style="padding:8px 10px">Feasibility</th>
+      <th style="padding:8px 10px">Strategic</th>
       <th style="padding:8px 10px">Score</th>
+      <th style="padding:8px 10px">สถานะ</th>
+      <th style="padding:8px 10px">หมายเหตุ</th>
     </tr></thead><tbody>`;
+  const sliderStyle='width:80px;accent-color:#c9a84c';
   sorted.forEach((x,i)=>{
+    const ri=x._realIdx;
     const sc=Math.round(((+x.impact||5)+(+x.feasibility||5)+(+x.strategic||5))/3*10);
     const scol=sc>=70?'#1a7a4a':sc>=50?'#c87a00':'#c0392b';
-    const stcol=SCOL2[x.status]||'#8a9bb0';
     html+=`<tr style="background:${i%2===0?'#fff':'#f7f5f0'}">
-      <td style="padding:8px 10px;font-weight:600;color:#1c2b3a">${x.title||'—'}<br><span style="font-size:10px;color:#8a9bb0;font-weight:400">${x.owner||''}</span></td>
-      <td style="padding:8px 10px;text-align:center"><span style="font-size:10px;font-weight:700;color:#856404;background:#fff8dc;padding:2px 7px;border-radius:10px">${x.cat||'—'}</span></td>
-      <td style="padding:8px 10px;text-align:center"><span style="font-size:10px;font-weight:700;color:${stcol}">${x.status}</span></td>
-      <td style="padding:8px 10px;text-align:center;font-family:monospace;font-size:14px;font-weight:700;color:${scol}">${sc}</td>
+      <td style="padding:8px 10px;font-weight:600;color:#1c2b3a;min-width:140px">${x.title||'—'}<br><span style="font-size:10px;color:#8a9bb0;font-weight:400">${x.owner||''}</span></td>
+      <td style="padding:8px 10px;text-align:center;min-width:100px">
+        <input type="range" min="1" max="10" value="${+x.impact||5}" style="${sliderStyle}" oninput="vipUpdIdea(${ri},'impact',this.value)">
+        <span id="vsl_impact_${ri}" style="font-family:monospace;font-weight:700;color:#1a6fa8;margin-left:4px">${+x.impact||5}</span>
+      </td>
+      <td style="padding:8px 10px;text-align:center;min-width:100px">
+        <input type="range" min="1" max="10" value="${+x.feasibility||5}" style="${sliderStyle}" oninput="vipUpdIdea(${ri},'feasibility',this.value)">
+        <span id="vsl_feasibility_${ri}" style="font-family:monospace;font-weight:700;color:#1a7a4a;margin-left:4px">${+x.feasibility||5}</span>
+      </td>
+      <td style="padding:8px 10px;text-align:center;min-width:100px">
+        <input type="range" min="1" max="10" value="${+x.strategic||5}" style="${sliderStyle}" oninput="vipUpdIdea(${ri},'strategic',this.value)">
+        <span id="vsl_strategic_${ri}" style="font-family:monospace;font-weight:700;color:#c87a00;margin-left:4px">${+x.strategic||5}</span>
+      </td>
+      <td style="padding:8px 10px;text-align:center;font-family:monospace;font-size:15px;font-weight:700;color:${scol}" id="vsc${ri}">${sc}</td>
+      <td style="padding:8px 10px;text-align:center">
+        <select onchange="vipUpdIdea(${ri},'status',this.value)" style="font-size:11px;font-family:'Sarabun',sans-serif;border:1px solid #ddd;border-radius:6px;padding:4px 6px;background:#fff">
+          <option value="new" ${x.status==='new'?'selected':''}>🆕 New</option>
+          <option value="review" ${x.status==='review'?'selected':''}>🔍 Review</option>
+          <option value="approved" ${x.status==='approved'?'selected':''}>✅ Approved</option>
+          <option value="rejected" ${x.status==='rejected'?'selected':''}>❌ Rejected</option>
+        </select>
+      </td>
+      <td style="padding:8px 10px;min-width:130px">
+        <input type="text" value="${(x.note||'').replace(/"/g,'&quot;')}" placeholder="หมายเหตุ..." onchange="vipUpdIdea(${ri},'note',this.value)" style="width:100%;font-size:11px;font-family:'Sarabun',sans-serif;border:1px solid #ddd;border-radius:6px;padding:4px 8px;box-sizing:border-box">
+      </td>
     </tr>`;
   });
-  html+='</tbody></table>';
+  html+='</tbody></table></div>';
   el.innerHTML=html;
 }
 
