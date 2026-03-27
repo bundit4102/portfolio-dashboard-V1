@@ -3,7 +3,11 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 import os, json
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+
+TZ_BANGKOK = timezone(timedelta(hours=7))
+def now_bangkok():
+    return datetime.now(TZ_BANGKOK).isoformat()
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(BASE_DIR)
@@ -63,7 +67,7 @@ class User(db.Model):
             'dept':      self.dept or '',
             'role':      self.role,
             'status':    self.status,
-            'createdAt': self.created_at or datetime.now().isoformat(),
+            'createdAt': self.created_at or now_bangkok(),
         }
 
 
@@ -132,7 +136,7 @@ def auth_login():
         return jsonify({'success': True, 'user': {
             'id': '__admin__', 'username': 'admin', 'name': 'System Admin',
             'dept': 'Administration', 'role': 'Admin', 'status': 'approved',
-            'createdAt': datetime.now().isoformat(),
+            'createdAt': now_bangkok(),
         }})
 
     user = User.query.filter_by(username=username).first()
@@ -163,12 +167,12 @@ def auth_register():
         return jsonify({'success': False, 'error': 'Username นี้ถูกใช้แล้ว'})
 
     u = User(
-        id='u' + str(int(datetime.now().timestamp() * 1000)),
+        id='u' + str(int(datetime.now(TZ_BANGKOK).timestamp() * 1000)),
         username=username,
         password_hash=generate_password_hash(password),
         name=name, dept=dept, role=role,
         status='pending',
-        created_at=datetime.now().isoformat(),
+        created_at=now_bangkok(),
     )
     db.session.add(u)
     db.session.commit()
@@ -208,11 +212,11 @@ def users_create():
         return jsonify({'success': False, 'error': 'Username นี้ถูกใช้แล้ว'})
 
     u = User(
-        id='u' + str(int(datetime.now().timestamp() * 1000)),
+        id='u' + str(int(datetime.now(TZ_BANGKOK).timestamp() * 1000)),
         username=username,
         password_hash=generate_password_hash(password),
         name=name, dept=dept, role=role, status=status,
-        created_at=datetime.now().isoformat(),
+        created_at=now_bangkok(),
     )
     db.session.add(u)
     db.session.commit()
