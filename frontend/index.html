@@ -3876,8 +3876,8 @@ async function showQR(){
   const qs=$('qrStatus');
   if(qc)qc.innerHTML='<div style="font-size:11px;color:var(--muted);padding:12px">กำลังสร้าง QR...</div>';
 
-  // VIP URL — ชี้ไป Render โดยตรงเสมอ (ไม่ใช้ location.href เพราะอาจเป็น GitHub Pages)
-  const vipUrl='https://bundit4102.github.io/portfolio-dashboard-V1/#vip-open';
+  // VIP URL — ใช้ domain ที่กำลังเปิดอยู่ รองรับทั้ง Render และ GitHub Pages
+  const vipUrl=window.location.origin+window.location.pathname+'#vip-open';
   modal.dataset.vipUrl=vipUrl;
   // Update copy button
   const vl=$('btnVipLink');if(vl)vl.onclick=()=>copyVipLink(vipUrl);
@@ -4093,7 +4093,7 @@ return QrCode;
 })();
 
 function copyVipLink(url){
-  const vipUrl=url||'https://bundit4102.github.io/portfolio-dashboard-V1/#vip-open';
+  const vipUrl=url||(window.location.origin+window.location.pathname+'#vip-open');
   navigator.clipboard?.writeText(vipUrl).then(()=>showToast('✅ Copy Link VIP แล้ว! ส่งให้ผู้บริหารได้เลย','var(--green)')).catch(()=>{});
 }
 
