@@ -25,7 +25,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 ════════════════════════════════════ */
 .auth-screen{position:fixed;inset:0;z-index:999;background:var(--navy);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:20px;overflow-y:auto;gap:0}
+  padding:20px;overflow-y:auto;gap:12px}
 .auth-screen.hidden{display:none}
 .auth-screen::before{content:'';position:absolute;inset:0;pointer-events:none;
   background:radial-gradient(circle at 30% 70%,rgba(201,168,76,.12) 0%,transparent 55%),
@@ -34,7 +34,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 /* card */
 .auth-box{position:relative;z-index:1;background:rgba(255,255,255,.04);
   border:1px solid rgba(201,168,76,.2);border-radius:20px;
-  width:100%;max-width:480px;box-shadow:0 24px 80px rgba(0,0,0,.4);
+  width:100%;max-width:440px;box-shadow:0 24px 80px rgba(0,0,0,.4);
   animation:slideUp .4s ease both}
 .auth-box-wide{max-width:900px}
 @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
@@ -78,12 +78,12 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 .auth-link span:hover{text-decoration:underline}
 
 /* waiting screen */
-.wait-body{padding:36px;text-align:center}
-.wait-icon{font-size:48px;margin-bottom:16px}
-.wait-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--gold);margin-bottom:8px}
-.wait-msg{font-size:13px;color:rgba(255,255,255,.5);line-height:1.7;margin-bottom:20px}
-.wait-user{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px 18px;display:inline-flex;align-items:center;gap:10px;margin-bottom:20px}
-.wait-user .wname{font-size:14px;font-weight:600;color:rgba(255,255,255,.8)}
+.wait-body{padding:20px 24px;text-align:center}
+.wait-icon{font-size:32px;margin-bottom:8px;display:block}
+.wait-title{font-family:'Playfair Display',serif;font-size:16px;color:var(--gold);margin-bottom:6px;font-weight:700}
+.wait-msg{font-size:11px;color:rgba(255,255,255,.5);line-height:1.6;margin-bottom:12px}
+.wait-user{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px 14px;display:inline-flex;align-items:center;gap:8px;margin-bottom:14px}
+.wait-user .wname{font-size:13px;font-weight:600;color:rgba(255,255,255,.8)}
 .wait-user .wrole{font-size:10px;color:rgba(255,255,255,.35);margin-top:2px}
 .auth-btn-outline{width:100%;background:transparent;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);border-radius:9px;padding:11px;font-family:'Sarabun',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;margin-top:8px}
 .auth-btn-outline:hover{border-color:var(--red);color:var(--red)}
@@ -2094,6 +2094,7 @@ function rem(p){if(p.ae)return-1;if(!p.pe)return null;return Math.max(0,Math.rou
 function iScore(x){return Math.round(((+x.impact||5)+(+x.feasibility||5)+(+x.strategic||5))/3*10);}
 function scoreColor(sc){return sc>=70?'var(--green)':sc>=50?'var(--amber)':'var(--red)';}
 const isViewer=()=>currentUser?.role==='Viewer';
+const isAdminOrManager=()=>currentUser?.role==='Admin'||currentUser?.role==='Manager';
 
 // Returns days since last log update; null if completed/no start
 function staleDays(p){
@@ -3176,6 +3177,7 @@ function updIdeaUndoBtns(){
 
 function renderIdeaTable(){
   const ro=isViewer();const dis=ro?'disabled':'';
+  const roScore=!isAdminOrManager();const disScore=roScore?'disabled':'';
   $('ideaBody').innerHTML=IDEAS.map((x,i)=>{
     const sc=iScore(x),bc=scoreColor(sc);
     return`<tr id="ir${i}" class="pop">
@@ -3194,17 +3196,17 @@ function renderIdeaTable(){
       <td><input class="ci mo" type="date" value="${x.date||''}" onchange="updI(${i},'date',this.value)" ${dis}></td>
       <td><input class="ci mo" type="number" min="0" value="${x.budget||''}" onchange="updI(${i},'budget',+this.value)" placeholder="0" ${dis}></td>
       <td><input class="ci" value="${esc(x.desc)}" onchange="updI(${i},'desc',this.value)" placeholder="รายละเอียดโดยย่อ" ${dis}></td>
-      <td><div class="score-mini"><input type="range" id="si${i}imp" min="1" max="10" value="${x.impact||5}" oninput="updIScore(${i})" ${dis}><span id="sv${i}imp">${x.impact||5}</span></div></td>
-      <td><div class="score-mini"><input type="range" id="si${i}feas" min="1" max="10" value="${x.feasibility||5}" oninput="updIScore(${i})" ${dis}><span id="sv${i}feas">${x.feasibility||5}</span></div></td>
-      <td><div class="score-mini"><input type="range" id="si${i}str" min="1" max="10" value="${x.strategic||5}" oninput="updIScore(${i})" ${dis}><span id="sv${i}str">${x.strategic||5}</span></div></td>
+      <td title="${roScore?'เฉพาะ Admin/Manager เท่านั้น':''}"><div class="score-mini"><input type="range" id="si${i}imp" min="1" max="10" value="${x.impact||5}" oninput="updIScore(${i})" ${disScore}><span id="sv${i}imp">${x.impact||5}</span></div></td>
+      <td title="${roScore?'เฉพาะ Admin/Manager เท่านั้น':''}"><div class="score-mini"><input type="range" id="si${i}feas" min="1" max="10" value="${x.feasibility||5}" oninput="updIScore(${i})" ${disScore}><span id="sv${i}feas">${x.feasibility||5}</span></div></td>
+      <td title="${roScore?'เฉพาะ Admin/Manager เท่านั้น':''}"><div class="score-mini"><input type="range" id="si${i}str" min="1" max="10" value="${x.strategic||5}" oninput="updIScore(${i})" ${disScore}><span id="sv${i}str">${x.strategic||5}</span></div></td>
       <td class="total-badge" id="sc${i}" style="color:${bc}">${sc}</td>
-      <td><select class="ci" onchange="updI(${i},'status',this.value)" ${dis}>
+      <td title="${roScore?'เฉพาะ Admin/Manager เท่านั้น':''}"><select class="ci" onchange="updI(${i},'status',this.value)" ${disScore}>
         <option value="new" ${x.status==='new'?'selected':''}>🆕 New</option>
         <option value="review" ${x.status==='review'?'selected':''}>🔍 Review</option>
         <option value="approved" ${x.status==='approved'?'selected':''}>✅ Approved</option>
         <option value="rejected" ${x.status==='rejected'?'selected':''}>❌ Rejected</option>
       </select></td>
-      <td><input class="ci" value="${esc(x.note)}" onchange="updI(${i},'note',this.value)" placeholder="ความเห็น" ${dis}></td>
+      <td title="${roScore?'เฉพาะ Admin/Manager เท่านั้น':''}"><input class="ci" value="${esc(x.note)}" onchange="updI(${i},'note',this.value)" placeholder="ความเห็น" ${disScore}></td>
       <td>${ro?'':('<button class="del" onclick="delIdea('+i+')">✕</button>')}</td>
     </tr>`;
   }).join('');
