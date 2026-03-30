@@ -2,10 +2,11 @@ from flask import Flask, request, jsonify, session, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
-import os, json
+import os, json, secrets
 from datetime import datetime, timezone, timedelta
 
 TZ_BANGKOK = timezone(timedelta(hours=7))
+
 def now_bangkok():
     return datetime.now(TZ_BANGKOK).isoformat()
 
@@ -13,6 +14,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(BASE_DIR)
 
 app = Flask(__name__, static_folder=os.path.join(ROOT_DIR, 'frontend'))
+
 CORS(app,
      supports_credentials=True,
      origins=[
@@ -21,11 +23,12 @@ CORS(app,
          'http://localhost:5000',
          'http://127.0.0.1:5000',
      ],
-     allow_headers=['Content-Type','Authorization'],
-     methods=['GET','POST','PUT','DELETE','OPTIONS'])
+     allow_headers=['Content-Type', 'Authorization'],
+     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 
 app.secret_key = 'portfolio-secret-2026-change-in-production'
-# ✅ สำคัญ: รองรับ cross-origin session บน Render (HTTPS)
+
+# ✅ รองรับ cross-origin session บน Render (HTTPS)
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
@@ -34,7 +37,6 @@ app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # 24 ชั่วโมง
 # รองรับทั้ง SQLite (local/Render free) และ PostgreSQL (Render paid)
 if os.environ.get("DATABASE_URL"):
     db_url = os.environ.get("DATABASE_URL")
-    # Render ใช้ postgres:// แต่ SQLAlchemy ต้องการ postgresql://
     if db_url.startswith("postgres://"):
         db_url = db_url.replace("postgres://", "postgresql://", 1)
     app.config['SQLALCHEMY_DATABASE_URI'] = db_url
@@ -45,19 +47,20 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-
 # ─── Models ───────────────────────────────────────────────────────────────────
 
 class User(db.Model):
     __tablename__ = 'users'
-    id          = db.Column(db.String(50),  primary_key=True)
-    username    = db.Column(db.String(80),  unique=True, nullable=False)
-    password_hash = db.Column(db.String(256), nullable=False)
-    name        = db.Column(db.String(200))
-    dept        = db.Column(db.String(200))
-    role        = db.Column(db.String(50),  default='Viewer')
-    status      = db.Column(db.String(50),  default='pending')
-    created_at  = db.Column(db.String(50))
+    id           = db.Column(db.String(50),  primary_key=True)
+    username     = db.Column(db.String(80),  unique=True, nullable=False)
+    password_hash= db.Column(db.String(256), nullable=False)
+    name         = db.Column(db.String(200))
+    dept         = db.Column(db.String(200))
+    role         = db.Column(db.String(50),  default='Viewer')
+    status       = db.Column(db.String(50),  default='pending')
+    created_at   = db.Column(db.String(50))
+    # ✅ token สำหรับ cross-origin auth (GitHub Pages → Render)
+    token        = db.Column(db.String(64),  nullable=True)
 
     def to_dict(self):
         return {
@@ -70,28 +73,52 @@ class User(db.Model):
             'createdAt': self.created_at or now_bangkok(),
         }
 
-
 class Project(db.Model):
     __tablename__ = 'projects'
-    id   = db.Column(db.String(50),  primary_key=True)
-    data = db.Column(db.Text, nullable=False)
+    id   = db.Column(db.String(50), primary_key=True)
+    data = db.Column(db.Text,       nullable=False)
 
     def to_dict(self):
         return json.loads(self.data)
-
 
 class Idea(db.Model):
     __tablename__ = 'ideas'
-    id   = db.Column(db.String(50),  primary_key=True)
-    data = db.Column(db.Text, nullable=False)
+    id   = db.Column(db.String(50), primary_key=True)
+    data = db.Column(db.Text,       nullable=False)
 
     def to_dict(self):
         return json.loads(self.data)
 
+# ─── Token store สำหรับ admin (in-memory) ────────────────────────────────────
+# admin ไม่มี DB row — เก็บ token ใน dict แทน
+_admin_tokens = set()
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
+def _get_token_from_request():
+    """อ่าน token จาก Authorization header หรือ query param"""
+    auth = request.headers.get('Authorization', '')
+    if auth.startswith('Bearer '):
+        return auth[7:].strip()
+    return request.args.get('token', '').strip() or None
+
 def _current_user():
+    """
+    ตรวจสอบ identity จาก:
+    1. Authorization: Bearer <token>  ← ใช้เมื่อ cross-origin (GitHub Pages)
+    2. session['uid']                 ← ใช้เมื่อ same-origin (Render โดยตรง)
+    """
+    # 1. Token-based (cross-origin)
+    token = _get_token_from_request()
+    if token:
+        if token in _admin_tokens:
+            return {'id': '__admin__', 'role': 'Admin', 'status': 'approved'}
+        user = User.query.filter_by(token=token).first()
+        if user:
+            return user
+        return None
+
+    # 2. Session-based (same-origin)
     uid = session.get('uid')
     if not uid:
         return None
@@ -120,20 +147,23 @@ def _get_role():
         return None
     return u['role'] if isinstance(u, dict) else u.role
 
-
 # ─── Auth Routes ──────────────────────────────────────────────────────────────
 
 @app.route('/api/auth/login', methods=['POST'])
 def auth_login():
     body     = request.get_json() or {}
     username = (body.get('username') or '').strip()
-    password = body.get('password') or ''
+    password =  body.get('password') or ''
 
-    # Built-in admin — hardcoded (ไม่เก็บใน DB)
+    # Built-in admin
     if username == 'admin' and password == 'admin2026':
+        # สร้าง token ใหม่ทุกครั้ง login
+        token = secrets.token_hex(32)
+        _admin_tokens.add(token)
+
         session.permanent = True
         session['uid'] = '__admin__'
-        return jsonify({'success': True, 'user': {
+        return jsonify({'success': True, 'token': token, 'user': {
             'id': '__admin__', 'username': 'admin', 'name': 'System Admin',
             'dept': 'Administration', 'role': 'Admin', 'status': 'approved',
             'createdAt': now_bangkok(),
@@ -146,44 +176,60 @@ def auth_login():
     if user.status == 'rejected':
         return jsonify({'success': False, 'error': 'บัญชีของคุณถูกปฏิเสธ กรุณาติดต่อ Admin'})
 
+    # สร้าง token และบันทึกลง DB
+    token = secrets.token_hex(32)
+    user.token = token
+    db.session.commit()
+
     session.permanent = True
     session['uid'] = user.id
-    return jsonify({'success': True, 'pending': user.status == 'pending', 'user': user.to_dict()})
-
+    return jsonify({
+        'success': True,
+        'pending': user.status == 'pending',
+        'token':   token,
+        'user':    user.to_dict(),
+    })
 
 @app.route('/api/auth/register', methods=['POST'])
 def auth_register():
     body     = request.get_json() or {}
     username = (body.get('username') or '').strip()
-    password = body.get('password') or ''
-    name     = (body.get('name') or '').strip()
-    dept     = (body.get('dept') or '').strip()
-    role     = body.get('role') or 'Viewer'
+    password =  body.get('password') or ''
+    name     = (body.get('name')     or '').strip()
+    dept     = (body.get('dept')     or '').strip()
+    role     =  body.get('role')     or 'Viewer'
 
     if not username or not password or not name:
         return jsonify({'success': False, 'error': 'กรุณากรอกข้อมูลที่จำเป็น'})
-
     if username == 'admin' or User.query.filter_by(username=username).first():
         return jsonify({'success': False, 'error': 'Username นี้ถูกใช้แล้ว'})
 
     u = User(
-        id='u' + str(int(datetime.now(TZ_BANGKOK).timestamp() * 1000)),
-        username=username,
+        id=           'u' + str(int(datetime.now(TZ_BANGKOK).timestamp() * 1000)),
+        username=     username,
         password_hash=generate_password_hash(password),
         name=name, dept=dept, role=role,
-        status='pending',
-        created_at=now_bangkok(),
+        status=       'pending',
+        created_at=   now_bangkok(),
     )
     db.session.add(u)
     db.session.commit()
     return jsonify({'success': True})
 
-
 @app.route('/api/auth/logout', methods=['POST'])
 def auth_logout():
+    # ลบ token ถ้ามี
+    token = _get_token_from_request()
+    if token:
+        if token in _admin_tokens:
+            _admin_tokens.discard(token)
+        else:
+            user = User.query.filter_by(token=token).first()
+            if user:
+                user.token = None
+                db.session.commit()
     session.clear()
     return jsonify({'success': True})
-
 
 # ─── User Routes (Admin only) ─────────────────────────────────────────────────
 
@@ -193,18 +239,17 @@ def users_list():
         return jsonify({'error': 'Unauthorized'}), 403
     return jsonify([u.to_dict() for u in User.query.order_by(User.created_at).all()])
 
-
 @app.route('/api/users', methods=['POST'])
 def users_create():
     if not _is_admin():
         return jsonify({'error': 'Unauthorized'}), 403
     body     = request.get_json() or {}
     username = (body.get('username') or '').strip()
-    password = body.get('password') or ''
-    name     = (body.get('name') or '').strip()
-    dept     = (body.get('dept') or '').strip()
-    role     = body.get('role') or 'Viewer'
-    status   = body.get('status') or 'pending'
+    password =  body.get('password') or ''
+    name     = (body.get('name')     or '').strip()
+    dept     = (body.get('dept')     or '').strip()
+    role     =  body.get('role')     or 'Viewer'
+    status   =  body.get('status')   or 'pending'
 
     if not username or not password or not name:
         return jsonify({'success': False, 'error': 'กรุณากรอกข้อมูลที่จำเป็น'})
@@ -212,16 +257,15 @@ def users_create():
         return jsonify({'success': False, 'error': 'Username นี้ถูกใช้แล้ว'})
 
     u = User(
-        id='u' + str(int(datetime.now(TZ_BANGKOK).timestamp() * 1000)),
-        username=username,
+        id=           'u' + str(int(datetime.now(TZ_BANGKOK).timestamp() * 1000)),
+        username=     username,
         password_hash=generate_password_hash(password),
         name=name, dept=dept, role=role, status=status,
-        created_at=now_bangkok(),
+        created_at=   now_bangkok(),
     )
     db.session.add(u)
     db.session.commit()
     return jsonify({'success': True, 'user': u.to_dict()})
-
 
 @app.route('/api/users/<uid>', methods=['PUT'])
 def users_update(uid):
@@ -238,7 +282,6 @@ def users_update(uid):
     db.session.commit()
     return jsonify({'success': True, 'user': u.to_dict()})
 
-
 @app.route('/api/users/<uid>/password', methods=['PUT'])
 def users_reset_password(uid):
     if not _is_admin():
@@ -247,13 +290,12 @@ def users_reset_password(uid):
     if not u:
         return jsonify({'error': 'Not found'}), 404
     body     = request.get_json() or {}
-    password = body.get('password') or ''
+    password =  body.get('password') or ''
     if len(password) < 6:
         return jsonify({'success': False, 'error': 'Password ต้องมีอย่างน้อย 6 ตัวอักษร'})
     u.password_hash = generate_password_hash(password)
     db.session.commit()
     return jsonify({'success': True})
-
 
 @app.route('/api/users/<uid>', methods=['DELETE'])
 def users_delete(uid):
@@ -266,7 +308,6 @@ def users_delete(uid):
     db.session.commit()
     return jsonify({'success': True})
 
-
 # ─── Data Routes ──────────────────────────────────────────────────────────────
 
 @app.route('/api/data', methods=['GET'])
@@ -277,7 +318,6 @@ def data_get():
     ideas    = [i.to_dict() for i in Idea.query.all()]
     return jsonify({'projects': projects, 'ideas': ideas})
 
-
 @app.route('/api/data', methods=['PUT'])
 def data_save():
     if not _is_authenticated():
@@ -286,8 +326,8 @@ def data_save():
         return jsonify({'error': 'Viewers cannot modify data'}), 403
 
     body     = request.get_json() or {}
-    projects = body.get('projects', [])
-    ideas    = body.get('ideas', [])
+    projects =  body.get('projects', [])
+    ideas    =  body.get('ideas',    [])
 
     db.session.query(Project).delete()
     for p in projects:
@@ -304,8 +344,7 @@ def data_save():
     db.session.commit()
     return jsonify({'success': True})
 
-
-# ─── Public Data (VIP view — no login required) ──────────────────────────────
+# ─── Public Data (VIP view — no login required) ───────────────────────────────
 
 @app.route('/api/data/public', methods=['GET'])
 def data_public():
@@ -314,8 +353,7 @@ def data_public():
     ideas    = [i.to_dict() for i in Idea.query.all()]
     return jsonify({'projects': projects, 'ideas': ideas})
 
-
-# ─── Serve Frontend (GitHub Pages จะไม่ใช้ส่วนนี้) ────────────────────────────
+# ─── Serve Frontend ───────────────────────────────────────────────────────────
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
@@ -324,12 +362,10 @@ def serve_frontend(path):
         return send_from_directory(app.static_folder, path)
     return send_from_directory(app.static_folder, 'index.html')
 
-
 # ─── Init DB ──────────────────────────────────────────────────────────────────
 
 with app.app_context():
     db.create_all()
-
 
 # ─── Run ──────────────────────────────────────────────────────────────────────
 
