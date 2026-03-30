@@ -380,6 +380,19 @@ def users_clear_all():
     return jsonify({'success': True, 'deleted': count})
 
 
+# ─── Reset DB (admin only) ────────────────────────────────────────────────────
+
+@app.route('/api/admin/reset-db', methods=['POST'])
+def reset_db():
+    """Drop and recreate all tables — admin only"""
+    body = request.get_json() or {}
+    if body.get('secret') != 'reset-2026':
+        return jsonify({'error': 'Unauthorized'}), 403
+    db.drop_all()
+    db.create_all()
+    return jsonify({'success': True, 'message': 'Database reset complete'})
+
+
 # ─── Public Data (VIP view — no login required) ───────────────────────────────
 
 @app.route('/api/data/public', methods=['GET'])
