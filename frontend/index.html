@@ -1498,7 +1498,7 @@ function getAllUsers(){return USERS_CACHE;}
 function getPendingCount(){return getUsers().filter(u=>u.status==='pending').length;}
 async function refreshUsers(){
   let server=[];
-  try{const r=await fetch(API+'/api/users',{credentials:'include'});if(r.ok)server=await r.json();}catch(e){}
+  try{const r=await fetch(API+'/api/users',{credentials:'include',headers:authHeaders()});if(r.ok)server=await r.json();}catch(e){}
   USERS_CACHE=[ADMIN_USER,...server];
 }
 
@@ -1506,6 +1506,11 @@ let USERS_CACHE=[ADMIN_USER];
 let _pendingSyncData=null;
 let currentUser=null;
 let adminTab='pending';
+let _authToken=null;
+function saveToken(t){_authToken=t;try{if(t)sessionStorage.setItem('ptk_token',t);else sessionStorage.removeItem('ptk_token');}catch(e){}}
+function loadToken(){try{_authToken=sessionStorage.getItem('ptk_token')||null;}catch(e){}}
+function authHeaders(extra){const h={'Content-Type':'application/json',...(extra||{})};if(_authToken)h['Authorization']='Bearer '+_authToken;return h;}
+loadToken();
 
 // ── AUTH TABS ──────────────────────────────────
 function showAuthTab(t){
@@ -1552,6 +1557,7 @@ async function doLogin(){
     }
     // success = true และ pending = false → เข้าได้
     currentUser=data.user||{username:u,name:u,role:'Viewer',status:'approved'};
+    if(data.token)saveToken(data.token);
     saveRemembered(u,p,remember);
     if(currentUser.role==='Admin'){
       await showAdminBox();
@@ -1670,6 +1676,7 @@ async function doRegister(){
 // ── LOGOUT ───────────────────────────────────
 function doLogout(){
   currentUser=null;
+  saveToken(null);
   $('authScreen').classList.remove('hidden');
   $('mainApp').classList.remove('show');
   $('authBox').classList.remove('hidden');
@@ -1865,7 +1872,7 @@ function logActivity(icon,bg,msg){
 async function approveUser(id){
   const all=getAllUsers();const u=all.find(x=>x.id===id);if(!u)return;
   try{
-    const res=await fetch(API+'/api/users/'+id,{method:'PUT',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'approved'})});
+    const res=await fetch(API+'/api/users/'+id,{method:'PUT',credentials:'include',headers:authHeaders(),body:JSON.stringify({status:'approved'})});
     const data=await res.json();
     if(!data.success){showToast('❌ อนุมัติไม่สำเร็จ: '+(data.error||'เกิดข้อผิดพลาด'),'var(--red)');return;}
   }catch(e){showToast('❌ ไม่สามารถเชื่อมต่อ Server ได้','var(--red)');return;}
@@ -1876,7 +1883,7 @@ async function approveUser(id){
 async function rejectUser(id){
   const all=getAllUsers();const u=all.find(x=>x.id===id);if(!u)return;
   try{
-    const res=await fetch(API+'/api/users/'+id,{method:'PUT',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'rejected'})});
+    const res=await fetch(API+'/api/users/'+id,{method:'PUT',credentials:'include',headers:authHeaders(),body:JSON.stringify({status:'rejected'})});
     const data=await res.json();
     if(!data.success){showToast('❌ ปฏิเสธไม่สำเร็จ: '+(data.error||'เกิดข้อผิดพลาด'),'var(--red)');return;}
   }catch(e){showToast('❌ ไม่สามารถเชื่อมต่อ Server ได้','var(--red)');return;}
@@ -1985,7 +1992,7 @@ async function confirmResetPw(id){
 async function deleteUser(id){
   const users=getUsers();const u=users.find(x=>x.id===id);if(!u||!confirm(`ลบผู้ใช้ "${u.name}" ออกจากระบบ?\nการดำเนินการนี้ไม่สามารถย้อนกลับได้`))return;
   try{
-    const res=await fetch(API+'/api/users/'+id,{method:'DELETE',credentials:'include'});
+    const res=await fetch(API+'/api/users/'+id,{method:'DELETE',credentials:'include',headers:authHeaders()});
     const data=await res.json();
     if(!data.success){showToast('❌ ลบไม่สำเร็จ: '+(data.error||'เกิดข้อผิดพลาด'),'var(--red)');return;}
   }catch(e){showToast('❌ ไม่สามารถเชื่อมต่อ Server ได้','var(--red)');return;}
@@ -1996,7 +2003,7 @@ async function changeRole(id,role){
   const all=getAllUsers();const u=all.find(x=>x.id===id);if(!u)return;
   const old=u.role;
   try{
-    const res=await fetch(API+'/api/users/'+id,{method:'PUT',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({role})});
+    const res=await fetch(API+'/api/users/'+id,{method:'PUT',credentials:'include',headers:authHeaders(),body:JSON.stringify({role})});
     const data=await res.json();
     if(!data.success){showToast('❌ เปลี่ยนสิทธิ์ไม่สำเร็จ','var(--red)');return;}
   }catch(e){showToast('❌ ไม่สามารถเชื่อมต่อ Server ได้','var(--red)');return;}
@@ -2017,7 +2024,7 @@ async function createUserByAdmin(){
   if(pass!==pass2){errEl.textContent='Password ไม่ตรงกัน';errEl.classList.add('show');return;}
   if(/\s/.test(user)){errEl.textContent='Username ต้องไม่มีช่องว่าง';errEl.classList.add('show');return;}
   try{
-    const res=await fetch(API+'/api/users',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:pass,name,dept,role,status})});
+    const res=await fetch(API+'/api/users',{method:'POST',credentials:'include',headers:authHeaders(),body:JSON.stringify({username:user,password:pass,name,dept,role,status})});
     const data=await res.json();
     if(!data.success){errEl.textContent=data.error||'เกิดข้อผิดพลาด';errEl.classList.add('show');return;}
   }catch(e){errEl.textContent='ไม่สามารถเชื่อมต่อ Server ได้';errEl.classList.add('show');return;}
@@ -2124,12 +2131,12 @@ function staleDays(p){
 async function save(){
   setSave('go');
   try{localStorage.setItem(SK,JSON.stringify(P));localStorage.setItem(IK,JSON.stringify(IDEAS));}catch(e){}
-  try{await fetch(API+'/api/data',{method:'PUT',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({projects:P,ideas:IDEAS})});}catch(e){}
+  try{await fetch(API+'/api/data',{method:'PUT',credentials:'include',headers:authHeaders(),body:JSON.stringify({projects:P,ideas:IDEAS})});}catch(e){}
   setSave('ok');
 }
 async function load(){
   TODAY=new Date();TODAY.setHours(0,0,0,0);
-  try{const r=await fetch(API+'/api/data',{credentials:'include'});if(r.ok){const d=await r.json();if(d.projects&&d.projects.length)P=d.projects;if(d.ideas&&d.ideas.length)IDEAS=d.ideas;}}catch(e){}
+  try{const r=await fetch(API+'/api/data',{credentials:'include',headers:authHeaders()});if(r.ok){const d=await r.json();if(d.projects&&d.projects.length)P=d.projects;if(d.ideas&&d.ideas.length)IDEAS=d.ideas;}}catch(e){}
   if(!P.length){try{const s=localStorage.getItem(SK);if(s)P=JSON.parse(s);}catch(e){}}
   if(!IDEAS.length){try{const s=localStorage.getItem(IK);if(s)IDEAS=JSON.parse(s);}catch(e){}}
   if(!P.length)loadDemoP();if(!IDEAS.length)loadDemoI();
@@ -4348,7 +4355,7 @@ async function vipSaveIdeas(){
   const btn=document.getElementById('vipSaveBtn');
   if(btn){btn.disabled=true;btn.textContent='⏳ กำลังบันทึก...';}
   try{
-    const res=await fetch(API+'/api/data',{method:'PUT',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({projects:P,ideas:IDEAS})});
+    const res=await fetch(API+'/api/data',{method:'PUT',credentials:'include',headers:authHeaders(),body:JSON.stringify({projects:P,ideas:IDEAS})});
     if(res.ok){
       if(btn){btn.style.background='#1a7a4a';btn.textContent='✅ บันทึกแล้ว!';}
       setTimeout(()=>{if(btn){btn.style.background='#c9a84c';btn.disabled=false;btn.textContent='💾 บันทึกคะแนน';}},2000);
