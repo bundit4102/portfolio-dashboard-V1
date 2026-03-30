@@ -367,6 +367,19 @@ def data_save():
     db.session.commit()
     return jsonify({'success': True})
 
+# ─── Admin: Clear all users (reset) ──────────────────────────────────────────
+
+@app.route('/api/users/clear-all', methods=['DELETE'])
+def users_clear_all():
+    """ลบ users ทั้งหมด (admin only) — สำหรับ reset database"""
+    if not _is_admin():
+        return jsonify({'error': 'Unauthorized'}), 403
+    count = User.query.count()
+    User.query.delete()
+    db.session.commit()
+    return jsonify({'success': True, 'deleted': count})
+
+
 # ─── Public Data (VIP view — no login required) ───────────────────────────────
 
 @app.route('/api/data/public', methods=['GET'])
@@ -395,4 +408,3 @@ with app.app_context():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
-
