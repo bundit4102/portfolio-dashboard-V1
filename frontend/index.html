@@ -1662,11 +1662,20 @@ async function doRegister(){
   // ส่งไป Server (Render) ด้วย
   const btn2=document.querySelector('.auth-btn[onclick="doRegister()"]');
   if(btn2){btn2.disabled=true;btn2.textContent='⏳ กำลังส่งข้อมูล...';}
-  try{
-    const res=await fetch(API+'/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:pass,name,dept,role})});
-    const data=await res.json();
-    if(!data.success){showErr('regErr',data.error||'เกิดข้อผิดพลาด');if(btn2){btn2.disabled=false;btn2.textContent='ส่งคำขอสมัคร →';}return;}
-  }catch(e){showErr('regErr','ไม่สามารถเชื่อมต่อ Server ได้ กรุณาลองใหม่');if(btn2){btn2.disabled=false;btn2.textContent='ส่งคำขอสมัคร →';}return;}
+  // retry สูงสุด 3 ครั้ง รองรับ Render spin-up
+  let regOk=false;
+  for(let attempt=1;attempt<=3;attempt++){
+    try{
+      if(attempt>1&&btn2)btn2.textContent='⏳ กำลังเชื่อมต่อ ('+attempt+'/3)...';
+      const res=await fetch(API+'/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:pass,name,dept,role})});
+      const data=await res.json();
+      if(!data.success){showErr('regErr',data.error||'เกิดข้อผิดพลาด');if(btn2){btn2.disabled=false;btn2.textContent='ส่งคำขอสมัคร →';}return;}
+      regOk=true;break;
+    }catch(e){
+      if(attempt<3){await new Promise(r=>setTimeout(r,4000));}// รอ 4 วิ แล้ว retry
+      else{showErr('regErr','ไม่สามารถเชื่อมต่อ Server ได้ (Server อาจกำลังเริ่มต้น ~30 วิ) กรุณาลองใหม่อีกครั้ง');if(btn2){btn2.disabled=false;btn2.textContent='ส่งคำขอสมัคร →';}return;}
+    }
+  }
   if(btn2){btn2.disabled=false;btn2.textContent='ส่งคำขอสมัคร →';}
   $('regOk').textContent='✅ ส่งคำขอเรียบร้อย! กรุณารอ Admin ตรวจสอบและอนุมัติบัญชีของคุณ';
   $('regOk').classList.add('show');
@@ -1717,8 +1726,9 @@ function loadRemembered(){
         $('lUser').value=d.u;
         $('lPass').value=d.p;
         if($('rememberMe'))$('rememberMe').checked=true;
+        // restore token ถ้ามี — ช่วยให้ไม่ต้อง login ใหม่ทุกครั้ง
+        if(d.token)saveToken(d.token);
       } else if(d.u==='admin'){
-        // Clear stale admin remember
         localStorage.removeItem(REMEMBER_KEY);
       }
     }
@@ -1726,8 +1736,11 @@ function loadRemembered(){
 }
 function saveRemembered(u,p,remember){
   try{
-    if(remember)localStorage.setItem(REMEMBER_KEY,JSON.stringify({u,p}));
-    else localStorage.removeItem(REMEMBER_KEY);
+    if(remember){
+      localStorage.setItem(REMEMBER_KEY,JSON.stringify({u,p,token:_authToken||''}));
+    }else{
+      localStorage.removeItem(REMEMBER_KEY);
+    }
   }catch(e){}
 }
 // Load remembered credentials on page load
@@ -1990,13 +2003,15 @@ async function confirmResetPw(id){
 }
 
 async function deleteUser(id){
-  const users=getUsers();const u=users.find(x=>x.id===id);if(!u||!confirm(`ลบผู้ใช้ "${u.name}" ออกจากระบบ?\nการดำเนินการนี้ไม่สามารถย้อนกลับได้`))return;
+  const u=USERS_CACHE.find(x=>x.id===id);
+  const name=u?u.name:id;
+  if(!confirm(`ลบผู้ใช้ "${name}" ออกจากระบบ?\nการดำเนินการนี้ไม่สามารถย้อนกลับได้`))return;
   try{
     const res=await fetch(API+'/api/users/'+id,{method:'DELETE',credentials:'include',headers:authHeaders()});
     const data=await res.json();
     if(!data.success){showToast('❌ ลบไม่สำเร็จ: '+(data.error||'เกิดข้อผิดพลาด'),'var(--red)');return;}
   }catch(e){showToast('❌ ไม่สามารถเชื่อมต่อ Server ได้','var(--red)');return;}
-  logActivity('🗑','rgba(138,155,176,.12)',`ลบผู้ใช้ <strong>${u.name} (@${u.username})</strong> ออกจากระบบ`);
+  logActivity('🗑','rgba(138,155,176,.12)',`ลบผู้ใช้ <strong>${name} (@${id})</strong> ออกจากระบบ`);
   await refreshUsers();renderAdminPanel();checkAdminNotif();
 }
 async function changeRole(id,role){
