@@ -24,7 +24,8 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
    AUTH SCREEN (shared bg)
 ════════════════════════════════════ */
 .auth-screen{position:fixed;inset:0;z-index:999;background:var(--navy);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;overflow-y:auto;gap:16px}
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:20px;overflow-y:auto;gap:0}
 .auth-screen.hidden{display:none}
 .auth-screen::before{content:'';position:absolute;inset:0;pointer-events:none;
   background:radial-gradient(circle at 30% 70%,rgba(201,168,76,.12) 0%,transparent 55%),
@@ -33,19 +34,16 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 /* card */
 .auth-box{position:relative;z-index:1;background:rgba(255,255,255,.04);
   border:1px solid rgba(201,168,76,.2);border-radius:20px;
-  width:100%;max-width:440px;box-shadow:0 24px 80px rgba(0,0,0,.4);
+  width:100%;max-width:480px;box-shadow:0 24px 80px rgba(0,0,0,.4);
   animation:slideUp .4s ease both}
 .auth-box-wide{max-width:900px}
 @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-
-/* Mobile */
 @media(max-width:600px){
-  .auth-screen{padding:16px 12px;justify-content:flex-start;padding-top:30px}
-  .auth-box{max-width:100%;border-radius:16px}
-  .auth-logo{padding:24px 20px 16px}
-  .auth-body{padding:20px 20px 24px}
-  .wait-body{padding:28px 20px}
-  .auth-btn{padding:13px;font-size:13px}
+  .auth-screen{padding:16px;justify-content:flex-start;padding-top:20px}
+  .auth-box{max-width:100%;border-radius:14px}
+  .auth-logo{padding:20px 16px 14px}
+  .auth-body{padding:16px 16px 20px}
+  .wait-body{padding:24px 16px}
 }
 
 /* logo */
@@ -1507,10 +1505,11 @@ function saveUsers(us){
 function getAllUsers(){return USERS_CACHE;}
 function getPendingCount(){return getUsers().filter(u=>u.status==='pending').length;}
 async function refreshUsers(){
+  const base=location.hostname.includes('onrender.com')||location.hostname==='localhost'?'':'https://portfolio-dashboard-v1.onrender.com';
   let local=[];
   try{const s=localStorage.getItem(UK);if(s)local=JSON.parse(s);}catch(e){}
   let server=[];
-  try{const r=await fetch('https://portfolio-dashboard-v1.onrender.com/api/users',{credentials:'include'});if(r.ok)server=await r.json();}catch(e){}
+  try{const r=await fetch(base+'/api/users',{credentials:'include'});if(r.ok)server=await r.json();}catch(e){}
   const merged=[...server];
   local.forEach(u=>{if(!merged.find(x=>x.username===u.username))merged.push(u);});
   USERS_CACHE=[ADMIN_USER,...merged];
@@ -1538,16 +1537,47 @@ async function doLogin(){
   const remember=$('rememberMe')?.checked||false;
   if(!u||!p){showErr('loginErr','กรุณากรอก username และ password');return;}
 
-  // Check built-in admin FIRST — cannot be overridden by localStorage
+  // Check built-in admin FIRST
   if(u===ADMIN_USER.username && p===ADMIN_USER.password){
     saveRemembered(u,p,remember);
     currentUser=ADMIN_USER;
-    try{await fetch('/api/auth/login',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});}catch(e){}
+    // บอก server ด้วย
+    const base=location.hostname.includes('onrender.com')||location.hostname==='localhost'?'':'https://portfolio-dashboard-v1.onrender.com';
+    try{await fetch(base+'/api/auth/login',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});}catch(e){}
     await showAdminBox();
     return;
   }
 
-  // Check registered users
+  // ลอง login ผ่าน Server ก่อน (Render) — แม่นยำที่สุด
+  const base=location.hostname.includes('onrender.com')||location.hostname==='localhost'?'':'https://portfolio-dashboard-v1.onrender.com';
+  try{
+    const res=await fetch(base+'/api/auth/login',{method:'POST',credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:u,password:p})});
+    if(res.ok){
+      const d=await res.json();
+      if(d.success){
+        saveRemembered(u,p,remember);
+        currentUser=d.user;
+        if(d.pending){
+          $('waitName').textContent=d.user.name;
+          $('waitRole').textContent='ขอสิทธิ์: '+d.user.role;
+          $('waitUser').textContent='@'+d.user.username;
+          $('authBox').classList.add('hidden');
+          $('waitBox').classList.remove('hidden');
+          return;
+        }
+        if(d.user.role==='Admin'){await showAdminBox();}
+        else{await enterApp();}
+        return;
+      } else {
+        showErr('loginErr',d.error||'Username หรือ Password ไม่ถูกต้อง');return;
+      }
+    }
+  }catch(e){}
+
+  // Fallback: localStorage (GitHub Pages)
+  await refreshUsers();
   const users=getUsers();
   const found=users.find(x=>x.username===u && x.password===p);
   if(!found){showErr('loginErr','Username หรือ Password ไม่ถูกต้อง');return;}
@@ -1563,11 +1593,8 @@ async function doLogin(){
   if(found.status==='rejected'){showErr('loginErr','บัญชีของคุณถูกปฏิเสธ กรุณาติดต่อ Admin');return;}
   saveRemembered(u,p,remember);
   currentUser=found;
-  if(found.role==='Admin'){
-    await showAdminBox();
-  } else {
-    await enterApp();
-  }
+  if(found.role==='Admin'){await showAdminBox();}
+  else{await enterApp();}
 }
 
 function clearConflict(){
@@ -1637,11 +1664,7 @@ function startClock(){
     el.textContent=pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
   }
   tick();
-  setInterval(()=>{
-    const el=document.getElementById('liveClock');if(!el)return;
-    const now=new Date();const pad=n=>String(n).padStart(2,'0');
-    el.textContent=pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
-  },1000);
+  setInterval(()=>{const el=document.getElementById('liveClock');if(!el)return;const now=new Date();const pad=n=>String(n).padStart(2,'0');el.textContent=pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());},1000);
 }
 
 // ── REGISTER ─────────────────────────────────
@@ -1654,22 +1677,12 @@ async function doRegister(){
   if(pass.length<6){showErr('regErr','Password ต้องมีอย่างน้อย 6 ตัวอักษร');return;}
   if(pass!==pass2){showErr('regErr','Password ไม่ตรงกัน');return;}
   if(/\s/.test(user)){showErr('regErr','Username ต้องไม่มีช่องว่าง');return;}
-  // เช็ค username ซ้ำจาก Server ก่อน (แม่นยำกว่า localStorage)
-  try{
-    const chk=await fetch('https://portfolio-dashboard-v1.onrender.com/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({username:user,password:pass,name,dept,role})});
-    const res=await chk.json();
-    if(!res.success){showErr('regErr',res.error||'Username นี้ถูกใช้แล้ว กรุณาเลือก username อื่น');return;}
-    // สำเร็จ — บันทึก localStorage ด้วย
-    const newUser={id:'u'+Date.now(),username:user,password:pass,name,dept,role,status:'pending',createdAt:new Date().toISOString()};
-    const users=getUsers();users.push(newUser);saveUsers(users);
-  }catch(e){
-    // ถ้าไม่มี server (GitHub Pages) ใช้ localStorage อย่างเดียว
-    const all=getAllUsers();
-    if(all.find(x=>x.username===user)){showErr('regErr','Username นี้ถูกใช้แล้ว กรุณาเลือก username อื่น');return;}
-    const newUser={id:'u'+Date.now(),username:user,password:pass,name,dept,role,status:'pending',createdAt:new Date().toISOString()};
-    const users=getUsers();users.push(newUser);saveUsers(users);
-  }
+  const all=getAllUsers();
+  if(all.find(x=>x.username===user)){showErr('regErr','Username นี้ถูกใช้แล้ว กรุณาเลือก username อื่น');return;}
+  const newUser={id:'u'+Date.now(),username:user,password:pass,name,dept,role,status:'pending',createdAt:new Date().toISOString()};
+  const users=getUsers();users.push(newUser);saveUsers(users);
+  const base=location.hostname.includes('onrender.com')||location.hostname==='localhost'?'':'https://portfolio-dashboard-v1.onrender.com';
+  try{await fetch(base+'/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:pass,name,dept,role})});}catch(e){}
   $('regOk').textContent='✅ ส่งคำขอเรียบร้อย! กรุณารอ Admin ตรวจสอบและอนุมัติบัญชีของคุณ';
   $('regOk').classList.add('show');
   ['rName','rDept','rUser','rPass','rPass2'].forEach(id=>$(id).value='');
@@ -1762,14 +1775,9 @@ function copyRegLink(){
 async function refreshAdminPanel(){
   const btn=document.querySelector('[onclick="refreshAdminPanel()"]');
   if(btn){btn.textContent='⏳ กำลังโหลด...';btn.disabled=true;}
-  try{
-    if(currentUser?.id==='__admin__'){
-      try{await fetch('/api/auth/login',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'admin',password:'admin2026'})});}catch(e){}
-    }
-    await refreshUsers();
-  }catch(e){}
-  renderAdminPanel();
-  checkAdminNotif();
+  const base=location.hostname.includes('onrender.com')||location.hostname==='localhost'?'':'https://portfolio-dashboard-v1.onrender.com';
+  try{await fetch(base+'/api/auth/login',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'admin',password:'admin2026'})});await refreshUsers();}catch(e){}
+  renderAdminPanel();checkAdminNotif();
   if(btn){btn.textContent='✅ Updated!';btn.disabled=false;setTimeout(()=>{btn.textContent='🔄 Refresh';},1500);}
 }
 
@@ -2110,13 +2118,15 @@ function staleDays(p){
 // ══════════════════════════════════════════════
 async function save(){
   setSave('go');
+  const base=location.hostname.includes('onrender.com')||location.hostname==='localhost'?'':'https://portfolio-dashboard-v1.onrender.com';
   try{localStorage.setItem(SK,JSON.stringify(P));localStorage.setItem(IK,JSON.stringify(IDEAS));}catch(e){}
-  try{await fetch('/api/data',{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({projects:P,ideas:IDEAS})});}catch(e){}
+  try{await fetch(base+'/api/data',{method:'PUT',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({projects:P,ideas:IDEAS})});}catch(e){}
   setSave('ok');
 }
 async function load(){
   TODAY=new Date();TODAY.setHours(0,0,0,0);
-  try{const r=await fetch('/api/data',{credentials:'same-origin'});if(r.ok){const d=await r.json();if(d.projects&&d.projects.length)P=d.projects;if(d.ideas&&d.ideas.length)IDEAS=d.ideas;}}catch(e){}
+  const base=location.hostname.includes('onrender.com')||location.hostname==='localhost'?'':'https://portfolio-dashboard-v1.onrender.com';
+  try{const r=await fetch(base+'/api/data',{credentials:'include'});if(r.ok){const d=await r.json();if(d.projects&&d.projects.length)P=d.projects;if(d.ideas&&d.ideas.length)IDEAS=d.ideas;}}catch(e){}
   if(!P.length){try{const s=localStorage.getItem(SK);if(s)P=JSON.parse(s);}catch(e){}}
   if(!IDEAS.length){try{const s=localStorage.getItem(IK);if(s)IDEAS=JSON.parse(s);}catch(e){}}
   if(!P.length)loadDemoP();if(!IDEAS.length)loadDemoI();
