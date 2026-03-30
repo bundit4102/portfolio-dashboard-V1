@@ -1667,13 +1667,13 @@ async function doRegister(){
   for(let attempt=1;attempt<=3;attempt++){
     try{
       if(attempt>1&&btn2)btn2.textContent='⏳ กำลังเชื่อมต่อ ('+attempt+'/3)...';
-      const res=await fetch(API+'/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:pass,name,dept,role})});
+      const res=await fetch(API+'/api/auth/register',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:pass,name,dept,role})});
       const data=await res.json();
       if(!data.success){showErr('regErr',data.error||'เกิดข้อผิดพลาด');if(btn2){btn2.disabled=false;btn2.textContent='ส่งคำขอสมัคร →';}return;}
       regOk=true;break;
     }catch(e){
-      if(attempt<3){await new Promise(r=>setTimeout(r,4000));}// รอ 4 วิ แล้ว retry
-      else{showErr('regErr','ไม่สามารถเชื่อมต่อ Server ได้ (Server อาจกำลังเริ่มต้น ~30 วิ) กรุณาลองใหม่อีกครั้ง');if(btn2){btn2.disabled=false;btn2.textContent='ส่งคำขอสมัคร →';}return;}
+      if(attempt<3){await new Promise(r=>setTimeout(r,8000));}// รอ 8 วิ แล้ว retry
+      else{showErr('regErr','ไม่สามารถเชื่อมต่อ Server ได้ (Server อาจกำลังเริ่มต้น ~30 วิ) กรุณากดปุ่มอีกครั้ง');if(btn2){btn2.disabled=false;btn2.textContent='ส่งคำขอสมัคร →';}return;}
     }
   }
   if(btn2){btn2.disabled=false;btn2.textContent='ส่งคำขอสมัคร →';}
