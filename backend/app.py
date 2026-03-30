@@ -147,6 +147,29 @@ def _get_role():
         return None
     return u['role'] if isinstance(u, dict) else u.role
 
+# ─── CORS preflight handler ──────────────────────────────────────────────────
+@app.after_request
+def add_cors_headers(response):
+    origin = request.headers.get('Origin', '')
+    allowed = [
+        'https://bundit4102.github.io',
+        'https://portfolio-dashboard-v1.onrender.com',
+        'http://localhost:5000',
+        'http://127.0.0.1:5000',
+    ]
+    if origin in allowed:
+        response.headers['Access-Control-Allow-Origin']      = origin
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        response.headers['Access-Control-Allow-Methods']     = 'GET,POST,PUT,DELETE,OPTIONS'
+        response.headers['Access-Control-Allow-Headers']     = 'Content-Type,Authorization'
+    return response
+
+@app.route('/api/auth/register', methods=['OPTIONS'])
+@app.route('/api/auth/login',    methods=['OPTIONS'])
+@app.route('/api/data',          methods=['OPTIONS'])
+def handle_options(*args, **kwargs):
+    return '', 204
+
 # ─── Auth Routes ──────────────────────────────────────────────────────────────
 
 @app.route('/api/auth/login', methods=['POST'])
@@ -372,3 +395,4 @@ with app.app_context():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
