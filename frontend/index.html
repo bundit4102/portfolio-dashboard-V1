@@ -24,69 +24,71 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
    AUTH SCREEN (shared bg)
 ════════════════════════════════════ */
 .auth-screen{position:fixed;inset:0;z-index:999;background:var(--navy);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:20px;overflow-y:auto;gap:0}
+  display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
 .auth-screen.hidden{display:none}
 .auth-screen::before{content:'';position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(circle at 30% 70%,rgba(201,168,76,.12) 0%,transparent 55%),
-             radial-gradient(circle at 70% 30%,rgba(255,255,255,.03) 0%,transparent 55%)}
+  background:radial-gradient(circle at 20% 80%,rgba(201,168,76,.09) 0%,transparent 45%),
+             radial-gradient(circle at 80% 20%,rgba(108,52,131,.07) 0%,transparent 45%)}
 
-/* card */
-.auth-box{position:relative;z-index:1;background:rgba(255,255,255,.04);
-  border:1px solid rgba(201,168,76,.2);border-radius:20px;
-  width:100%;max-width:480px;box-shadow:0 24px 80px rgba(0,0,0,.4);
-  animation:slideUp .4s ease both}
+/* card — single centred box, one at a time */
+.auth-box{position:relative;z-index:1;background:rgba(255,255,255,.05);
+  border:1px solid rgba(201,168,76,.16);border-radius:16px;
+  width:100%;max-width:400px;box-shadow:0 16px 48px rgba(0,0,0,.5);
+  animation:slideUp .28s ease both}
 .auth-box-wide{max-width:900px}
-@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-@media(max-width:600px){
-  .auth-screen{padding:16px;justify-content:flex-start;padding-top:20px}
-  .auth-box{max-width:100%;border-radius:14px}
-  .auth-logo{padding:20px 16px 14px}
-  .auth-body{padding:16px 16px 20px}
-  .wait-body{padding:24px 16px}
-}
+@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 
 /* logo */
-.auth-logo{text-align:center;padding:36px 40px 28px}
-.auth-logo-title{font-family:'Playfair Display',serif;font-size:24px;color:var(--gold);margin-bottom:4px}
-.auth-logo-sub{font-size:10px;color:rgba(255,255,255,.35);letter-spacing:2.5px;text-transform:uppercase}
+.auth-logo{text-align:center;padding:26px 28px 14px}
+.auth-logo-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--gold);margin-bottom:3px}
+.auth-logo-sub{font-size:9px;color:rgba(255,255,255,.28);letter-spacing:2.5px;text-transform:uppercase}
 
-/* tabs inside auth */
-.auth-tabs{display:flex;border-bottom:1px solid rgba(255,255,255,.08)}
-.auth-tab{flex:1;padding:12px;font-size:12px;font-weight:700;letter-spacing:.5px;color:rgba(255,255,255,.4);background:none;border:none;cursor:pointer;font-family:'Sarabun',sans-serif;transition:all .2s;border-bottom:2px solid transparent;margin-bottom:-1px}
-.auth-tab:hover{color:rgba(255,255,255,.7)}
+/* tabs */
+.auth-tabs{display:flex;border-bottom:1px solid rgba(255,255,255,.07)}
+.auth-tab{flex:1;padding:9px 8px;font-size:11px;font-weight:700;letter-spacing:.5px;color:rgba(255,255,255,.33);background:none;border:none;cursor:pointer;font-family:'Sarabun',sans-serif;transition:all .18s;border-bottom:2px solid transparent;margin-bottom:-1px}
+.auth-tab:hover{color:rgba(255,255,255,.6)}
 .auth-tab.on{color:var(--gold);border-bottom-color:var(--gold)}
 
-/* form area */
-.auth-body{padding:28px 36px 36px}
-.auth-err{background:rgba(192,57,43,.15);border:1px solid rgba(192,57,43,.3);border-radius:8px;
-  padding:10px 14px;font-size:12px;color:#ff8a80;margin-bottom:14px;display:none}
+/* form */
+.auth-body{padding:16px 22px 22px}
+.auth-err{background:rgba(192,57,43,.13);border:1px solid rgba(192,57,43,.25);border-radius:7px;
+  padding:8px 12px;font-size:12px;color:#ff8a80;margin-bottom:11px;display:none}
 .auth-err.show{display:block}
-.auth-ok{background:rgba(26,122,74,.15);border:1px solid rgba(26,122,74,.3);border-radius:8px;
-  padding:10px 14px;font-size:12px;color:#4caf82;margin-bottom:14px;display:none}
+.auth-ok{background:rgba(26,122,74,.13);border:1px solid rgba(26,122,74,.25);border-radius:7px;
+  padding:8px 12px;font-size:12px;color:#81c995;margin-bottom:11px;display:none}
 .auth-ok.show{display:block}
-.lf{margin-bottom:14px}
-.lf label{display:block;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:6px}
-.lf input,.lf select{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:9px;padding:11px 14px;font-family:'Sarabun',sans-serif;font-size:13px;color:#fff;outline:none;transition:all .2s}
-.lf input:focus,.lf select:focus{border-color:var(--gold);background:rgba(255,255,255,.09)}
-.lf input::placeholder{color:rgba(255,255,255,.2)}
+.lf{margin-bottom:10px}
+.lf label{display:block;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.36);margin-bottom:4px}
+.lf input,.lf select{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:9px 12px;font-family:'Sarabun',sans-serif;font-size:13px;color:#fff;outline:none;transition:border-color .18s,background .18s}
+.lf input:focus,.lf select:focus{border-color:rgba(201,168,76,.5);background:rgba(255,255,255,.09)}
+.lf input::placeholder{color:rgba(255,255,255,.18)}
 .lf select option{background:var(--navy);color:#fff}
-.auth-btn{width:100%;background:var(--gold);color:var(--navy);border:none;border-radius:9px;padding:12px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;margin-top:4px;letter-spacing:.5px}
-.auth-btn:hover{background:var(--gold-l)}
-.auth-link{text-align:center;margin-top:14px;font-size:11px;color:rgba(255,255,255,.35)}
+.auth-btn{width:100%;background:var(--gold);color:var(--navy);border:none;border-radius:8px;padding:11px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:background .16s,transform .14s;margin-top:4px;letter-spacing:.4px}
+.auth-btn:hover{background:var(--gold-l);transform:translateY(-1px)}
+.auth-btn:active{transform:none}
+.auth-link{text-align:center;margin-top:10px;font-size:11px;color:rgba(255,255,255,.3)}
 .auth-link span{color:var(--gold);cursor:pointer;font-weight:600}
 .auth-link span:hover{text-decoration:underline}
 
-/* waiting screen */
-.wait-body{padding:36px;text-align:center}
-.wait-icon{font-size:48px;margin-bottom:16px}
-.wait-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--gold);margin-bottom:8px}
-.wait-msg{font-size:13px;color:rgba(255,255,255,.5);line-height:1.7;margin-bottom:20px}
-.wait-user{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px 18px;display:inline-flex;align-items:center;gap:10px;margin-bottom:20px}
-.wait-user .wname{font-size:14px;font-weight:600;color:rgba(255,255,255,.8)}
-.wait-user .wrole{font-size:10px;color:rgba(255,255,255,.35);margin-top:2px}
-.auth-btn-outline{width:100%;background:transparent;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);border-radius:9px;padding:11px;font-family:'Sarabun',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;margin-top:8px}
-.auth-btn-outline:hover{border-color:var(--red);color:var(--red)}
+/* wait box — compact pill */
+.wait-body{padding:22px 22px 20px;text-align:center}
+.wait-icon{font-size:26px;margin-bottom:7px;display:block}
+.wait-title{font-family:'Playfair Display',serif;font-size:15px;color:var(--gold);margin-bottom:5px;font-weight:700}
+.wait-msg{font-size:11px;color:rgba(255,255,255,.4);line-height:1.55;margin-bottom:12px}
+.wait-user{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:9px;margin-bottom:12px;text-align:left}
+.wait-user .wname{font-size:13px;font-weight:600;color:rgba(255,255,255,.85)}
+.wait-user .wrole{font-size:10px;color:rgba(201,168,76,.6);margin-top:1px}
+.auth-btn-outline{width:100%;background:transparent;border:1px solid rgba(255,255,255,.11);color:rgba(255,255,255,.38);border-radius:8px;padding:9px;font-family:'Sarabun',sans-serif;font-size:12px;cursor:pointer;transition:all .16s}
+.auth-btn-outline:hover{border-color:rgba(201,168,76,.35);color:var(--gold)}
+
+/* mobile */
+@media(max-width:480px){
+  .auth-screen{padding:12px;align-items:flex-start;padding-top:20px}
+  .auth-box{border-radius:14px}
+  .auth-logo{padding:18px 16px 11px}
+  .auth-body{padding:12px 16px 18px}
+  .wait-body{padding:18px 16px 16px}
+}
 
 /* admin user mgmt panel (wide box) */
 .users-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:20px}
@@ -880,17 +882,17 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
   <div class="auth-box hidden" id="waitBox">
     <div class="wait-body">
       <div class="wait-icon">⏳</div>
-      <div class="wait-title">รอการอนุมัติจาก Admin</div>
-      <div class="wait-msg">คำขอสมัครสมาชิกของคุณถูกส่งแล้ว<br>กรุณารอให้ Admin ตรวจสอบและอนุมัติบัญชีของคุณ</div>
+      <div class="wait-title">Pending Admin Approval</div>
+      <div class="wait-msg">Your request has been submitted.<br>Please wait for Admin to review and approve your account.</div>
       <div class="wait-user">
-        <div style="font-size:28px">🙋</div>
-        <div>
+        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,rgba(201,168,76,.18),rgba(108,52,131,.18));border:1px solid rgba(201,168,76,.22);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">👤</div>
+        <div style="min-width:0;overflow:hidden">
           <div class="wname" id="waitName">—</div>
           <div class="wrole" id="waitRole">—</div>
-          <div class="wrole" id="waitUser" style="font-family:'DM Mono',monospace;margin-top:2px"></div>
+          <div style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,.28);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="waitUser"></div>
         </div>
       </div>
-      <button class="auth-btn-outline" onclick="doLogout()">← กลับหน้าเข้าสู่ระบบ</button>
+      <button class="auth-btn-outline" onclick="doLogout()">← Back to Login</button>
     </div>
   </div>
 
@@ -2094,7 +2096,6 @@ function rem(p){if(p.ae)return-1;if(!p.pe)return null;return Math.max(0,Math.rou
 function iScore(x){return Math.round(((+x.impact||5)+(+x.feasibility||5)+(+x.strategic||5))/3*10);}
 function scoreColor(sc){return sc>=70?'var(--green)':sc>=50?'var(--amber)':'var(--red)';}
 const isViewer=()=>currentUser?.role==='Viewer';
-const isAdminOrVIP=()=>currentUser?.role==='Admin'||currentUser?.role==='VIP';
 
 // Returns days since last log update; null if completed/no start
 function staleDays(p){
@@ -3177,9 +3178,6 @@ function updIdeaUndoBtns(){
 
 function renderIdeaTable(){
   const ro=isViewer();const dis=ro?'disabled':'';
-  // Sliders, Status, Remark → Admin & VIP only
-  const canScore=isAdminOrVIP();const disScore=canScore?'':'disabled';
-  const lockTitle=canScore?'':'🔒 Admin & VIP only';
   $('ideaBody').innerHTML=IDEAS.map((x,i)=>{
     const sc=iScore(x),bc=scoreColor(sc);
     return`<tr id="ir${i}" class="pop">
@@ -3198,36 +3196,17 @@ function renderIdeaTable(){
       <td><input class="ci mo" type="date" value="${x.date||''}" onchange="updI(${i},'date',this.value)" ${dis}></td>
       <td><input class="ci mo" type="number" min="0" value="${x.budget||''}" onchange="updI(${i},'budget',+this.value)" placeholder="0" ${dis}></td>
       <td><input class="ci" value="${esc(x.desc)}" onchange="updI(${i},'desc',this.value)" placeholder="รายละเอียดโดยย่อ" ${dis}></td>
-      <td title="${lockTitle}" style="${canScore?'':'opacity:.55;cursor:not-allowed'}">
-        <div class="score-mini">
-          <input type="range" id="si${i}imp" min="1" max="10" value="${x.impact||5}" oninput="updIScore(${i})" ${disScore} style="${canScore?'':'pointer-events:none'}">
-          <span id="sv${i}imp">${x.impact||5}</span>
-        </div>
-      </td>
-      <td title="${lockTitle}" style="${canScore?'':'opacity:.55;cursor:not-allowed'}">
-        <div class="score-mini">
-          <input type="range" id="si${i}feas" min="1" max="10" value="${x.feasibility||5}" oninput="updIScore(${i})" ${disScore} style="${canScore?'':'pointer-events:none'}">
-          <span id="sv${i}feas">${x.feasibility||5}</span>
-        </div>
-      </td>
-      <td title="${lockTitle}" style="${canScore?'':'opacity:.55;cursor:not-allowed'}">
-        <div class="score-mini">
-          <input type="range" id="si${i}str" min="1" max="10" value="${x.strategic||5}" oninput="updIScore(${i})" ${disScore} style="${canScore?'':'pointer-events:none'}">
-          <span id="sv${i}str">${x.strategic||5}</span>
-        </div>
-      </td>
-      <td class="total-badge" id="sc${i}" style="color:${bc}" title="Auto-calculated score (read-only)">${sc}</td>
-      <td title="${lockTitle}">
-        <select class="ci" onchange="updI(${i},'status',this.value)" ${disScore} style="${canScore?'':'opacity:.55;pointer-events:none'}">
-          <option value="new" ${x.status==='new'?'selected':''}>🆕 New</option>
-          <option value="review" ${x.status==='review'?'selected':''}>🔍 Review</option>
-          <option value="approved" ${x.status==='approved'?'selected':''}>✅ Approved</option>
-          <option value="rejected" ${x.status==='rejected'?'selected':''}>❌ Rejected</option>
-        </select>
-      </td>
-      <td title="${lockTitle}">
-        <input class="ci" value="${esc(x.note)}" onchange="updI(${i},'note',this.value)" placeholder="ความเห็น" ${disScore} style="${canScore?'':'opacity:.55'}">
-      </td>
+      <td><div class="score-mini"><input type="range" id="si${i}imp" min="1" max="10" value="${x.impact||5}" oninput="updIScore(${i})" ${dis}><span id="sv${i}imp">${x.impact||5}</span></div></td>
+      <td><div class="score-mini"><input type="range" id="si${i}feas" min="1" max="10" value="${x.feasibility||5}" oninput="updIScore(${i})" ${dis}><span id="sv${i}feas">${x.feasibility||5}</span></div></td>
+      <td><div class="score-mini"><input type="range" id="si${i}str" min="1" max="10" value="${x.strategic||5}" oninput="updIScore(${i})" ${dis}><span id="sv${i}str">${x.strategic||5}</span></div></td>
+      <td class="total-badge" id="sc${i}" style="color:${bc}">${sc}</td>
+      <td><select class="ci" onchange="updI(${i},'status',this.value)" ${dis}>
+        <option value="new" ${x.status==='new'?'selected':''}>🆕 New</option>
+        <option value="review" ${x.status==='review'?'selected':''}>🔍 Review</option>
+        <option value="approved" ${x.status==='approved'?'selected':''}>✅ Approved</option>
+        <option value="rejected" ${x.status==='rejected'?'selected':''}>❌ Rejected</option>
+      </select></td>
+      <td><input class="ci" value="${esc(x.note)}" onchange="updI(${i},'note',this.value)" placeholder="ความเห็น" ${dis}></td>
       <td>${ro?'':('<button class="del" onclick="delIdea('+i+')">✕</button>')}</td>
     </tr>`;
   }).join('');
@@ -3235,8 +3214,6 @@ function renderIdeaTable(){
 }
 function updI(i,f,v){
   if(isViewer())return;
-  // Status, note, and score fields → Admin & VIP only
-  if((f==='status'||f==='note'||f==='impact'||f==='feasibility'||f==='strategic')&&!isAdminOrVIP())return;
   pushIdeaUndo();
   IDEAS[i][f]=v;
   // Auto-regen ID when cat or owner changes
@@ -3250,7 +3227,6 @@ function updI(i,f,v){
   sched();renderKanban();renderIdeaKPIs();
 }
 function updIScore(i){
-  if(!isAdminOrVIP())return; // Only Admin & VIP can adjust scores
   const imp=+$('si'+i+'imp').value,feas=+$('si'+i+'feas').value,str=+$('si'+i+'str').value;
   $('sv'+i+'imp').textContent=imp;$('sv'+i+'feas').textContent=feas;$('sv'+i+'str').textContent=str;
   IDEAS[i].impact=imp;IDEAS[i].feasibility=feas;IDEAS[i].strategic=str;
