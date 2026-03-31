@@ -964,7 +964,7 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
       </div>
     </div>
     <div class="gantt-card">
-      <div class="gh"><span>#</span><span>Project</span><span>Progress</span><div class="ms" id="mst"></div></div>
+      <div class="gh"><span>#</span><span>Project</span><span>Status</span><span>Progress</span><div class="ms" id="mst"></div></div>
       <div id="gBody"></div>
     </div>
     <div class="sec"><div class="sec-t">Project Details</div><div class="sec-line"></div></div>
@@ -2637,7 +2637,8 @@ function renderDash(){
       const actBar=(aL!==null&&aR!==null)?`<div class="tb tact t-${sk(p.status)}" style="left:${aL}%;width:${Math.max(.4,aR-aL)}%"></div>`:'';
       const gl=months.slice(1).map(m=>`<div class="mgl" style="left:${pp(m)}%"></div>`).join('');
       return`<div class="gr"><div class="rn">${String(i+1).padStart(2,'0')}</div>
-        <div><div class="pid2" style="display:flex;align-items:center;gap:5px"><span style="font-size:9px;font-family:'DM Mono',monospace;color:var(--gold-d)">${p.id}</span><span class="badge s-${sk(p.status)}" style="font-size:9px;padding:1px 6px"><span class="bdot"></span>${p.status}</span></div><div class="pn">${p.name||'(ไม่ระบุ)'}</div></div>
+        <div><div class="pid2"><span style="font-size:9px;font-family:'DM Mono',monospace;color:var(--gold-d)">${p.id}</span></div><div class="pn">${p.name||'(ไม่ระบุ)'}</div></div>
+        <div><span class="badge s-${sk(p.status)}" style="font-size:9px;padding:2px 7px"><span class="bdot"></span>${p.status}</span></div>
         <div class="pw"><div class="pt">${p.pct}%</div><div class="pb"><div class="pf" style="width:${p.pct}%;background:${pc(p.status)}"></div></div></div>
         <div class="tl">${gl}<div class="tmk" style="left:${tp}%"></div>${planBar}${revisedBar}${actBar}</div>
       </div>`;
@@ -3399,223 +3400,194 @@ async function buildPptx(){
   const s1=[]; let id1=10;
   // Full navy background
   s1.push(spRect(id1++,'bg',0,0,13.33,7.5,C.navy,C.navy));
-  // Dark right panel (60/40 split)
-  s1.push(spRect(id1++,'rpanel',8.6,0,4.73,7.5,'131F2B','131F2B'));
-  // Gold vertical accent bar (left edge)
-  s1.push(spRect(id1++,'goldBar',0,0,.18,7.5,C.gold,C.gold));
-  // Decorative thin horizontal gold lines — left content area
-  s1.push(spRect(id1++,'gline1',.18,.92,8.2,.025,C.gold,C.gold));
-  s1.push(spRect(id1++,'gline2',.18,4.55,8.2,.025,C.gold,C.gold));
-  // Decorative circle — top right corner ornament
-  s1.push(spRect(id1++,'cOuter',10.6,.22,2.5,2.5,'1E3347','1E3347'));
-  s1.push(spRect(id1++,'cInner',10.95,.57,1.8,1.8,C.navy,C.navy));
-  // org tag
-  s1.push(spText(id1++,'org',.38,.55,8,.3,'EXECUTIVE MANAGEMENT SYSTEM',7,false,C.gold,'l','Calibri'));
-  // Main title — very large
-  s1.push(spText(id1++,'t1',.38,1.12,8.3,1.05,'PROJECT PORTFOLIO',46,true,C.white,'l','Calibri'));
-  s1.push(spText(id1++,'t2',.38,2.18,8.3,.9,'TRACKER',46,true,C.gold,'l','Calibri'));
-  // Subtitle tag
-  s1.push(spRect(id1++,'stag',.38,3.3,3.2,.38,'C9A84C22','C9A84C',9525));
-  s1.push(spText(id1++,'t3',.48,3.35,3.0,.28,'Executive Dashboard  ·  Confidential',9,false,C.gold,'l','Calibri'));
-  // Date row
-  s1.push(spText(id1++,'dtL',.38,4.75,2.2,.3,'Report Date',8,true,C.muted,'l','Calibri'));
-  s1.push(spText(id1++,'dtV',2.6,4.75,5.8,.3,dateStr,9,false,C.goldL,'l','Calibri'));
-  s1.push(spText(id1++,'totL',.38,5.12,2.2,.3,'Total Projects',8,true,C.muted,'l','Calibri'));
-  s1.push(spText(id1++,'totV',2.6,5.12,5.8,.3,P.length+' projects',9,false,C.goldL,'l','Calibri'));
+  // Subtle dark panel right side
+  s1.push(spRect(id1++,'rpanel',9.2,0,4.13,7.5,'16232F','16232F'));
+  // Gold vertical accent bar
+  s1.push(spRect(id1++,'goldBar',0,0,.12,7.5,C.gold,C.gold));
+  // Horizontal gold line across full width
+  s1.push(spRect(id1++,'hline',.12,4.1,9.08,.03,C.gold,C.gold));
+  // Company label
+  s1.push(spText(id1++,'org',.4,.6,8,.3,'EXECUTIVE MANAGEMENT SYSTEM',8,false,C.gold,'l','Calibri'));
+  // Main title — large elegant
+  s1.push(spText(id1++,'t1',.4,1.2,8.6,.9,'PROJECT PORTFOLIO',44,true,C.white,'l','Calibri'));
+  s1.push(spText(id1++,'t2',.4,2.1,8.6,.9,'TRACKER',44,true,C.gold,'l','Calibri'));
+  // Subtitle
+  s1.push(spText(id1++,'t3',.4,3.2,8.6,.4,'Executive Dashboard  ·  Confidential',12,false,C.muted,'l','Calibri'));
+  // Date and project count
+  s1.push(spText(id1++,'dt',.4,4.4,8.6,.35,'Report Date:  '+dateStr,11,false,C.goldL,'l','Calibri'));
+  s1.push(spText(id1++,'tot',.4,4.85,8.6,.3,'Total Projects:  '+P.length+' projects',10,false,C.muted,'l','Calibri'));
 
-  // Right panel — KPI stack with dividers
+  // Right panel KPI boxes — clean executive style
   const kpis=[
     {l:'On Track',v:cnt['On Track'],c:C.green},
     {l:'Delayed',v:cnt['Delay'],c:C.red},
     {l:'Completed',v:cnt['Completed'],c:C.purple},
     {l:'Avg Progress',v:avg+'%',c:C.amber},
   ];
-  s1.push(spText(id1++,'kpiHdr',8.78,.32,4.4,.28,'KEY METRICS',7,true,'4A6070','c','Calibri'));
   kpis.forEach((k,i)=>{
-    const kx=8.75, ky=.68+i*1.64, kw=4.38, kh=1.5;
-    s1.push(spRect(id1++,'kdiv'+i,kx,ky,kw,kh,'1C2F3E','1C2F3E'));
-    // Left color accent stripe
-    s1.push(spRect(id1++,'kstripe'+i,kx,ky,.06,kh,k.c,k.c));
-    s1.push(spText(id1++,'kv'+i,kx+.18,ky+.08,kw-.2,.82,String(k.v),40,true,k.c,'c','Calibri'));
-    s1.push(spText(id1++,'kl'+i,kx+.18,ky+.98,kw-.2,.28,k.l,8,true,'6A8090','c','Calibri'));
+    const kx=9.5, ky=.55+i*1.7, kw=3.55, kh=1.5;
+    s1.push(spRect(id1++,'kdiv'+i,kx,ky,kw,kh,'1A2A38','1A2A38'));
+    s1.push(spRect(id1++,'ktop'+i,kx,ky,kw,.04,k.c,k.c));
+    s1.push(spText(id1++,'kv'+i,kx,ky+.12,kw,.75,String(k.v),36,true,k.c,'c','Calibri'));
+    s1.push(spText(id1++,'kl'+i,kx,ky+.95,kw,.28,k.l,9,false,C.muted,'c','Calibri'));
   });
-  // Footer bar
-  s1.push(spRect(id1++,'fbar',0,7.3,13.33,.2,'0E1B26','0E1B26'));
-  s1.push(spText(id1++,'foot',.38,7.32,12.7,.18,'CONFIDENTIAL  ·  FOR EXECUTIVE USE ONLY  ·  PROJECT PORTFOLIO TRACKER',7,false,'3A5060','c','Calibri'));
+  // Footer line
+  s1.push(spRect(id1++,'fline',.12,7.25,13.21,.03,'2A3F50','2A3F50'));
+  s1.push(spText(id1++,'foot',.4,7.3,12.5,.18,'CONFIDENTIAL  ·  FOR EXECUTIVE USE ONLY',7,false,'2A3F50','c','Calibri'));
 
   /* ════ SLIDE 2 — KPI SUMMARY ════ */
   const s2=[]; let id2=100;
   // Header band
-  s2.push(spRect(id2++,'hdr',0,0,13.33,.72,C.navy,C.navy));
-  s2.push(spRect(id2++,'goldBar',0,0,.12,7.5,C.gold,C.gold));
-  s2.push(spText(id2++,'title',.3,.14,9,.44,'KPI SUMMARY',15,true,C.gold,'l','Calibri'));
-  s2.push(spText(id2++,'dt',9.5,.18,3.7,.35,dateStr,9,false,C.goldL,'r','Calibri'));
-  // Section label with dot
-  s2.push(spRect(id2++,'sdot',.3,.86,.06,.06,C.gold,C.gold));
-  s2.push(spText(id2++,'sec',.45,.8,12.5,.28,'Portfolio at a Glance',10,true,C.slate,'l','Calibri'));
+  s2.push(spRect(id2++,'hdr',0,0,13.33,.7,C.navy,C.navy));
+  s2.push(spRect(id2++,'goldBar',0,0,.1,7.5,C.gold,C.gold));
+  s2.push(spText(id2++,'title',.28,.12,9,.46,'KPI SUMMARY',14,true,C.gold,'l','Calibri'));
+  s2.push(spText(id2++,'dt',9.5,.16,3.7,.35,dateStr,9,false,C.goldL,'r','Calibri'));
+  // Section label
+  s2.push(spText(id2++,'sec',.28,.82,12.5,.28,'● Portfolio at a Glance',10,true,C.slate,'l','Calibri'));
 
-  // 5 KPI cards — each with colored left stripe + large number
+  // 5 KPI cards — bold numbers
   [{l:'Total Projects',v:P.length,sub:'โครงการทั้งหมด',c:C.gold},
    {l:'On Track',v:cnt['On Track'],sub:'เป็นไปตามแผน',c:C.green},
    {l:'Delayed',v:cnt['Delay'],sub:'ล่าช้ากว่าแผน',c:C.red},
    {l:'Completed',v:cnt['Completed'],sub:'แล้วเสร็จ',c:C.purple},
    {l:'Avg Progress',v:avg+'%',sub:'ความคืบหน้าเฉลี่ย',c:C.amber},
   ].forEach((k,i)=>{
-    const kx=.28+i*2.57, ky=1.12, kw=2.42, kh=1.92;
-    // Card shadow effect (slightly offset darker rect)
-    s2.push(spRect(id2++,'ksh'+i,kx+.04,ky+.04,kw,kh,'D8D0C2','D8D0C2'));
+    const kx=.28+i*2.57, ky=1.15, kw=2.42, kh=1.85;
     s2.push(spRect(id2++,'kcard'+i,kx,ky,kw,kh,C.white,'D8D0C2',9525));
-    // Top color stripe
-    s2.push(spRect(id2++,'kline'+i,kx,ky,kw,.07,k.c,k.c));
-    // Large number
-    s2.push(spText(id2++,'kv'+i,kx,ky+.18,kw,.9,String(k.v),40,true,k.c,'c','Calibri'));
-    // Label
-    s2.push(spText(id2++,'kl'+i,kx,ky+1.12,kw,.3,k.l,10,true,C.slate,'c','Calibri'));
-    // Thai subtitle
-    s2.push(spText(id2++,'ks'+i,kx,ky+1.48,kw,.28,k.sub,8,false,C.muted,'c','Calibri'));
+    s2.push(spRect(id2++,'kline'+i,kx,ky,kw,.06,k.c,k.c));
+    s2.push(spText(id2++,'kv'+i,kx,ky+.22,kw,.82,String(k.v),38,true,k.c,'c','Calibri'));
+    s2.push(spText(id2++,'kl'+i,kx,ky+1.08,kw,.3,k.l,10,true,C.slate,'c','Calibri'));
+    s2.push(spText(id2++,'ks'+i,kx,ky+1.42,kw,.28,k.sub,8,false,C.muted,'c','Calibri'));
   });
 
-  // Divider
-  s2.push(spRect(id2++,'div1',.28,3.2,12.77,.018,'D8D0C2','D8D0C2'));
-
   // Overall progress section
-  s2.push(spRect(id2++,'pdot',.28,3.32,.06,.06,C.gold,C.gold));
-  s2.push(spText(id2++,'ptlbl',.43,3.25,8,.32,'Overall Portfolio Progress',10,true,C.slate,'l','Calibri'));
-  s2.push(spText(id2++,'ptpct',11.5,3.25,1.6,.32,avg+'%',11,true,C.amber,'r','Calibri'));
-  // Track bg
-  s2.push(spRect(id2++,'pbg',.28,3.65,12.77,.42,'EAE4DB','EAE4DB'));
+  s2.push(spText(id2++,'ptlbl',.28,3.22,8,.32,'● Overall Portfolio Progress',10,true,C.slate,'l','Calibri'));
+  s2.push(spText(id2++,'ptpct',11.8,3.22,1.3,.32,avg+'%',10,true,C.amber,'r','Calibri'));
+  // Progress track
+  s2.push(spRect(id2++,'pbg',.28,3.62,12.77,.38,'EAE4DB','EAE4DB'));
   if(avg>0){
-    s2.push(spRect(id2++,'pfill',.28,3.65,12.77*(avg/100),.42,C.gold,C.gold));
-    // Percentage text inside bar
-    if(avg>8)s2.push(spText(id2++,'ppct',.32,3.68,12.77*(avg/100)-.1,.35,avg+'%',9,true,C.navy,'r','Calibri'));
+    s2.push(spRect(id2++,'pfill',.28,3.62,12.77*(avg/100),.38,C.gold,C.gold));
+    // Milestone marks at 25/50/75
     [25,50,75].forEach(pct=>{
       if(avg>=pct)return;
       const mx=.28+12.77*(pct/100);
-      s2.push(spRect(id2++,'pm'+pct,mx,3.6,.018,.52,C.muted,C.muted));
-      s2.push(spText(id2++,'pmL'+pct,mx-.2,3.5,.4,.22,pct+'%',6,false,C.muted,'c','Calibri'));
+      s2.push(spRect(id2++,'pm'+pct,mx,3.58,.015,.46,C.muted,C.muted));
     });
   }
 
-  // Status breakdown section
-  s2.push(spRect(id2++,'div2',.28,4.25,12.77,.018,'D8D0C2','D8D0C2'));
-  s2.push(spRect(id2++,'sdot2',.28,4.37,.06,.06,C.gold,C.gold));
-  s2.push(spText(id2++,'sbT',.43,4.3,12,.3,'Status Breakdown',10,true,C.slate,'l','Calibri'));
+  // Status breakdown — horizontal bars with counts
+  s2.push(spText(id2++,'sbT',.28,4.22,12,.3,'● Status Breakdown',10,true,C.slate,'l','Calibri'));
   const maxN2=Math.max(...Object.values(cnt),1);
   ['On Track','Delay','Completed','At Risk','Not Started'].forEach((st,i)=>{
-    const sy=4.72+i*.46, n=cnt[st], col=STATUS_COL[st];
+    const sy=4.62+i*.48, n=cnt[st], col=STATUS_COL[st];
     const pctW=10*(n/maxN2);
-    s2.push(spText(id2++,'sl'+i,.28,sy,2.0,.3,st,9,true,col,'l','Calibri'));
-    // Track bg
-    s2.push(spRect(id2++,'sbg'+i,2.35,sy+.04,10.3,.26,'EAE4DB','EAE4DB'));
-    if(n>0){
-      s2.push(spRect(id2++,'sf'+i,2.35,sy+.04,10.3*(n/maxN2),.26,col,col));
-    }
+    // Label
+    s2.push(spText(id2++,'sl'+i,.28,sy,2.2,.32,st,9,true,C.slate,'l','Calibri'));
+    // Track
+    s2.push(spRect(id2++,'sbg'+i,2.4,sy+.05,10,.26,'EAE4DB','EAE4DB'));
+    // Fill
+    if(n>0)s2.push(spRect(id2++,'sf'+i,2.4,sy+.05,pctW,.26,col,col));
     // Count badge
-    s2.push(spRect(id2++,'scnt'+i,12.45,sy+.01,.65,.3,col+'22',col,9525));
-    s2.push(spText(id2++,'sn'+i,12.45,sy+.01,.65,.3,String(n),9,true,col,'c','Calibri'));
+    s2.push(spRect(id2++,'scnt'+i,12.45,sy+.01,.6,.3,col+'22',col,9525));
+    s2.push(spText(id2++,'sn'+i,12.45,sy+.01,.6,.3,String(n),9,true,col,'c','Calibri'));
   });
 
   /* ════ SLIDE 3 — GANTT ════ */
   const s3=[]; let id3=300;
-  s3.push(spRect(id3++,'hdr',0,0,13.33,.72,C.navy,C.navy));
-  s3.push(spRect(id3++,'goldBar',0,0,.12,7.5,C.gold,C.gold));
-  s3.push(spText(id3++,'title',.3,.14,9,.44,'GANTT CHART — PROJECT TIMELINE',15,true,C.gold,'l','Calibri'));
-  s3.push(spText(id3++,'dt',9.5,.18,3.7,.35,dateStr,9,false,C.goldL,'r','Calibri'));
+  s3.push(spRect(id3++,'hdr',0,0,13.33,.7,C.navy,C.navy));
+  s3.push(spRect(id3++,'goldBar',0,0,.1,7.5,C.gold,C.gold));
+  s3.push(spText(id3++,'title',.28,.12,9,.46,'GANTT CHART — PROJECT TIMELINE',14,true,C.gold,'l','Calibri'));
+  s3.push(spText(id3++,'dt',9.5,.16,3.7,.35,dateStr,9,false,C.goldL,'r','Calibri'));
 
   const CS_=new Date('2025-04-01'),CE_=new Date('2026-09-30'),TMS_=CE_-CS_;
-  const gX=3.45, gW=9.62, gStartY=.82, gRowH=.42;
+  const gX=3.45, gW=9.6, gStartY=.82, gRowH=.4;
   const maxRows=Math.min(P.length,14);
 
   // Month grid header band
-  s3.push(spRect(id3++,'ghdr',gX,gStartY,gW,.32,C.navy,'D8D0C2',6350));
+  s3.push(spRect(id3++,'ghdr',gX,gStartY,gW,.3,'EDE9E1','EDE9E1'));
 
   const months_=[];let mc=new Date(CS_);
   while(mc<=CE_){months_.push(new Date(mc));mc=new Date(mc.getFullYear(),mc.getMonth()+1,1);}
-  months_.forEach((m,mi)=>{
+  months_.forEach(m=>{
     const lp=(m-CS_)/TMS_*gW+gX;
-    s3.push(spText(id3++,'ml'+m.getTime(),lp-.25,gStartY+.04,.55,.22,m.toLocaleString('en',{month:'short'}),6,true,C.goldL,'c','Calibri'));
-    // vertical grid line (through rows)
-    if(mi>0)s3.push(spRect(id3++,'mg'+m.getTime(),lp,gStartY+.32,.008,gRowH*maxRows,'D8D0C2','D8D0C2'));
+    // month label
+    s3.push(spText(id3++,'ml'+m.getTime(),lp-.22,gStartY+.03,.55,.22,m.toLocaleString('en',{month:'short'}),7,false,C.slate,'c','Calibri'));
+    // vertical grid line
+    s3.push(spRect(id3++,'mg'+m.getTime(),lp,gStartY+.3,.008,gRowH*maxRows,'D8D0C2','D8D0C2'));
   });
 
-  // Today marker (gold line)
+  // Today marker
   const tdFrac=(TODAY-CS_)/TMS_;
   if(tdFrac>=0&&tdFrac<=1){
-    s3.push(spRect(id3++,'todayL',gX+tdFrac*gW-.015,gStartY+.32,.03,gRowH*maxRows,C.gold,C.gold));
-    s3.push(spText(id3++,'todayT',gX+tdFrac*gW-.25,gStartY+.1,.5,.18,'Today',5,true,C.gold,'c','Calibri'));
+    s3.push(spRect(id3++,'todayL',gX+tdFrac*gW-.012,gStartY+.3,.024,gRowH*maxRows,C.gold,C.gold));
   }
 
   // Project rows
   P.slice(0,maxRows).forEach((p,i)=>{
-    const ry=gStartY+.32+i*gRowH;
-    const rbg=i%2===0?C.white:'F5F3EE';
-    // Row bg (full width)
-    s3.push(spRect(id3++,'rb'+i,.15,ry,13.1,gRowH-.02,rbg,'EDE9E1',3175));
-    // Left info panel bg
-    s3.push(spRect(id3++,'lip'+i,.15,ry,3.25,gRowH-.02,'F0EDE7','D8D0C2',3175));
+    const ry=gStartY+.3+i*gRowH;
+    const rbg=i%2===0?C.white:'F7F5F0';
+    // Row background
+    s3.push(spRect(id3++,'rb'+i,.12,ry,13.1,gRowH-.03,rbg,'EDE9E1',3175));
     // Project ID
-    s3.push(spText(id3++,'pid'+i,.22,ry+.04,1.15,.18,p.id,6,true,C.gold,'l','Calibri'));
+    s3.push(spText(id3++,'pid'+i,.16,ry+.03,1.1,.18,p.id,7,true,C.gold,'l','Calibri'));
     // Project Name
-    s3.push(spText(id3++,'pn'+i,.22,ry+.2,1.55,.18,(p.name||'—').substring(0,20),7,false,C.slate,'l','Calibri'));
+    s3.push(spText(id3++,'pn'+i,.16,ry+.2,1.3,.17,(p.name||'—').substring(0,18),8,false,C.slate,'l','Calibri'));
     // Status pill
     const scol=STATUS_COL[p.status]||C.muted;
-    s3.push(spRect(id3++,'sb'+i,1.85,ry+.06,.95,.24,scol+'18',scol,6350));
-    s3.push(spText(id3++,'st'+i,1.85,ry+.07,.95,.22,p.status,5,true,scol,'c','Calibri'));
+    s3.push(spRect(id3++,'sb'+i,1.55,ry+.07,.98,.24,scol+'18',scol,9525));
+    s3.push(spText(id3++,'st'+i,1.55,ry+.07,.98,.24,p.status,6,true,scol,'c','Calibri'));
     // Progress %
-    s3.push(spText(id3++,'sp'+i,2.87,ry+.09,.52,.2,p.pct+'%',7,true,scol,'c','Calibri'));
+    s3.push(spText(id3++,'sp'+i,2.6,ry+.08,.75,.24,p.pct+'%',8,true,scol,'c','Calibri'));
     // Timeline bars
     const dp2=ds=>{if(!ds)return null;const d=new Date(ds);return Math.min(1,Math.max(0,(d-CS_)/TMS_));};
     const psP=dp2(p.ps),peP=dp2(p.pe),asP=dp2(p.as_),aeP=dp2(p.ae),rpsP=dp2(p.rps),rpeP=dp2(p.rpe);
+    // Plan bar (thin, light)
     if(psP!==null&&peP!==null&&peP>psP){
-      s3.push(spRect(id3++,'plan'+i,gX+psP*gW,ry+.06,Math.max(.015,(peP-psP)*gW),.1,'D8D0C2','BBBBBB',6350));
+      s3.push(spRect(id3++,'plan'+i,gX+psP*gW,ry+.05,Math.max(.015,(peP-psP)*gW),.11,'D8D0C2','BBBBBB',6350));
     }
+    // Revised plan bar
     if(rpsP!==null||rpeP!==null){
       const r1=rpsP??psP??0, r2=rpeP??peP??1;
-      if(r2>r1)s3.push(spRect(id3++,'rev'+i,gX+r1*gW,ry+.06,Math.max(.015,(r2-r1)*gW),.1,'F0A500','F0A500'));
+      if(r2>r1)s3.push(spRect(id3++,'rev'+i,gX+r1*gW,ry+.05,Math.max(.015,(r2-r1)*gW),.11,'F0A500','F0A500'));
     }
+    // Actual bar (thick, colored)
     if(asP!==null){
       const aeP2=aeP??Math.min(1,asP+(p.pct/100)*((peP??asP+.01)-asP));
       const bw=Math.max(.015,(aeP2-asP)*gW);
-      s3.push(spRect(id3++,'act'+i,gX+asP*gW,ry+.2,bw,.15,scol,scol));
+      s3.push(spRect(id3++,'act'+i,gX+asP*gW,ry+.2,bw,.14,scol,scol));
     }
   });
 
-  // Legend row at bottom
-  const legY=gStartY+.4+maxRows*gRowH;
-  s3.push(spRect(id3++,'legbg',0,legY,13.33,.45,'EDE9E1','EDE9E1'));
-  [['D8D0C2','Plan เดิม'],['F0A500','Plan ใหม่'],['1A7A4A','On Track'],['C0392B','Delay'],['6C3483','Completed'],['C87A00','At Risk']].forEach(([col,lbl],i)=>{
-    const lx=.55+i*2.18;
-    s3.push(spRect(id3++,'leg'+i,lx,legY+.14,.22,.16,col,col));
-    s3.push(spText(id3++,'legt'+i,lx+.28,legY+.12,1.8,.2,lbl,7,false,C.slate,'l','Calibri'));
+  // Legend
+  const legY=gStartY+.35+maxRows*gRowH;
+  [['D8D0C2','Plan'],['F0A500','Revised'],['1A7A4A','On Track'],['C0392B','Delay'],['6C3483','Completed'],['C87A00','At Risk']].forEach(([col,lbl],i)=>{
+    const lx=.3+i*2.15;
+    s3.push(spRect(id3++,'leg'+i,lx,legY,.2,.13,col,col));
+    s3.push(spText(id3++,'legt'+i,lx+.25,legY,2,.16,lbl,7,false,C.muted,'l','Calibri'));
   });
 
   /* ════ SLIDE 4 — PROJECT TABLE ════ */
   const s4=[]; let id4=500;
-  s4.push(spRect(id4++,'hdr',0,0,13.33,.72,C.navy,C.navy));
-  s4.push(spRect(id4++,'goldBar',0,0,.12,7.5,C.gold,C.gold));
-  s4.push(spText(id4++,'title',.3,.14,9,.44,'PROJECT DETAILS',15,true,C.gold,'l','Calibri'));
-  s4.push(spText(id4++,'dt',9.5,.18,3.7,.35,dateStr,9,false,C.goldL,'r','Calibri'));
+  s4.push(spRect(id4++,'hdr',0,0,13.33,.7,C.navy,C.navy));
+  s4.push(spRect(id4++,'goldBar',0,0,.1,7.5,C.gold,C.gold));
+  s4.push(spText(id4++,'title',.28,.12,9,.46,'PROJECT DETAILS',14,true,C.gold,'l','Calibri'));
+  s4.push(spText(id4++,'dt',9.5,.16,3.7,.35,dateStr,9,false,C.goldL,'r','Calibri'));
 
   const cols=['ID','Project Name','Category','Owner','Status','%','Plan End','Actual End','Delay'];
   const cw=[.85,2.65,.9,1.55,1.28,.55,1.28,1.28,.72];
-  const tx=.2, ty=.82, rh=.36;
-
-  // Table outer shadow
-  s4.push(spRect(id4++,'tsh',tx+.05,ty+.05,13.0,rh*(Math.min(P.length,16)+1),'D0C8BE','D0C8BE'));
-
+  const tx=.2, ty=.78, rh=.34;
   // Header row
   let cx4=tx;
   cols.forEach((h,i)=>{
     s4.push(spRect(id4++,'th'+i,cx4,ty,cw[i],rh-.02,C.navy,C.navy));
-    s4.push(spText(id4++,'thT'+i,cx4+.06,ty+.07,cw[i]-.1,rh-.14,h,8,true,C.goldL,'l','Calibri'));
+    s4.push(spText(id4++,'thT'+i,cx4+.05,ty+.06,cw[i]-.1,rh-.12,h,8,true,C.goldL,'l','Calibri'));
     cx4+=cw[i];
   });
-
   // Data rows
   const maxTbl=Math.min(P.length,16);
   P.slice(0,maxTbl).forEach((p,ri)=>{
     const ry=ty+rh+ri*rh;
-    const rbg=ri%2===0?C.white:'F5F3EE';
+    const rbg=ri%2===0?C.white:'F7F5F0';
     let cx5=tx;
     const d2=dd(p), scol=STATUS_COL[p.status]||C.muted;
     const catA=pcatInfo(p.pcat).abbr;
@@ -3625,23 +3597,21 @@ async function buildPptx(){
     const fColors=[C.gold,C.slate,PCAT_FG_COL[p.pcat]||C.muted,C.muted,scol,scol,C.slate,C.slate,d2>0?C.red:C.muted];
     vals.forEach((v,ci)=>{
       s4.push(spRect(id4++,'td'+ri+'_'+ci,cx5,ry,cw[ci],rh-.02,rbg,'EDE9E1',3175));
+      // Status cell gets colored background
       if(ci===4){
-        s4.push(spRect(id4++,'stbg'+ri,cx5+.04,ry+.05,cw[ci]-.08,rh-.12,scol+'15',scol,6350));
+        s4.push(spRect(id4++,'stbg'+ri,cx5+.04,ry+.04,cw[ci]-.08,rh-.1,scol+'15',scol,6350));
       }
-      s4.push(spText(id4++,'tdT'+ri+'_'+ci,cx5+.06,ry+.07,cw[ci]-.1,rh-.14,v,8,ci===4||(ci===8&&d2>0),fColors[ci],'l','Calibri'));
+      s4.push(spText(id4++,'tdT'+ri+'_'+ci,cx5+.05,ry+.06,cw[ci]-.1,rh-.12,v,8,ci===4||(ci===8&&d2>0),fColors[ci],'l','Calibri'));
       cx5+=cw[ci];
     });
   });
 
-  // Row count footer
-  s4.push(spText(id4++,'rcnt',.3,ty+rh+(maxTbl+.15)*rh,12,.28,'แสดง '+maxTbl+' จาก '+P.length+' โครงการ',7,false,C.muted,'l','Calibri'));
-
   /* ════ SLIDE 5 — CATEGORY BREAKDOWN ════ */
   const s5=[]; let id5=700;
-  s5.push(spRect(id5++,'hdr',0,0,13.33,.72,C.navy,C.navy));
-  s5.push(spRect(id5++,'goldBar',0,0,.12,7.5,C.gold,C.gold));
-  s5.push(spText(id5++,'title',.3,.14,9,.44,'CATEGORY BREAKDOWN',15,true,C.gold,'l','Calibri'));
-  s5.push(spText(id5++,'dt',9.5,.18,3.7,.35,dateStr,9,false,C.goldL,'r','Calibri'));
+  s5.push(spRect(id5++,'hdr',0,0,13.33,.7,C.navy,C.navy));
+  s5.push(spRect(id5++,'goldBar',0,0,.1,7.5,C.gold,C.gold));
+  s5.push(spText(id5++,'title',.28,.12,9,.46,'CATEGORY BREAKDOWN',14,true,C.gold,'l','Calibri'));
+  s5.push(spText(id5++,'dt',9.5,.16,3.7,.35,dateStr,9,false,C.goldL,'r','Calibri'));
 
   const catCnt2={};P.forEach(p=>{const v=p.pcat||'';catCnt2[v]=(catCnt2[v]||0)+1;});
   const catItems=PCAT.filter(c=>c.v&&catCnt2[c.v]).map(c=>({...c,n:catCnt2[c.v]}));
@@ -3649,36 +3619,33 @@ async function buildPptx(){
 
   catItems.forEach((c,i)=>{
     const col=Math.floor(i/4), row=i%4;
-    const cx=.32+col*6.62, cy=.88+row*1.62;
+    const cx=.32+col*6.6, cy=.82+row*1.62;
     const fgCol=PCAT_FG_COL[c.v]||C.muted, bgCol=PCAT_BG_COL[c.v]||'F7F5F0';
-    const kw=6.18, kh=1.5;
-    // Card shadow
-    s5.push(spRect(id5++,'csh'+i,cx+.04,cy+.04,kw,kh,'D0C8BE','D0C8BE'));
+    const kw=6.15, kh=1.48;
     // Card
-    s5.push(spRect(id5++,'cb'+i,cx,cy,kw,kh,bgCol,'D8D0C2',6350));
-    // Left accent bar (thick)
-    s5.push(spRect(id5++,'cline'+i,cx,cy,.12,kh,fgCol,fgCol));
+    s5.push(spRect(id5++,'cb'+i,cx,cy,kw,kh,bgCol,'D8D0C2',9525));
+    // Left accent bar
+    s5.push(spRect(id5++,'cline'+i,cx,cy,.1,kh,fgCol,fgCol));
     // Category abbr — big
-    s5.push(spText(id5++,'cabbr'+i,cx+.22,cy+.04,.9,.46,c.abbr,22,true,fgCol,'l','Calibri'));
-    // Full category name
-    s5.push(spText(id5++,'clbl'+i,cx+.22,cy+.5,4.8,.28,c.name||c.lbl.replace(/^[^ ]+ /,''),10,true,C.slate,'l','Calibri'));
+    s5.push(spText(id5++,'cabbr'+i,cx+.22,cy+.05,.9,.42,c.abbr,20,true,fgCol,'l','Calibri'));
+    // Full name
+    s5.push(spText(id5++,'clbl'+i,cx+.22,cy+.5,4.5,.28,c.lbl.replace(/^[^ ]+ /,''),10,true,C.slate,'l','Calibri'));
     // Count
-    s5.push(spText(id5++,'cnum'+i,cx+.22,cy+.8,2.5,.24,c.n+' projects',8,false,C.muted,'l','Calibri'));
-    // Bar track
-    s5.push(spRect(id5++,'cbar'+i,cx+.22,cy+1.12,5.72,.24,'D8D0C2','D8D0C2'));
-    if(c.n>0)s5.push(spRect(id5++,'cbarF'+i,cx+.22,cy+1.12,5.72*(c.n/catMax2),.24,fgCol,fgCol));
-    // Percentage label (top right of card)
+    s5.push(spText(id5++,'cnum'+i,cx+.22,cy+.8,2,.24,c.n+' projects',9,false,C.muted,'l','Calibri'));
+    // Bar track + fill
+    s5.push(spRect(id5++,'cbar'+i,cx+.22,cy+1.1,5.7,.22,C.cream,C.cream));
+    if(c.n>0)s5.push(spRect(id5++,'cbarF'+i,cx+.22,cy+1.1,5.7*(c.n/catMax2),.22,fgCol,fgCol));
+    // Percentage label
     const pctVal=Math.round(c.n/Math.max(P.length,1)*100);
-    s5.push(spRect(id5++,'cpct_bg'+i,cx+kw-.82,cy+.06,.72,.36,fgCol+'22',fgCol,6350));
-    s5.push(spText(id5++,'cpct'+i,cx+kw-.82,cy+.08,.72,.28,pctVal+'%',11,true,fgCol,'c','Calibri'));
+    s5.push(spText(id5++,'cpct'+i,cx+kw-.7,cy+.08,.6,.32,pctVal+'%',11,true,fgCol,'r','Calibri'));
   });
 
   /* ════ SLIDE 6 — IDEA PITCHING ════ */
   const s6=[]; let id6=900;
-  s6.push(spRect(id6++,'hdr',0,0,13.33,.72,C.navy,C.navy));
-  s6.push(spRect(id6++,'goldBar',0,0,.12,7.5,C.gold,C.gold));
-  s6.push(spText(id6++,'title',.3,.14,9,.44,'IDEA PITCHING SUMMARY',15,true,C.gold,'l','Calibri'));
-  s6.push(spText(id6++,'dt',9.5,.18,3.7,.35,dateStr,9,false,C.goldL,'r','Calibri'));
+  s6.push(spRect(id6++,'hdr',0,0,13.33,.7,C.navy,C.navy));
+  s6.push(spRect(id6++,'goldBar',0,0,.1,7.5,C.gold,C.gold));
+  s6.push(spText(id6++,'title',.28,.12,9,.46,'IDEA PITCHING SUMMARY',14,true,C.gold,'l','Calibri'));
+  s6.push(spText(id6++,'dt',9.5,.16,3.7,.35,dateStr,9,false,C.goldL,'r','Calibri'));
 
   const icnt={new:0,review:0,approved:0,rejected:0};
   IDEAS.forEach(x=>{if(icnt[x.status]!==undefined)icnt[x.status]++;});
@@ -3689,47 +3656,35 @@ async function buildPptx(){
    {l:'Approved',v:icnt.approved,sub:'อนุมัติแล้ว',c:C.green},
    {l:'Rejected',v:icnt.rejected,sub:'ไม่ผ่าน',c:C.red},
   ].forEach((k,i)=>{
-    const kx=.28+i*2.57, ky=.86, kw=2.42, kh=1.68;
-    // Card shadow
-    s6.push(spRect(id6++,'ksh'+i,kx+.04,ky+.04,kw,kh,'D0C8BE','D0C8BE'));
+    const kx=.28+i*2.57, ky=.82, kw=2.42, kh=1.65;
     s6.push(spRect(id6++,'kcard'+i,kx,ky,kw,kh,C.white,'D8D0C2',9525));
-    // Top color stripe
-    s6.push(spRect(id6++,'kline'+i,kx,ky,kw,.07,k.c,k.c));
-    s6.push(spText(id6++,'kv'+i,kx,ky+.18,kw,.72,String(k.v),36,true,k.c,'c','Calibri'));
-    s6.push(spText(id6++,'kl'+i,kx,ky+.98,kw,.3,k.l,10,true,C.slate,'c','Calibri'));
-    s6.push(spText(id6++,'ks'+i,kx,ky+1.32,kw,.26,k.sub,8,false,C.muted,'c','Calibri'));
+    s6.push(spRect(id6++,'kline'+i,kx,ky,kw,.06,k.c,k.c));
+    s6.push(spText(id6++,'kv'+i,kx,ky+.18,kw,.72,String(k.v),34,true,k.c,'c','Calibri'));
+    s6.push(spText(id6++,'kl'+i,kx,ky+.95,kw,.3,k.l,10,true,C.slate,'c','Calibri'));
+    s6.push(spText(id6++,'ks'+i,kx,ky+1.28,kw,.26,k.sub,8,false,C.muted,'c','Calibri'));
   });
 
-  // Section divider + header
-  s6.push(spRect(id6++,'tdiv',.28,2.7,12.77,.018,'D8D0C2','D8D0C2'));
-  s6.push(spRect(id6++,'tdot',.28,2.8,.06,.06,C.gold,C.gold));
-  s6.push(spText(id6++,'ith',.43,2.73,12,.3,'Top Ideas by Score',10,true,C.slate,'l','Calibri'));
-
-  // Table header
+  // Top ideas table
+  s6.push(spText(id6++,'ith',.28,2.65,12,.3,'● Top Ideas by Score',10,true,C.slate,'l','Calibri'));
   const icols=['Rank','Title','Owner','Category','Score','Status'];
   const icw=[.55,3.9,1.6,1.4,.75,1.35]; let icx=.28;
   icols.forEach((h,i)=>{
-    s6.push(spRect(id6++,'ih'+i,icx,3.08,icw[i],.34,C.navy,C.navy));
-    s6.push(spText(id6++,'ihT'+i,icx+.06,3.12,icw[i]-.1,.24,h,8,true,C.goldL,'l','Calibri'));
+    s6.push(spRect(id6++,'ih'+i,icx,3.05,icw[i],.32,C.navy,C.navy));
+    s6.push(spText(id6++,'ihT'+i,icx+.05,3.09,icw[i]-.1,.22,h,8,true,C.goldL,'l','Calibri'));
     icx+=icw[i];
   });
-
   const topIdeas=[...IDEAS].sort((a,b)=>iScore(b)-iScore(a)).slice(0,9);
   if(topIdeas.length===0){
-    s6.push(spText(id6++,'noIdea',.28,3.52,12,.4,'No ideas submitted yet.',10,false,C.muted,'c','Calibri'));
+    s6.push(spText(id6++,'noIdea',.28,3.45,12,.4,'No ideas submitted yet.',10,false,C.muted,'c','Calibri'));
   } else {
     topIdeas.forEach((x,ri)=>{
-      const iry=3.42+ri*.38; let icx2=.28;
-      const rbg=ri%2===0?C.white:'F5F3EE';
+      const iry=3.37+ri*.38; let icx2=.28;
+      const rbg=ri%2===0?C.white:'F7F5F0';
       const sc=iScore(x), scol2=sc>=70?C.green:sc>=50?C.amber:C.red;
       ['#'+(ri+1),x.title||'—',x.owner||'—',CAT_LBL[x.cat]||x.cat||'—',String(sc),x.status].forEach((v,ci)=>{
         s6.push(spRect(id6++,'id'+ri+'_'+ci,icx2,iry,icw[ci],.34,rbg,'EDE9E1',3175));
         const fc=ci===4?scol2:ci===0?C.gold:C.slate;
-        // Score cell gets colored background
-        if(ci===4){
-          s6.push(spRect(id6++,'scbg'+ri,icx2+.03,iry+.04,icw[ci]-.06,.26,scol2+'15',scol2,6350));
-        }
-        s6.push(spText(id6++,'idT'+ri+'_'+ci,icx2+.06,iry+.06,icw[ci]-.1,.24,v,8,ci===4||ci===0,fc,'l','Calibri'));
+        s6.push(spText(id6++,'idT'+ri+'_'+ci,icx2+.05,iry+.05,icw[ci]-.1,.24,v,8,ci===4||ci===0,fc,'l','Calibri'));
         icx2+=icw[ci];
       });
     });
