@@ -485,10 +485,22 @@ def serve_frontend(path):
         return send_from_directory(app.static_folder, path)
     return send_from_directory(app.static_folder, 'index.html')
 
-# ─── Init DB ──────────────────────────────────────────────────────────────────
+# ─── Init DB + Auto Migration ─────────────────────────────────────────────────
 
 with app.app_context():
     db.create_all()
+    # ✅ Migration: เพิ่ม column 'token' ถ้ายังไม่มี (ไม่ลบข้อมูลเดิม)
+    try:
+        from sqlalchemy import text, inspect
+        inspector = inspect(db.engine)
+        cols = [c['name'] for c in inspector.get_columns('users')]
+        if 'token' not in cols:
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE users ADD COLUMN token VARCHAR(64)'))
+                conn.commit()
+            app.logger.info('✅ Migration: added token column to users table')
+    except Exception as e:
+        app.logger.warning(f'Migration warning (safe to ignore if already exists): {e}')
 
 # ─── Run ──────────────────────────────────────────────────────────────────────
 
