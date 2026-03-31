@@ -1033,24 +1033,40 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
     </div>
 
     <!-- KPI Summary Cards (PCG style) -->
-    <div id="sumKpiRow" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:28px"></div>
+    <div id="sumKpiRow" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px"></div>
 
-    <!-- Donut + Category Stats row -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:28px">
-      <!-- Donut by Category -->
-      <div class="card" style="padding:22px">
-        <div class="sec-t" style="margin-bottom:14px">📊 Project by Category</div>
-        <div style="display:flex;align-items:center;gap:24px">
-          <svg width="130" height="130" viewBox="0 0 100 100" id="sumDonutCat"></svg>
-          <div id="sumCatLegend" style="display:flex;flex-direction:column;gap:7px;flex:1"></div>
+    <!-- PROJECT stats + IDEA stats side by side -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
+      <!-- PROJECT by Category & Status -->
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="background:var(--navy);padding:10px 18px;display:flex;align-items:center;gap:8px">
+          <span style="font-size:14px">📁</span>
+          <span style="font-family:'Playfair Display',serif;font-size:13px;color:var(--gold);letter-spacing:.5px">PROJECT</span>
+          <span id="sumProjPanelCount" style="background:rgba(201,168,76,.2);border:1px solid rgba(201,168,76,.3);color:var(--gold);font-family:'DM Mono',monospace;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:2px"></span>
+          <span style="margin-left:auto;font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,.35)">by Category &amp; Status</span>
+        </div>
+        <div style="padding:16px 18px">
+          <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">BY CATEGORY</div>
+          <div id="sumCatBars" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
+          <div style="height:1px;background:var(--div2);margin-bottom:10px"></div>
+          <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">BY STATUS</div>
+          <div id="sumStatBars" style="display:flex;flex-direction:column;gap:8px"></div>
         </div>
       </div>
-      <!-- Donut by Status -->
-      <div class="card" style="padding:22px">
-        <div class="sec-t" style="margin-bottom:14px">📊 Project by Status</div>
-        <div style="display:flex;align-items:center;gap:24px">
-          <svg width="130" height="130" viewBox="0 0 100 100" id="sumDonutStat"></svg>
-          <div id="sumStatLegend" style="display:flex;flex-direction:column;gap:7px;flex:1"></div>
+      <!-- IDEA / PROPOSAL summary -->
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="background:var(--navy);padding:10px 18px;display:flex;align-items:center;gap:8px">
+          <span style="font-size:14px">💡</span>
+          <span style="font-family:'Playfair Display',serif;font-size:13px;color:var(--gold);letter-spacing:.5px">IDEA &amp; PROPOSAL</span>
+          <span id="sumIdeaPanelCount" style="background:rgba(201,168,76,.2);border:1px solid rgba(201,168,76,.3);color:var(--gold);font-family:'DM Mono',monospace;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:2px"></span>
+          <span style="margin-left:auto;font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,.35)">by Stage &amp; Status</span>
+        </div>
+        <div style="padding:16px 18px">
+          <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">BY STAGE</div>
+          <div id="sumIdeaStageBars" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
+          <div style="height:1px;background:var(--div2);margin-bottom:10px"></div>
+          <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">BY STATUS</div>
+          <div id="sumIdeaStatBars" style="display:flex;flex-direction:column;gap:8px"></div>
         </div>
       </div>
     </div>
@@ -1059,6 +1075,10 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
     <div class="sec"><div class="sec-t">List of Projects by Stage</div><div class="sec-line"></div>
       <div style="font-size:10px;color:var(--muted);white-space:nowrap;flex-shrink:0" id="sumMonthLbl"></div>
     </div>
+
+    <!-- Idea / Proposal KPI Summary -->
+    <div id="sumIdeaKpiRow" style="display:none"></div>
+
     <div id="sumMatrix" style="margin-bottom:28px"></div>
 
   </div>
@@ -2879,62 +2899,109 @@ function renderSummary(){
 
   // ── KPI Row ─────────────────────────────────
   const totalP=P.length;
-  const preP=P.filter(p=>['idea','prop'].includes(stageOf(p))).length;
-  const ongoingP=P.filter(p=>['exec','clos'].includes(stageOf(p))).length;
-  const doneP=P.filter(p=>stageOf(p)==='res').length;
+  const onTrackP=P.filter(p=>p.status==='On Track').length;
+  const delayedP=P.filter(p=>p.status==='Delay').length;
+  const doneP=P.filter(p=>p.status==='Completed').length;
   const totalBudget=P.reduce((a,p)=>a+(+p.budget||0),0);
   const kpiData=[
-    {icon:'📁',num:totalP,lbl:'Total Projects',col:'var(--gold-d)'},
-    {icon:'💡',num:preP,lbl:'Pre-Projects',col:'var(--amber)'},
-    {icon:'⚙️',num:ongoingP,lbl:'On-Going Projects',col:'var(--blue)'},
-    {icon:'🏁',num:doneP,lbl:'Completed',col:'var(--green)'},
-    {icon:'💰',num:totalBudget?'฿'+Number(Math.round(totalBudget/1000)).toLocaleString('en-US')+'K':'—',lbl:'Total Budget',col:'var(--gold-d)',raw:true},
+    {icon:'📁',num:totalP,   lbl:'Total Projects',sub:'โครงการทั้งหมด',col:'var(--gold-d)'},
+    {icon:'✅',num:onTrackP, lbl:'On Track',       sub:'เป็นไปตามแผน', col:'var(--green)'},
+    {icon:'⚠️',num:delayedP,lbl:'Delayed',         sub:'ล่าช้ากว่าแผน',col:'var(--red)'},
+    {icon:'🏁',num:doneP,    lbl:'Completed',       sub:'แล้วเสร็จ',    col:'var(--purple)'},
+    {icon:'💰',num:totalBudget?'฿'+Number(Math.round(totalBudget/1000)).toLocaleString('en-US')+'K':'—',lbl:'Total Budget',sub:'งบประมาณรวม',col:'var(--gold-d)',raw:true},
   ];
   const kr=$('sumKpiRow');
-  if(kr)kr.innerHTML=kpiData.map((k,i)=>{
-    const cols=['var(--gold-d)','var(--amber)','var(--blue)','var(--green)','var(--purple)'];
-    return`<div class="sum-kpi-card" style="--kc:${k.col}">
+  if(kr)kr.innerHTML=kpiData.map(k=>`
+    <div class="sum-kpi-card" style="--kc:${k.col}">
       <div style="position:absolute;bottom:0;left:0;right:0;height:4px;background:${k.col}"></div>
       <div class="sum-kpi-icon">${k.icon}</div>
       <div class="sum-kpi-num" style="color:${k.col}">${k.num}</div>
       <div class="sum-kpi-lbl">${k.lbl}</div>
-    </div>`;
-  }).join('');
+      <div style="font-size:10px;color:var(--muted);margin-top:3px;font-weight:400;letter-spacing:0;text-transform:none">${k.sub}</div>
+    </div>`).join('');
 
-  // ── Donut Charts ────────────────────────────
-  function makeDonut(svgId,legId,slices){
-    const tot=slices.reduce((a,s)=>a+s.n,0)||1;
-    let ang=-Math.PI/2;let paths='';
-    slices.filter(s=>s.n>0).forEach(s=>{
-      const fr=s.n/tot,a2=ang+fr*2*Math.PI;
-      const x1=50+40*Math.cos(ang),y1=50+40*Math.sin(ang);
-      const x2=50+40*Math.cos(a2),y2=50+40*Math.sin(a2);
-      const i1x=50+24*Math.cos(ang),i1y=50+24*Math.sin(ang);
-      const i2x=50+24*Math.cos(a2),i2y=50+24*Math.sin(a2);
-      if(fr>0)paths+=`<path d="M${x1},${y1} A40,40 0 ${fr>.5?1:0} 1 ${x2},${y2} L${i2x},${i2y} A24,24 0 ${fr>.5?1:0} 0 ${i1x},${i1y} Z" fill="${s.c}" opacity=".9"/>`;
-      ang=a2;
-    });
-    const sv=$(svgId);if(sv)sv.innerHTML=paths+`<text x="50" y="46" text-anchor="middle" font-size="14" font-family="DM Mono" fill="#1c2b3a" font-weight="700">${slices.reduce((a,s)=>a+s.n,0)}</text><text x="50" y="57" text-anchor="middle" font-size="7" fill="#8a9bb0">Projects</text>`;
-    const lg=$(legId);if(lg)lg.innerHTML=slices.filter(s=>s.n>0).map(s=>`
-      <div style="display:flex;align-items:center;gap:8px;font-size:11px">
-        <span style="width:10px;height:10px;border-radius:2px;background:${s.c};flex-shrink:0;display:inline-block"></span>
-        <span style="flex:1;color:var(--slate)">${s.l}</span>
-        <span style="font-family:'DM Mono',monospace;font-weight:700;color:var(--slate)">${s.n}</span>
-      </div>`).join('');
+  // ── Helper: bar row with 2-line label ────────
+  function barRow2(label,sub,n,total,color,icon){
+    const pct=total>0?Math.round(n/total*100):0;
+    return`<div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:12px;flex-shrink:0;width:18px;text-align:center">${icon}</span>
+      <div style="min-width:108px;flex-shrink:0">
+        <div style="font-size:11px;color:var(--slate);font-weight:600;line-height:1.25">${label}</div>
+        <div style="font-size:9px;color:var(--muted);line-height:1.2">${sub}</div>
+      </div>
+      <div style="flex:1;background:var(--div2);border-radius:4px;height:9px;overflow:hidden">
+        <div style="width:${pct}%;background:${color};height:100%;border-radius:4px;transition:width .5s ease"></div>
+      </div>
+      <span style="font-family:'DM Mono',monospace;font-size:13px;font-weight:700;color:${color};min-width:24px;text-align:right">${n}</span>
+      <span style="font-size:10px;color:var(--muted);min-width:32px;text-align:right">${pct}%</span>
+    </div>`;
   }
-  // By Category donut
-  const CAT_COLORS={ENE:'#1a6fa8',CST:'#e67e22',QLT:'#95a5a6',PRD:'#f0c040',SAF:'#e74c3c',MRL:'#9b59b6',ENV:'#27ae60'};
-  const catSlices=CATS.map(c=>({l:c.name.replace(/[^\w\s]/g,'').trim()||c.v,n:P.filter(p=>p.pcat===c.v).length,c:CAT_COLORS[c.v]||'#aaa'}));
-  makeDonut('sumDonutCat','sumCatLegend',catSlices);
-  // By Status donut
-  const statSlices=[
-    {l:'On Track',n:P.filter(p=>p.status==='On Track').length,c:'#1a7a4a'},
-    {l:'Delay',n:P.filter(p=>p.status==='Delay').length,c:'#c0392b'},
-    {l:'Completed',n:P.filter(p=>p.status==='Completed').length,c:'#6c3483'},
-    {l:'At Risk',n:P.filter(p=>p.status==='At Risk').length,c:'#c87a00'},
-    {l:'Not Started',n:P.filter(p=>p.status==='Not Started').length,c:'#8a9bb0'},
-  ];
-  makeDonut('sumDonutStat','sumStatLegend',statSlices);
+
+  // ── PROJECT panel — badge count ──────────────
+  const projCountEl=$('sumProjPanelCount');
+  if(projCountEl) projCountEl.textContent=P.length+' โครงการ';
+
+  // ── PROJECT — by Category ────────────────────
+  const CAT_COLORS={ENE:'#1a6fa8',CST:'#e67e22',QLT:'#2980b9',PRD:'#c9a84c',SAF:'#e74c3c',MRL:'#9b59b6',ENV:'#27ae60',hr:'#16a085'};
+  const CAT_TH={ENE:'พลังงาน',CST:'ลดต้นทุน',QLT:'คุณภาพ',PRD:'ผลิตภาพ',SAF:'ความปลอดภัย',MRL:'บุคลากร',ENV:'สิ่งแวดล้อม',hr:'HR'};
+  const catEl=$('sumCatBars');
+  if(catEl){
+    const activeCatRows=CATS.filter(c=>P.some(p=>p.pcat===c.v));
+    catEl.innerHTML=activeCatRows.length
+      ? activeCatRows.map(c=>{
+          const nm=c.name.replace(/[^\wก-๙\s]/g,'').trim()||c.v;
+          const th=CAT_TH[c.v]||nm;
+          return barRow2(nm,th,P.filter(p=>p.pcat===c.v).length,P.length,CAT_COLORS[c.v]||'#5d6d7e','📂');
+        }).join('')
+      : '<div style="font-size:11px;color:var(--muted);font-style:italic">ไม่มีข้อมูล Category</div>';
+  }
+
+  // ── PROJECT — by Status ──────────────────────
+  const statEl=$('sumStatBars');
+  if(statEl){
+    const statDef=[
+      {key:'On Track',   lbl:'On Track',    sub:'เป็นไปตามแผน',  icon:'✅', col:'#1a7a4a'},
+      {key:'Delay',      lbl:'Delay',       sub:'ล่าช้ากว่าแผน', icon:'⚠️', col:'#c0392b'},
+      {key:'At Risk',    lbl:'At Risk',     sub:'มีความเสี่ยง',  icon:'🔶', col:'#c87a00'},
+      {key:'Completed',  lbl:'Completed',   sub:'แล้วเสร็จ',     icon:'🏁', col:'#6c3483'},
+      {key:'Not Started',lbl:'Not Started', sub:'ยังไม่เริ่ม',   icon:'⏳', col:'#8a9bb0'},
+    ];
+    statEl.innerHTML=statDef.map(s=>barRow2(s.lbl,s.sub,P.filter(p=>p.status===s.key).length,P.length,s.col,s.icon)).join('');
+  }
+
+  // ── IDEA panel — badge count ─────────────────
+  const ideaCountEl=$('sumIdeaPanelCount');
+  if(ideaCountEl) ideaCountEl.textContent=IDEAS.length+' รายการ';
+
+  // ── IDEA — by Stage ──────────────────────────
+  const ideaCnt=IDEAS.length;
+  const ideasIdea=IDEAS.filter(x=>(x.istage||'idea')==='idea').length;
+  const ideasProp=IDEAS.filter(x=>x.istage==='prop').length;
+  const ideaStageEl=$('sumIdeaStageBars');
+  if(ideaStageEl){
+    ideaStageEl.innerHTML=[
+      barRow2('Idea Pitching',   'กำลังเสนอไอเดีย', ideasIdea, ideaCnt, '#c9a84c','💡'),
+      barRow2('Project Proposal','เสนอขออนุมัติ',    ideasProp, ideaCnt, '#1a6fa8','📋'),
+    ].join('');
+  }
+
+  // ── IDEA — by Status ─────────────────────────
+  const ideaStatEl=$('sumIdeaStatBars');
+  if(ideaStatEl){
+    const ikCnt={new:0,review:0,approved:0,rejected:0};
+    IDEAS.forEach(x=>{if(ikCnt[x.status]!==undefined)ikCnt[x.status]++;});
+    const ideaStatDef=[
+      {key:'new',      lbl:'New',          sub:'รอพิจารณา',    icon:'🆕', col:'var(--blue)'},
+      {key:'review',   lbl:'Under Review', sub:'กำลังพิจารณา', icon:'🔍', col:'var(--amber)'},
+      {key:'approved', lbl:'Approved',     sub:'อนุมัติแล้ว',  icon:'✅', col:'var(--green)'},
+      {key:'rejected', lbl:'Rejected',     sub:'ไม่ผ่าน',      icon:'❌', col:'var(--red)'},
+    ];
+    ideaStatEl.innerHTML=ideaStatDef.map(s=>barRow2(s.lbl,s.sub,ikCnt[s.key]||0,IDEAS.length,s.col,s.icon)).join('');
+  }
+
+  // ── Idea KPI Row (hidden, kept for compatibility) ──
+  const ideaKpiEl=$('sumIdeaKpiRow');
+  if(ideaKpiEl) ideaKpiEl.innerHTML='';
 
   // ── Matrix Table ────────────────────────────
   const sm=$('sumMatrix');if(!sm)return;
