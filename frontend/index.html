@@ -1580,13 +1580,12 @@ async function doLogin(){
         if(d.user.role==='Admin'){await showAdminBox();}
         else{await enterApp();}
         return;
-      } else {
-        showErr('loginErr',d.error||'Username หรือ Password ไม่ถูกต้อง');return;
       }
+      // server returned error → fall through to localStorage fallback
     }
   }catch(e){}
 
-  // Fallback: localStorage (GitHub Pages)
+  // Fallback: localStorage
   await refreshUsers();
   const users=getUsers();
   const found=users.find(x=>x.username===u && x.password===p);
@@ -2122,6 +2121,7 @@ function rem(p){if(p.ae)return-1;if(!p.pe)return null;return Math.max(0,Math.rou
 function iScore(x){return Math.round(((+x.impact||5)+(+x.feasibility||5)+(+x.strategic||5))/3*10);}
 function scoreColor(sc){return sc>=70?'var(--green)':sc>=50?'var(--amber)':'var(--red)';}
 const isViewer=()=>currentUser?.role==='Viewer';
+const isAdminOrVIP=()=>currentUser?.role==='Admin'||currentUser?.role==='VIP';
 
 // Returns days since last log update; null if completed/no start
 function staleDays(p){
@@ -3203,6 +3203,7 @@ function updIdeaUndoBtns(){
 
 function renderIdeaTable(){
   const ro=isViewer();const dis=ro?'disabled':'';
+  const canScore=isAdminOrVIP();const disScore=canScore?'':'disabled';const lockTip=canScore?'':'🔒 Admin & VIP only';
   $('ideaBody').innerHTML=IDEAS.map((x,i)=>{
     const sc=iScore(x),bc=scoreColor(sc);
     return`<tr id="ir${i}" class="pop">
@@ -3221,17 +3222,17 @@ function renderIdeaTable(){
       <td><input class="ci mo" type="date" value="${x.date||''}" onchange="updI(${i},'date',this.value)" ${dis}></td>
       <td><input class="ci mo" type="number" min="0" value="${x.budget||''}" onchange="updI(${i},'budget',+this.value)" placeholder="0" ${dis}></td>
       <td><input class="ci" value="${esc(x.desc)}" onchange="updI(${i},'desc',this.value)" placeholder="รายละเอียดโดยย่อ" ${dis}></td>
-      <td><div class="score-mini"><input type="range" id="si${i}imp" min="1" max="10" value="${x.impact||5}" oninput="updIScore(${i})" ${dis}><span id="sv${i}imp">${x.impact||5}</span></div></td>
-      <td><div class="score-mini"><input type="range" id="si${i}feas" min="1" max="10" value="${x.feasibility||5}" oninput="updIScore(${i})" ${dis}><span id="sv${i}feas">${x.feasibility||5}</span></div></td>
-      <td><div class="score-mini"><input type="range" id="si${i}str" min="1" max="10" value="${x.strategic||5}" oninput="updIScore(${i})" ${dis}><span id="sv${i}str">${x.strategic||5}</span></div></td>
+      <td><div class="score-mini"><input type="range" id="si${i}imp" min="1" max="10" value="${x.impact||5}" oninput="updIScore(${i})" ${disScore} title="${lockTip}"><span id="sv${i}imp">${x.impact||5}</span></div></td>
+      <td><div class="score-mini"><input type="range" id="si${i}feas" min="1" max="10" value="${x.feasibility||5}" oninput="updIScore(${i})" ${disScore} title="${lockTip}"><span id="sv${i}feas">${x.feasibility||5}</span></div></td>
+      <td><div class="score-mini"><input type="range" id="si${i}str" min="1" max="10" value="${x.strategic||5}" oninput="updIScore(${i})" ${disScore} title="${lockTip}"><span id="sv${i}str">${x.strategic||5}</span></div></td>
       <td class="total-badge" id="sc${i}" style="color:${bc}">${sc}</td>
-      <td><select class="ci" onchange="updI(${i},'status',this.value)" ${dis}>
+      <td title="${lockTip}"><select class="ci" onchange="updI(${i},'status',this.value)" ${disScore}>
         <option value="new" ${x.status==='new'?'selected':''}>🆕 New</option>
         <option value="review" ${x.status==='review'?'selected':''}>🔍 Review</option>
         <option value="approved" ${x.status==='approved'?'selected':''}>✅ Approved</option>
         <option value="rejected" ${x.status==='rejected'?'selected':''}>❌ Rejected</option>
       </select></td>
-      <td><input class="ci" value="${esc(x.note)}" onchange="updI(${i},'note',this.value)" placeholder="ความเห็น" ${dis}></td>
+      <td title="${lockTip}"><input class="ci" value="${esc(x.note)}" onchange="updI(${i},'note',this.value)" placeholder="ความเห็น" ${disScore}></td>
       <td>${ro?'':('<button class="del" onclick="delIdea('+i+')">✕</button>')}</td>
     </tr>`;
   }).join('');
@@ -3239,6 +3240,7 @@ function renderIdeaTable(){
 }
 function updI(i,f,v){
   if(isViewer())return;
+  if((f==='status'||f==='note'||f==='impact'||f==='feasibility'||f==='strategic')&&!isAdminOrVIP())return;
   pushIdeaUndo();
   IDEAS[i][f]=v;
   // Auto-regen ID when cat or owner changes
@@ -3252,6 +3254,7 @@ function updI(i,f,v){
   sched();renderKanban();renderIdeaKPIs();
 }
 function updIScore(i){
+  if(!isAdminOrVIP())return;
   const imp=+$('si'+i+'imp').value,feas=+$('si'+i+'feas').value,str=+$('si'+i+'str').value;
   $('sv'+i+'imp').textContent=imp;$('sv'+i+'feas').textContent=feas;$('sv'+i+'str').textContent=str;
   IDEAS[i].impact=imp;IDEAS[i].feasibility=feas;IDEAS[i].strategic=str;
