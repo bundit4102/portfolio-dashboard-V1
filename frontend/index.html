@@ -964,20 +964,19 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
       </div>
     </div>
     <div class="gantt-card">
-      <div class="gh"><span>#</span><span>Project</span><span>Status</span><span>Progress</span><div class="ms" id="mst"></div></div>
+      <div class="gh"><span>#</span><span>Project</span><span>Progress</span><div class="ms" id="mst"></div></div>
       <div id="gBody"></div>
     </div>
     <div class="sec"><div class="sec-t">Project Details</div><div class="sec-line"></div></div>
     <div class="bg2">
       <div class="card" style="overflow:hidden">
         <table class="dtable"><thead><tr>
-          <th>ID</th><th>ชื่อโครงการ</th><th>Cat.</th><th>Owner</th><th>งบประมาณ</th><th>Status</th><th>%</th><th>Plan End</th><th>Actual End</th><th>Delay</th><th>ประวัติ</th>
+          <th>ID</th><th>ชื่อโครงการ</th><th>Owner</th><th>งบประมาณ</th><th>Status</th><th>%</th><th>Plan End</th><th>Actual End</th><th>Delay</th><th>ประวัติ</th>
         </tr></thead><tbody id="dtB"></tbody></table>
       </div>
       <div class="sp">
-        <div class="mi"><div class="mit">Status Overview</div>
-          <div class="dnw"><svg width="82" height="82" viewBox="0 0 100 100" id="donut"></svg><div class="dnl" id="dnl"></div></div>
-        </div>
+        <!-- Status Donut hidden — redundant with KPI cards -->
+        <div style="display:none"><svg id="donut"></svg><div id="dnl"></div></div>
         <div class="mi"><div class="mit">Category Breakdown</div><div id="catBreakdown"></div></div>
         <div class="mi"><div class="mit">Upcoming Deadlines</div><div class="ull" id="ull"></div></div>
         <div class="mi" id="staleCard" style="display:none">
@@ -1066,7 +1065,6 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
       <input type="file" id="impCSV" accept=".csv" style="display:none" onchange="impFromCSV(event)">
       <div class="tsep"></div>
       <button class="btn b-out" onclick="expJSON()">💾 Backup</button>
-      <button class="btn b-out" onclick="syncToServer()" title="Push data to Render so QR VIP can see it" style="background:rgba(26,122,74,.1);border-color:rgba(26,122,74,.3);color:var(--green)">☁️ Sync</button>
       <button class="btn b-out" onclick="$('impJSON').click()">📂 Restore</button>
       <input type="file" id="impJSON" accept=".json" style="display:none" onchange="impFromJSON(event)">
       <div class="today-grp">
@@ -1510,7 +1508,13 @@ async function refreshUsers(){
   let local=[];
   try{const s=localStorage.getItem(UK);if(s)local=JSON.parse(s);}catch(e){}
   let server=[];
-  try{const r=await fetch(base+'/api/users',{credentials:'include'});if(r.ok)server=await r.json();}catch(e){}
+  try{
+    const token=localStorage.getItem('ptk_token')||'';
+    const headers={'Content-Type':'application/json'};
+    if(token) headers['Authorization']='Bearer '+token;
+    const r=await fetch(base+'/api/users',{credentials:'include',headers});
+    if(r.ok){const data=await r.json();if(Array.isArray(data))server=data;}
+  }catch(e){}
   const merged=[...server];
   local.forEach(u=>{if(!merged.find(x=>x.username===u.username))merged.push(u);});
   USERS_CACHE=[ADMIN_USER,...merged];
@@ -1542,9 +1546,12 @@ async function doLogin(){
   if(u===ADMIN_USER.username && p===ADMIN_USER.password){
     saveRemembered(u,p,remember);
     currentUser=ADMIN_USER;
-    // บอก server ด้วย
+    // บอก server ด้วย + เก็บ token
     const base=location.hostname.includes('onrender.com')||location.hostname==='localhost'?'':'https://portfolio-dashboard-v1.onrender.com';
-    try{await fetch(base+'/api/auth/login',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});}catch(e){}
+    try{
+      const lr=await fetch(base+'/api/auth/login',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+      if(lr.ok){const ld=await lr.json();if(ld.token)localStorage.setItem('ptk_token',ld.token);}
+    }catch(e){}
     await showAdminBox();
     return;
   }
@@ -1559,6 +1566,8 @@ async function doLogin(){
       const d=await res.json();
       if(d.success){
         saveRemembered(u,p,remember);
+        // ✅ เก็บ token ไว้ใช้กับ API calls ถัดไป
+        if(d.token) localStorage.setItem('ptk_token', d.token);
         currentUser=d.user;
         if(d.pending){
           $('waitName').textContent=d.user.name;
@@ -1571,12 +1580,13 @@ async function doLogin(){
         if(d.user.role==='Admin'){await showAdminBox();}
         else{await enterApp();}
         return;
+      } else {
+        showErr('loginErr',d.error||'Username หรือ Password ไม่ถูกต้อง');return;
       }
-      // server returned error — fall through to localStorage
     }
-  }catch(e){/* server unreachable */}
+  }catch(e){}
 
-  // Fallback: localStorage (works on GitHub Pages & when server DB is empty)
+  // Fallback: localStorage (GitHub Pages)
   await refreshUsers();
   const users=getUsers();
   const found=users.find(x=>x.username===u && x.password===p);
@@ -1691,6 +1701,8 @@ async function doRegister(){
 // ── LOGOUT ───────────────────────────────────
 function doLogout(){
   currentUser=null;
+  // ✅ ล้าง token เมื่อ logout
+  localStorage.removeItem('ptk_token');
   $('authScreen').classList.remove('hidden');
   $('mainApp').classList.remove('show');
   $('authBox').classList.remove('hidden');
@@ -1878,15 +1890,31 @@ function logActivity(icon,bg,msg){
   actLog.push({icon,bg,msg,time:new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})});
 }
 
-function approveUser(id){
+async function approveUser(id){
   const users=getUsers();const u=users.find(x=>x.id===id);if(!u)return;
   u.status='approved';saveUsers(users);
+  // ✅ ส่งไป Server ด้วย
+  try{
+    const base=location.hostname.includes('onrender.com')||location.hostname==='localhost'?'':'https://portfolio-dashboard-v1.onrender.com';
+    const token=localStorage.getItem('ptk_token')||'';
+    await fetch(base+'/api/users/'+id,{method:'PUT',credentials:'include',
+      headers:{'Content-Type':'application/json','Authorization':token?'Bearer '+token:''},
+      body:JSON.stringify({status:'approved'})});
+  }catch(e){}
   logActivity('✅','rgba(26,122,74,.12)',`อนุมัติบัญชี <strong>${u.name} (@${u.username})</strong> — ${u.role}`);
   renderAdminPanel();checkAdminNotif();
 }
-function rejectUser(id){
+async function rejectUser(id){
   const users=getUsers();const u=users.find(x=>x.id===id);if(!u)return;
   u.status='rejected';saveUsers(users);
+  // ✅ ส่งไป Server ด้วย
+  try{
+    const base=location.hostname.includes('onrender.com')||location.hostname==='localhost'?'':'https://portfolio-dashboard-v1.onrender.com';
+    const token=localStorage.getItem('ptk_token')||'';
+    await fetch(base+'/api/users/'+id,{method:'PUT',credentials:'include',
+      headers:{'Content-Type':'application/json','Authorization':token?'Bearer '+token:''},
+      body:JSON.stringify({status:'rejected'})});
+  }catch(e){}
   logActivity('❌','rgba(192,57,43,.1)',`ปฏิเสธบัญชี <strong>${u.name} (@${u.username})</strong>`);
   renderAdminPanel();checkAdminNotif();
 }
@@ -2094,7 +2122,6 @@ function rem(p){if(p.ae)return-1;if(!p.pe)return null;return Math.max(0,Math.rou
 function iScore(x){return Math.round(((+x.impact||5)+(+x.feasibility||5)+(+x.strategic||5))/3*10);}
 function scoreColor(sc){return sc>=70?'var(--green)':sc>=50?'var(--amber)':'var(--red)';}
 const isViewer=()=>currentUser?.role==='Viewer';
-const isAdminOrVIP=()=>currentUser?.role==='Admin'||currentUser?.role==='VIP';
 
 // Returns days since last log update; null if completed/no start
 function staleDays(p){
@@ -2512,19 +2539,6 @@ async function fullRefreshAndGenIds(){
 }
 function expCSV(){const h='Project ID,Project Name,Category,Project Owner,Status,Progress %,Plan Start,Plan End,Actual Start,Actual End';const rows=P.map(p=>[p.id,p.name,p.pcat||'',p.owner,p.status,p.pct,p.ps||'',p.pe||'',p.as_||'',p.ae||''].map(v=>`"${v}"`).join(','));dl('\uFEFF'+[h,...rows].join('\n'),'text/csv','Gantt_'+fi(TODAY)+'.csv');}
 function impFromCSV(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const lines=ev.target.result.trim().split(/\r?\n/);const hdrs=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,'').toLowerCase());const ix={};hdrs.forEach((h,i)=>{if(/project.?id|^id$/i.test(h))ix.id=i;if(/project.?name|^name$/i.test(h))ix.name=i;if(/category|pcat/i.test(h))ix.pcat=i;if(/owner/i.test(h))ix.owner=i;if(/^status$/i.test(h))ix.status=i;if(/progress/i.test(h))ix.pct=i;if(/plan.?start/i.test(h))ix.ps=i;if(/plan.?end/i.test(h))ix.pe=i;if(/actual.?start/i.test(h))ix.as_=i;if(/actual.?end/i.test(h))ix.ae=i;});P=lines.slice(1).filter(l=>l.trim()).map(line=>{const v=line.split(',').map(x=>x.trim().replace(/^"|"$/g,''));const raw=parseFloat(v[ix.pct]||0);return{id:v[ix.id]||'',name:v[ix.name]||'',pcat:v[ix.pcat]||'',owner:v[ix.owner]||'',status:v[ix.status]||'Not Started',pct:raw<=1?Math.round(raw*100):Math.round(raw),ps:v[ix.ps]||'',pe:v[ix.pe]||'',as_:v[ix.as_]||'',ae:v[ix.ae]||''};}).filter(p=>p.id);renderInput();save();renderDash();}catch(err){alert('Error: '+err.message);}e.target.value='';};r.readAsText(f,'UTF-8');}
-async function syncToServer(){
-  const btn=document.querySelector('[onclick="syncToServer()"]');
-  if(btn){btn.textContent='⏳...';btn.disabled=true;}
-  const base=location.hostname.includes('onrender.com')||location.hostname==='localhost'?'':'https://portfolio-dashboard-v1.onrender.com';
-  try{
-    await fetch(base+'/api/auth/login',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'admin',password:'admin2026'})});
-    const res=await fetch(base+'/api/data',{method:'PUT',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({projects:P,ideas:IDEAS})});
-    if(res.ok){showToast('✅ Synced! QR VIP will now show your data.','var(--green)');}
-    else{showToast('⚠ Sync failed: '+res.status,'var(--amber)');}
-  }catch(e){showToast('⚠ Cannot reach server','var(--amber)');}
-  if(btn){btn.textContent='☁️ Sync';btn.disabled=false;}
-}
-
 function expJSON(){dl(JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY)},null,2),'application/json','Backup_'+fi(TODAY)+'.json');}
 function impFromJSON(e){
   const f=e.target.files[0];if(!f)return;
@@ -2623,8 +2637,7 @@ function renderDash(){
       const actBar=(aL!==null&&aR!==null)?`<div class="tb tact t-${sk(p.status)}" style="left:${aL}%;width:${Math.max(.4,aR-aL)}%"></div>`:'';
       const gl=months.slice(1).map(m=>`<div class="mgl" style="left:${pp(m)}%"></div>`).join('');
       return`<div class="gr"><div class="rn">${String(i+1).padStart(2,'0')}</div>
-        <div><div class="pid2">${p.id} ${pcatBadge(p.pcat)}</div><div class="pn">${p.name||'(ไม่ระบุ)'}</div></div>
-        <div><span class="badge s-${sk(p.status)}"><span class="bdot"></span>${p.status}</span></div>
+        <div><div class="pid2" style="display:flex;align-items:center;gap:5px"><span style="font-size:9px;font-family:'DM Mono',monospace;color:var(--gold-d)">${p.id}</span><span class="badge s-${sk(p.status)}" style="font-size:9px;padding:1px 6px"><span class="bdot"></span>${p.status}</span></div><div class="pn">${p.name||'(ไม่ระบุ)'}</div></div>
         <div class="pw"><div class="pt">${p.pct}%</div><div class="pb"><div class="pf" style="width:${p.pct}%;background:${pc(p.status)}"></div></div></div>
         <div class="tl">${gl}<div class="tmk" style="left:${tp}%"></div>${planBar}${revisedBar}${actBar}</div>
       </div>`;
@@ -2640,7 +2653,6 @@ function renderDash(){
         ${isStale?`<span class="stale-bell" style="font-size:13px" title="ไม่มีการอัปเดต ${sd} วัน">🔔</span>`:''}
       </div>
     </td>
-    <td>${pcatBadge(p.pcat)}</td>
     <td style="color:var(--muted);font-size:10px">${p.owner||'—'}</td>
     <td class="mn" style="color:var(--gold-d);text-align:right">${p.budget?'฿'+Number(p.budget).toLocaleString():'—'}</td>
     <td><span class="badge s-${sk(p.status)}"><span class="bdot"></span>${p.status}</span></td>
@@ -3190,8 +3202,6 @@ function updIdeaUndoBtns(){
 
 function renderIdeaTable(){
   const ro=isViewer();const dis=ro?'disabled':'';
-  const canScore=isAdminOrVIP();const disScore=canScore?'':'disabled';
-  const lockTip=canScore?'':'🔒 Admin & VIP only';
   $('ideaBody').innerHTML=IDEAS.map((x,i)=>{
     const sc=iScore(x),bc=scoreColor(sc);
     return`<tr id="ir${i}" class="pop">
@@ -3210,17 +3220,17 @@ function renderIdeaTable(){
       <td><input class="ci mo" type="date" value="${x.date||''}" onchange="updI(${i},'date',this.value)" ${dis}></td>
       <td><input class="ci mo" type="number" min="0" value="${x.budget||''}" onchange="updI(${i},'budget',+this.value)" placeholder="0" ${dis}></td>
       <td><input class="ci" value="${esc(x.desc)}" onchange="updI(${i},'desc',this.value)" placeholder="รายละเอียดโดยย่อ" ${dis}></td>
-      <td><div class="score-mini"><input type="range" id="si${i}imp" min="1" max="10" value="${x.impact||5}" oninput="updIScore(${i})" ${disScore} title="${lockTip}"><span id="sv${i}imp">${x.impact||5}</span></div></td>
-      <td><div class="score-mini"><input type="range" id="si${i}feas" min="1" max="10" value="${x.feasibility||5}" oninput="updIScore(${i})" ${disScore} title="${lockTip}"><span id="sv${i}feas">${x.feasibility||5}</span></div></td>
-      <td><div class="score-mini"><input type="range" id="si${i}str" min="1" max="10" value="${x.strategic||5}" oninput="updIScore(${i})" ${disScore} title="${lockTip}"><span id="sv${i}str">${x.strategic||5}</span></div></td>
+      <td><div class="score-mini"><input type="range" id="si${i}imp" min="1" max="10" value="${x.impact||5}" oninput="updIScore(${i})" ${dis}><span id="sv${i}imp">${x.impact||5}</span></div></td>
+      <td><div class="score-mini"><input type="range" id="si${i}feas" min="1" max="10" value="${x.feasibility||5}" oninput="updIScore(${i})" ${dis}><span id="sv${i}feas">${x.feasibility||5}</span></div></td>
+      <td><div class="score-mini"><input type="range" id="si${i}str" min="1" max="10" value="${x.strategic||5}" oninput="updIScore(${i})" ${dis}><span id="sv${i}str">${x.strategic||5}</span></div></td>
       <td class="total-badge" id="sc${i}" style="color:${bc}">${sc}</td>
-      <td title="${lockTip}"><select class="ci" onchange="updI(${i},'status',this.value)" ${disScore}>
+      <td><select class="ci" onchange="updI(${i},'status',this.value)" ${dis}>
         <option value="new" ${x.status==='new'?'selected':''}>🆕 New</option>
         <option value="review" ${x.status==='review'?'selected':''}>🔍 Review</option>
         <option value="approved" ${x.status==='approved'?'selected':''}>✅ Approved</option>
         <option value="rejected" ${x.status==='rejected'?'selected':''}>❌ Rejected</option>
       </select></td>
-      <td title="${lockTip}"><input class="ci" value="${esc(x.note)}" onchange="updI(${i},'note',this.value)" placeholder="ความเห็น" ${disScore}></td>
+      <td><input class="ci" value="${esc(x.note)}" onchange="updI(${i},'note',this.value)" placeholder="ความเห็น" ${dis}></td>
       <td>${ro?'':('<button class="del" onclick="delIdea('+i+')">✕</button>')}</td>
     </tr>`;
   }).join('');
@@ -3228,7 +3238,6 @@ function renderIdeaTable(){
 }
 function updI(i,f,v){
   if(isViewer())return;
-  if((f==='status'||f==='note'||f==='impact'||f==='feasibility'||f==='strategic')&&!isAdminOrVIP())return;
   pushIdeaUndo();
   IDEAS[i][f]=v;
   // Auto-regen ID when cat or owner changes
@@ -3242,7 +3251,6 @@ function updI(i,f,v){
   sched();renderKanban();renderIdeaKPIs();
 }
 function updIScore(i){
-  if(!isAdminOrVIP())return;
   const imp=+$('si'+i+'imp').value,feas=+$('si'+i+'feas').value,str=+$('si'+i+'str').value;
   $('sv'+i+'imp').textContent=imp;$('sv'+i+'feas').textContent=feas;$('sv'+i+'str').textContent=str;
   IDEAS[i].impact=imp;IDEAS[i].feasibility=feas;IDEAS[i].strategic=str;
@@ -4226,10 +4234,6 @@ function initVipModeFromSnap(snap){
   const dl=$('vipDateLbl');
   if(dl)dl.textContent='ข้อมูล ณ วันที่ '+TODAY.toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'});
 
-  // VIP user = same edit rights as Admin
-  if(!currentUser){
-    currentUser={id:'__vip__',username:'vip',name:'VIP Viewer',dept:'Executive',role:'VIP',status:'approved'};
-  }
   renderVipContent();
 }
 
