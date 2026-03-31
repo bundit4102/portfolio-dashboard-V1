@@ -1241,6 +1241,7 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
             </span>
           </th>
           <th style="min-width:80px">Score</th>
+          <th style="min-width:140px">ขั้นตอน</th>
           <th style="min-width:100px">สถานะ</th>
           <th style="min-width:130px">หมายเหตุ</th>
           <th style="width:32px"></th>
@@ -1248,7 +1249,7 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
         <tr class="sub">
           <th></th><th>auto</th><th>กรอกข้อมูล *</th><th>กรอก</th><th>เลือก▼</th><th>วันที่</th><th>ตัวเลข</th>
           <th>กรอก</th><th>เลื่อน slider</th><th>เลื่อน slider</th><th>เลื่อน slider</th>
-          <th style="color:rgba(201,168,76,.5)">⚙ Auto</th><th>เลือก▼</th><th>กรอก</th><th></th>
+          <th style="color:rgba(201,168,76,.5)">⚙ Auto</th><th>เลือก▼</th><th>เลือก▼</th><th>กรอก</th><th></th>
         </tr>
       </thead>
       <tbody id="ideaBody"></tbody>
@@ -2640,6 +2641,16 @@ function openNamePopup(label, value, onSave){
   setTimeout(()=>{const inp=document.getElementById('_nameTa');if(inp){inp.focus();inp.select();}},80);
 }
 
+function goToSummaryStage(stg){
+  sw('summary');
+  // small delay so summary renders, then scroll to stage column
+  setTimeout(()=>{
+    const lbl=stg==='prop'?'Project Proposal':'Idea Pitching';
+    const ths=document.querySelectorAll('#panel-summary th');
+    for(const th of ths){if(th.textContent.trim()===lbl){th.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});break;}}
+  },300);
+}
+
 function expJSON(){dl(JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY)},null,2),'application/json','Backup_'+fi(TODAY)+'.json');}
 function impFromJSON(e){
   const f=e.target.files[0];if(!f)return;
@@ -2840,14 +2851,15 @@ function renderSummary(){
   const matrix={};
   CATS.forEach(c=>{matrix[c.v]={};STAGES.forEach(s=>{matrix[c.v][s.k]=[];});});
 
-  // Add IDEAS (from Idea Pitching tab) into 'idea' stage
+  // Add IDEAS (from Idea Pitching tab) into correct stage based on idea.istage
   IDEAS.forEach(idea=>{
     const cv=idea.cat||'';
     // Map idea.cat to PCAT value (ideas use lowercase sometimes)
     const catKey=CATS.find(c=>c.v.toLowerCase()===(cv||'').toLowerCase())||CATS.find(c=>c.v===cv);
     const cv2=catKey?catKey.v:'';
-    if(matrix[cv2]){
-      matrix[cv2]['idea'].push({name:idea.title,id:idea.id,_isIdea:true,ideaStatus:idea.status});
+    const stk=idea.istage||'idea';
+    if(matrix[cv2]&&matrix[cv2][stk]){
+      matrix[cv2][stk].push({name:idea.title,id:idea.id,_isIdea:true,ideaStatus:idea.status});
     }
   });
 
@@ -3009,7 +3021,8 @@ async function exportSummaryPDF(){
     CATS.forEach(c=>{mx[c]={};STAGES.forEach(s=>{mx[c][s.k]=[];});});
     IDEAS.forEach(idea=>{
       const cv=Object.keys(PCAT_LBL).find(k=>k.toLowerCase()===(idea.cat||'').toLowerCase())||'';
-      if(mx[cv])mx[cv]['idea'].push({name:idea.title,isIdea:true});
+      const stk=idea.istage||'idea';
+      if(mx[cv]&&mx[cv][stk])mx[cv][stk].push({name:idea.title,isIdea:true});
     });
     P.forEach(p=>{const cv=p.pcat||'';if(!mx[cv])return;const stk=stageOf(p);if(mx[cv][stk])mx[cv][stk].push(p);});
     const activeCats=CATS.filter(c=>P.some(p=>p.pcat===c)||IDEAS.some(i=>i.cat&&i.cat.toUpperCase()===c));
@@ -3329,6 +3342,12 @@ function renderIdeaTable(){
       <td style="min-width:80px"><div class="score-mini"><input type="range" id="si${i}feas" min="1" max="10" value="${x.feasibility||5}" oninput="updIScore(${i})" ${dis} style="min-width:36px"><span id="sv${i}feas">${x.feasibility||5}</span></div></td>
       <td style="min-width:80px"><div class="score-mini"><input type="range" id="si${i}str" min="1" max="10" value="${x.strategic||5}" oninput="updIScore(${i})" ${dis} style="min-width:36px"><span id="sv${i}str">${x.strategic||5}</span></div></td>
       <td class="total-badge" id="sc${i}" style="color:${bc}">${sc}</td>
+      <td><select class="ci" onchange="updI(${i},'istage',this.value)" ${dis} style="font-size:11px">
+        <option value="idea" ${(x.istage||'idea')==='idea'?'selected':''}>💡 Idea Pitching</option>
+        <option value="prop" ${(x.istage||'idea')==='prop'?'selected':''}>📋 Project Proposal</option>
+      </select>
+      ${!dis?`<button onclick="goToSummaryStage('${(x.istage||'idea')}')" title="ดูใน Portfolio Summary" style="border:none;background:none;cursor:pointer;font-size:13px;padding:2px 4px;color:var(--muted);vertical-align:middle" onmouseover="this.style.color='var(--gold-d)'" onmouseout="this.style.color='var(--muted)'">🔗</button>`:''}
+      </td>
       <td><select class="ci" onchange="updI(${i},'status',this.value)" ${dis}>
         <option value="new" ${x.status==='new'?'selected':''}>🆕 New</option>
         <option value="review" ${x.status==='review'?'selected':''}>🔍 Review</option>
@@ -3366,7 +3385,7 @@ function updIScore(i){
 function addIdea(){
   if(isViewer())return;
   pushIdeaUndo();
-  const newX={id:'',title:'',owner:'',cat:'ENE',date:fi(TODAY),budget:0,desc:'',impact:5,feasibility:5,strategic:5,status:'new',note:''};
+  const newX={id:'',title:'',owner:'',cat:'ENE',date:fi(TODAY),budget:0,desc:'',impact:5,feasibility:5,strategic:5,status:'new',istage:'idea',note:''};
   IDEAS.push(newX);
   const idx=IDEAS.length-1;
   IDEAS[idx].id=genIdeaId(newX.cat,newX.owner,idx);
@@ -4537,7 +4556,8 @@ function renderVipContent(){
   IDEAS.forEach(idea=>{
     const catKey=CATS_V.find(c=>c.v.toLowerCase()===(idea.cat||'').toLowerCase());
     const cv=catKey?catKey.v:'';
-    if(mx[cv])mx[cv]['idea'].push({name:idea.title,_isIdea:true,ideaStatus:idea.status});
+    const stk=idea.istage||'idea';
+    if(mx[cv]&&mx[cv][stk])mx[cv][stk].push({name:idea.title,_isIdea:true,ideaStatus:idea.status});
   });
   P.forEach(p=>{
     const cv=p.pcat||'';
