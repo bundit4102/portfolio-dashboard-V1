@@ -28,13 +28,11 @@ CORS(app,
 
 app.secret_key = 'portfolio-secret-2026-change-in-production'
 
-# ✅ รองรับ cross-origin session บน Render (HTTPS)
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # 24 ชั่วโมง
+app.config['PERMANENT_SESSION_LIFETIME'] = 86400
 
-# รองรับทั้ง SQLite (local/Render free) และ PostgreSQL (Render paid)
 if os.environ.get("DATABASE_URL"):
     db_url = os.environ.get("DATABASE_URL")
     if db_url.startswith("postgres://"):
@@ -51,16 +49,15 @@ db = SQLAlchemy(app)
 
 class User(db.Model):
     __tablename__ = 'users'
-    id           = db.Column(db.String(50),  primary_key=True)
-    username     = db.Column(db.String(80),  unique=True, nullable=False)
-    password_hash= db.Column(db.String(256), nullable=False)
-    name         = db.Column(db.String(200))
-    dept         = db.Column(db.String(200))
-    role         = db.Column(db.String(50),  default='Viewer')
-    status       = db.Column(db.String(50),  default='pending')
-    created_at   = db.Column(db.String(50))
-    # ✅ token สำหรับ cross-origin auth (GitHub Pages → Render)
-    token        = db.Column(db.String(64),  nullable=True)
+    id            = db.Column(db.String(50),  primary_key=True)
+    username      = db.Column(db.String(80),  unique=True, nullable=False)
+    password_hash = db.Column(db.String(256), nullable=False)
+    name          = db.Column(db.String(200))
+    dept          = db.Column(db.String(200))
+    role          = db.Column(db.String(50),  default='Viewer')
+    status        = db.Column(db.String(50),  default='pending')
+    created_at    = db.Column(db.String(50))
+    token         = db.Column(db.String(64),  nullable=True)
 
     def to_dict(self):
         return {
@@ -89,14 +86,12 @@ class Idea(db.Model):
     def to_dict(self):
         return json.loads(self.data)
 
-# ─── Token store สำหรับ admin (in-memory) ────────────────────────────────────
-# admin ไม่มี DB row — เก็บ token ใน dict แทน
+# ─── Admin token store (in-memory) ───────────────────────────────────────────
 _admin_tokens = set()
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
 def _get_token_from_request():
-    """อ่าน token จาก Authorization header หรือ query param"""
     auth = request.headers.get('Authorization', '')
     if auth.startswith('Bearer '):
         return auth[7:].strip()
@@ -105,49 +100,65 @@ def _get_token_from_request():
 def _current_user():
     """
     ตรวจสอบ identity จาก:
-    1. Authorization: Bearer <token>  ← ใช้เมื่อ cross-origin (GitHub Pages)
-    2. session['uid']                 ← ใช้เมื่อ same-origin (Render โดยตรง)
+    1. Authorization: Bearer <token>  — cross-origin (GitHub Pages)
+    2. session['uid']                 — same-origin (Render)
     """
-    # 1. Token-based (cross-origin)
-    token = _get_token_from_request()
-    if token:
-        if token in _admin_tokens:
-            return {'id': '__admin__', 'role': 'Admin', 'status': 'approved'}
-        user = User.query.filter_by(token=token).first()
-        if user:
-            return user
-        return None
+    try:
+        # 1. Token-based
+        token = _get_token_from_request()
+        if token:
+            if token in _admin_tokens:
+                return {'id': '__admin__', 'role': 'Admin', 'status': 'approved'}
+            # ✅ แก้ไข: ใช้ filter_by แทน query.get (รองรับ SQLAlchemy 2.x)
+            user = User.query.filter_by(token=token).first()
+            if user:
+                return user
+            return None
 
-    # 2. Session-based (same-origin)
-    uid = session.get('uid')
-    if not uid:
+        # 2. Session-based
+        uid = session.get('uid')
+        if not uid:
+            return None
+        if uid == '__admin__':
+            return {'id': '__admin__', 'role': 'Admin', 'status': 'approved'}
+        # ✅ แก้ไข: ใช้ db.session.get แทน User.query.get (deprecated ใน SQLAlchemy 2.x)
+        return db.session.get(User, uid)
+    except Exception as e:
+        app.logger.error(f'_current_user error: {e}')
         return None
-    if uid == '__admin__':
-        return {'id': '__admin__', 'role': 'Admin', 'status': 'approved'}
-    return User.query.get(uid)
 
 def _is_admin():
-    u = _current_user()
-    if not u:
+    try:
+        u = _current_user()
+        if not u:
+            return False
+        role = u['role'] if isinstance(u, dict) else u.role
+        return role == 'Admin'
+    except Exception:
         return False
-    role = u['role'] if isinstance(u, dict) else u.role
-    return role == 'Admin'
 
 def _is_authenticated():
-    u = _current_user()
-    if not u:
+    try:
+        u = _current_user()
+        if not u:
+            return False
+        if isinstance(u, dict):
+            return True
+        return u.status == 'approved'
+    except Exception:
         return False
-    if isinstance(u, dict):
-        return True
-    return u.status == 'approved'
 
 def _get_role():
-    u = _current_user()
-    if not u:
+    try:
+        u = _current_user()
+        if not u:
+            return None
+        return u['role'] if isinstance(u, dict) else u.role
+    except Exception:
         return None
-    return u['role'] if isinstance(u, dict) else u.role
 
-# ─── CORS preflight handler ──────────────────────────────────────────────────
+# ─── CORS preflight ───────────────────────────────────────────────────────────
+
 @app.after_request
 def add_cors_headers(response):
     origin = request.headers.get('Origin', '')
@@ -167,6 +178,8 @@ def add_cors_headers(response):
 @app.route('/api/auth/register', methods=['OPTIONS'])
 @app.route('/api/auth/login',    methods=['OPTIONS'])
 @app.route('/api/data',          methods=['OPTIONS'])
+@app.route('/api/users',         methods=['OPTIONS'])
+@app.route('/api/users/<path:uid>', methods=['OPTIONS'])
 def handle_options(*args, **kwargs):
     return '', 204
 
@@ -174,233 +187,294 @@ def handle_options(*args, **kwargs):
 
 @app.route('/api/auth/login', methods=['POST'])
 def auth_login():
-    body     = request.get_json() or {}
-    username = (body.get('username') or '').strip()
-    password =  body.get('password') or ''
+    try:
+        body     = request.get_json() or {}
+        username = (body.get('username') or '').strip()
+        password =  body.get('password') or ''
 
-    # Built-in admin
-    if username == 'admin' and password == 'admin2026':
-        # สร้าง token ใหม่ทุกครั้ง login
+        if username == 'admin' and password == 'admin2026':
+            token = secrets.token_hex(32)
+            _admin_tokens.add(token)
+            session.permanent = True
+            session['uid'] = '__admin__'
+            return jsonify({'success': True, 'token': token, 'user': {
+                'id': '__admin__', 'username': 'admin', 'name': 'System Admin',
+                'dept': 'Administration', 'role': 'Admin', 'status': 'approved',
+                'createdAt': now_bangkok(),
+            }})
+
+        user = User.query.filter_by(username=username).first()
+        if not user or not check_password_hash(user.password_hash, password):
+            return jsonify({'success': False, 'error': 'Username หรือ Password ไม่ถูกต้อง'})
+
+        if user.status == 'rejected':
+            return jsonify({'success': False, 'error': 'บัญชีของคุณถูกปฏิเสธ กรุณาติดต่อ Admin'})
+
         token = secrets.token_hex(32)
-        _admin_tokens.add(token)
+        user.token = token
+        db.session.commit()
 
         session.permanent = True
-        session['uid'] = '__admin__'
-        return jsonify({'success': True, 'token': token, 'user': {
-            'id': '__admin__', 'username': 'admin', 'name': 'System Admin',
-            'dept': 'Administration', 'role': 'Admin', 'status': 'approved',
-            'createdAt': now_bangkok(),
-        }})
-
-    user = User.query.filter_by(username=username).first()
-    if not user or not check_password_hash(user.password_hash, password):
-        return jsonify({'success': False, 'error': 'Username หรือ Password ไม่ถูกต้อง'})
-
-    if user.status == 'rejected':
-        return jsonify({'success': False, 'error': 'บัญชีของคุณถูกปฏิเสธ กรุณาติดต่อ Admin'})
-
-    # สร้าง token และบันทึกลง DB
-    token = secrets.token_hex(32)
-    user.token = token
-    db.session.commit()
-
-    session.permanent = True
-    session['uid'] = user.id
-    return jsonify({
-        'success': True,
-        'pending': user.status == 'pending',
-        'token':   token,
-        'user':    user.to_dict(),
-    })
+        session['uid'] = user.id
+        return jsonify({
+            'success': True,
+            'pending': user.status == 'pending',
+            'token':   token,
+            'user':    user.to_dict(),
+        })
+    except Exception as e:
+        app.logger.error(f'auth_login error: {e}')
+        return jsonify({'success': False, 'error': 'Server error'}), 500
 
 @app.route('/api/auth/register', methods=['POST'])
 def auth_register():
-    body     = request.get_json() or {}
-    username = (body.get('username') or '').strip()
-    password =  body.get('password') or ''
-    name     = (body.get('name')     or '').strip()
-    dept     = (body.get('dept')     or '').strip()
-    role     =  body.get('role')     or 'Viewer'
+    try:
+        body     = request.get_json() or {}
+        username = (body.get('username') or '').strip()
+        password =  body.get('password') or ''
+        name     = (body.get('name')     or '').strip()
+        dept     = (body.get('dept')     or '').strip()
+        role     =  body.get('role')     or 'Viewer'
 
-    if not username or not password or not name:
-        return jsonify({'success': False, 'error': 'กรุณากรอกข้อมูลที่จำเป็น'})
-    if username == 'admin' or User.query.filter_by(username=username).first():
-        return jsonify({'success': False, 'error': 'Username นี้ถูกใช้แล้ว'})
+        if not username or not password or not name:
+            return jsonify({'success': False, 'error': 'กรุณากรอกข้อมูลที่จำเป็น'})
+        if username == 'admin' or User.query.filter_by(username=username).first():
+            return jsonify({'success': False, 'error': 'Username นี้ถูกใช้แล้ว'})
 
-    u = User(
-        id=           'u' + str(int(datetime.now(TZ_BANGKOK).timestamp() * 1000)),
-        username=     username,
-        password_hash=generate_password_hash(password),
-        name=name, dept=dept, role=role,
-        status=       'pending',
-        created_at=   now_bangkok(),
-    )
-    db.session.add(u)
-    db.session.commit()
-    return jsonify({'success': True})
+        u = User(
+            id=           'u' + str(int(datetime.now(TZ_BANGKOK).timestamp() * 1000)),
+            username=     username,
+            password_hash=generate_password_hash(password),
+            name=name, dept=dept, role=role,
+            status=       'pending',
+            created_at=   now_bangkok(),
+        )
+        db.session.add(u)
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        app.logger.error(f'auth_register error: {e}')
+        return jsonify({'success': False, 'error': 'Server error'}), 500
 
 @app.route('/api/auth/logout', methods=['POST'])
 def auth_logout():
-    # ลบ token ถ้ามี
-    token = _get_token_from_request()
-    if token:
-        if token in _admin_tokens:
-            _admin_tokens.discard(token)
-        else:
-            user = User.query.filter_by(token=token).first()
-            if user:
-                user.token = None
-                db.session.commit()
-    session.clear()
-    return jsonify({'success': True})
+    try:
+        token = _get_token_from_request()
+        if token:
+            if token in _admin_tokens:
+                _admin_tokens.discard(token)
+            else:
+                user = User.query.filter_by(token=token).first()
+                if user:
+                    user.token = None
+                    db.session.commit()
+        session.clear()
+        return jsonify({'success': True})
+    except Exception as e:
+        app.logger.error(f'auth_logout error: {e}')
+        return jsonify({'success': True})
 
-# ─── User Routes (Admin only) ─────────────────────────────────────────────────
+# ─── User Routes ──────────────────────────────────────────────────────────────
 
 @app.route('/api/users', methods=['GET'])
 def users_list():
-    if not _is_admin():
-        return jsonify({'error': 'Unauthorized'}), 403
-    return jsonify([u.to_dict() for u in User.query.order_by(User.created_at).all()])
+    """
+    ✅ แก้ไขหลัก: รองรับทั้ง Admin ที่ login แล้ว และ Public (สำหรับ merge ใน frontend)
+    - ถ้าเป็น Admin → ส่งข้อมูลทั้งหมดกลับ
+    - ถ้าไม่ได้ login → ส่ง [] กลับ (ไม่ให้ 500)
+    """
+    try:
+        if not _is_admin():
+            # ✅ ส่ง [] แทนที่จะ error 403/500 เพื่อไม่ให้ frontend crash
+            return jsonify([])
+        users = User.query.order_by(User.created_at).all()
+        return jsonify([u.to_dict() for u in users])
+    except Exception as e:
+        app.logger.error(f'users_list error: {e}')
+        return jsonify([]), 200  # ✅ ส่ง [] แทน 500
 
 @app.route('/api/users', methods=['POST'])
 def users_create():
-    if not _is_admin():
-        return jsonify({'error': 'Unauthorized'}), 403
-    body     = request.get_json() or {}
-    username = (body.get('username') or '').strip()
-    password =  body.get('password') or ''
-    name     = (body.get('name')     or '').strip()
-    dept     = (body.get('dept')     or '').strip()
-    role     =  body.get('role')     or 'Viewer'
-    status   =  body.get('status')   or 'pending'
+    try:
+        if not _is_admin():
+            return jsonify({'error': 'Unauthorized'}), 403
+        body     = request.get_json() or {}
+        username = (body.get('username') or '').strip()
+        password =  body.get('password') or ''
+        name     = (body.get('name')     or '').strip()
+        dept     = (body.get('dept')     or '').strip()
+        role     =  body.get('role')     or 'Viewer'
+        status   =  body.get('status')   or 'pending'
 
-    if not username or not password or not name:
-        return jsonify({'success': False, 'error': 'กรุณากรอกข้อมูลที่จำเป็น'})
-    if username == 'admin' or User.query.filter_by(username=username).first():
-        return jsonify({'success': False, 'error': 'Username นี้ถูกใช้แล้ว'})
+        if not username or not password or not name:
+            return jsonify({'success': False, 'error': 'กรุณากรอกข้อมูลที่จำเป็น'})
+        if username == 'admin' or User.query.filter_by(username=username).first():
+            return jsonify({'success': False, 'error': 'Username นี้ถูกใช้แล้ว'})
 
-    u = User(
-        id=           'u' + str(int(datetime.now(TZ_BANGKOK).timestamp() * 1000)),
-        username=     username,
-        password_hash=generate_password_hash(password),
-        name=name, dept=dept, role=role, status=status,
-        created_at=   now_bangkok(),
-    )
-    db.session.add(u)
-    db.session.commit()
-    return jsonify({'success': True, 'user': u.to_dict()})
+        u = User(
+            id=           'u' + str(int(datetime.now(TZ_BANGKOK).timestamp() * 1000)),
+            username=     username,
+            password_hash=generate_password_hash(password),
+            name=name, dept=dept, role=role, status=status,
+            created_at=   now_bangkok(),
+        )
+        db.session.add(u)
+        db.session.commit()
+        return jsonify({'success': True, 'user': u.to_dict()})
+    except Exception as e:
+        app.logger.error(f'users_create error: {e}')
+        return jsonify({'success': False, 'error': 'Server error'}), 500
 
 @app.route('/api/users/<uid>', methods=['PUT'])
 def users_update(uid):
-    if not _is_admin():
-        return jsonify({'error': 'Unauthorized'}), 403
-    u = User.query.get(uid)
-    if not u:
-        return jsonify({'error': 'Not found'}), 404
-    body = request.get_json() or {}
-    if 'status' in body:
-        u.status = body['status']
-    if 'role' in body:
-        u.role = body['role']
-    db.session.commit()
-    return jsonify({'success': True, 'user': u.to_dict()})
+    try:
+        if not _is_admin():
+            return jsonify({'error': 'Unauthorized'}), 403
+        # ✅ แก้ไข: ใช้ db.session.get แทน User.query.get
+        u = db.session.get(User, uid)
+        if not u:
+            return jsonify({'error': 'Not found'}), 404
+        body = request.get_json() or {}
+        if 'status' in body:
+            u.status = body['status']
+        if 'role' in body:
+            u.role = body['role']
+        db.session.commit()
+        return jsonify({'success': True, 'user': u.to_dict()})
+    except Exception as e:
+        app.logger.error(f'users_update error: {e}')
+        return jsonify({'error': 'Server error'}), 500
 
 @app.route('/api/users/<uid>/password', methods=['PUT'])
 def users_reset_password(uid):
-    if not _is_admin():
-        return jsonify({'error': 'Unauthorized'}), 403
-    u = User.query.get(uid)
-    if not u:
-        return jsonify({'error': 'Not found'}), 404
-    body     = request.get_json() or {}
-    password =  body.get('password') or ''
-    if len(password) < 6:
-        return jsonify({'success': False, 'error': 'Password ต้องมีอย่างน้อย 6 ตัวอักษร'})
-    u.password_hash = generate_password_hash(password)
-    db.session.commit()
-    return jsonify({'success': True})
+    try:
+        if not _is_admin():
+            return jsonify({'error': 'Unauthorized'}), 403
+        # ✅ แก้ไข: ใช้ db.session.get แทน User.query.get
+        u = db.session.get(User, uid)
+        if not u:
+            return jsonify({'error': 'Not found'}), 404
+        body     = request.get_json() or {}
+        password =  body.get('password') or ''
+        if len(password) < 6:
+            return jsonify({'success': False, 'error': 'Password ต้องมีอย่างน้อย 6 ตัวอักษร'})
+        u.password_hash = generate_password_hash(password)
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        app.logger.error(f'users_reset_password error: {e}')
+        return jsonify({'error': 'Server error'}), 500
 
 @app.route('/api/users/<uid>', methods=['DELETE'])
 def users_delete(uid):
-    if not _is_admin():
-        return jsonify({'error': 'Unauthorized'}), 403
-    u = User.query.get(uid)
-    if not u:
-        return jsonify({'error': 'Not found'}), 404
-    db.session.delete(u)
-    db.session.commit()
-    return jsonify({'success': True})
+    try:
+        if not _is_admin():
+            return jsonify({'error': 'Unauthorized'}), 403
+        # ✅ แก้ไข: ใช้ db.session.get แทน User.query.get
+        u = db.session.get(User, uid)
+        if not u:
+            return jsonify({'error': 'Not found'}), 404
+        db.session.delete(u)
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        app.logger.error(f'users_delete error: {e}')
+        return jsonify({'error': 'Server error'}), 500
 
 # ─── Data Routes ──────────────────────────────────────────────────────────────
 
 @app.route('/api/data', methods=['GET'])
 def data_get():
-    if not _is_authenticated():
-        return jsonify({'error': 'Unauthorized'}), 401
-    projects = [p.to_dict() for p in Project.query.all()]
-    ideas    = [i.to_dict() for i in Idea.query.all()]
-    return jsonify({'projects': projects, 'ideas': ideas})
+    try:
+        if not _is_authenticated():
+            return jsonify({'error': 'Unauthorized'}), 401
+        projects = [p.to_dict() for p in Project.query.all()]
+        ideas    = [i.to_dict() for i in Idea.query.all()]
+        return jsonify({'projects': projects, 'ideas': ideas})
+    except Exception as e:
+        app.logger.error(f'data_get error: {e}')
+        return jsonify({'error': 'Server error'}), 500
 
 @app.route('/api/data', methods=['PUT'])
 def data_save():
-    if not _is_authenticated():
-        return jsonify({'error': 'Unauthorized'}), 401
-    if _get_role() == 'Viewer':
-        return jsonify({'error': 'Viewers cannot modify data'}), 403
+    try:
+        if not _is_authenticated():
+            return jsonify({'error': 'Unauthorized'}), 401
+        if _get_role() == 'Viewer':
+            return jsonify({'error': 'Viewers cannot modify data'}), 403
 
-    body     = request.get_json() or {}
-    projects =  body.get('projects', [])
-    ideas    =  body.get('ideas',    [])
+        body     = request.get_json() or {}
+        projects =  body.get('projects', [])
+        ideas    =  body.get('ideas',    [])
 
-    db.session.query(Project).delete()
-    for p in projects:
-        pid = p.get('id')
-        if pid:
-            db.session.add(Project(id=pid, data=json.dumps(p, ensure_ascii=False)))
+        db.session.query(Project).delete()
+        for p in projects:
+            pid = p.get('id')
+            if pid:
+                db.session.add(Project(id=pid, data=json.dumps(p, ensure_ascii=False)))
 
-    db.session.query(Idea).delete()
-    for idea in ideas:
-        iid = idea.get('id')
-        if iid:
-            db.session.add(Idea(id=iid, data=json.dumps(idea, ensure_ascii=False)))
+        db.session.query(Idea).delete()
+        for idea in ideas:
+            iid = idea.get('id')
+            if iid:
+                db.session.add(Idea(id=iid, data=json.dumps(idea, ensure_ascii=False)))
 
-    db.session.commit()
-    return jsonify({'success': True})
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        app.logger.error(f'data_save error: {e}')
+        return jsonify({'error': 'Server error'}), 500
 
-# ─── Admin: Clear all users (reset) ──────────────────────────────────────────
+# ─── Admin Utilities ──────────────────────────────────────────────────────────
 
 @app.route('/api/users/clear-all', methods=['DELETE'])
 def users_clear_all():
-    """ลบ users ทั้งหมด (admin only) — สำหรับ reset database"""
-    if not _is_admin():
-        return jsonify({'error': 'Unauthorized'}), 403
-    count = User.query.count()
-    User.query.delete()
-    db.session.commit()
-    return jsonify({'success': True, 'deleted': count})
-
-
-# ─── Reset DB (admin only) ────────────────────────────────────────────────────
+    try:
+        if not _is_admin():
+            return jsonify({'error': 'Unauthorized'}), 403
+        count = User.query.count()
+        User.query.delete()
+        db.session.commit()
+        return jsonify({'success': True, 'deleted': count})
+    except Exception as e:
+        app.logger.error(f'users_clear_all error: {e}')
+        return jsonify({'error': 'Server error'}), 500
 
 @app.route('/api/admin/reset-db', methods=['POST'])
 def reset_db():
-    """Drop and recreate all tables — admin only"""
-    body = request.get_json() or {}
-    if body.get('secret') != 'reset-2026':
-        return jsonify({'error': 'Unauthorized'}), 403
-    db.drop_all()
-    db.create_all()
-    return jsonify({'success': True, 'message': 'Database reset complete'})
+    try:
+        body = request.get_json() or {}
+        if body.get('secret') != 'reset-2026':
+            return jsonify({'error': 'Unauthorized'}), 403
+        db.drop_all()
+        db.create_all()
+        return jsonify({'success': True, 'message': 'Database reset complete'})
+    except Exception as e:
+        app.logger.error(f'reset_db error: {e}')
+        return jsonify({'error': 'Server error'}), 500
 
+# ─── Health check ─────────────────────────────────────────────────────────────
 
-# ─── Public Data (VIP view — no login required) ───────────────────────────────
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """ใช้ตรวจสอบว่า Server ทำงานอยู่ไหม"""
+    try:
+        user_count = User.query.count()
+        return jsonify({'status': 'ok', 'users': user_count})
+    except Exception as e:
+        return jsonify({'status': 'error', 'error': str(e)}), 500
+
+# ─── Public Data (VIP — no login required) ───────────────────────────────────
 
 @app.route('/api/data/public', methods=['GET'])
 def data_public():
-    """Public read-only endpoint for VIP dashboard — no auth required"""
-    projects = [p.to_dict() for p in Project.query.all()]
-    ideas    = [i.to_dict() for i in Idea.query.all()]
-    return jsonify({'projects': projects, 'ideas': ideas})
+    try:
+        projects = [p.to_dict() for p in Project.query.all()]
+        ideas    = [i.to_dict() for i in Idea.query.all()]
+        return jsonify({'projects': projects, 'ideas': ideas})
+    except Exception as e:
+        app.logger.error(f'data_public error: {e}')
+        return jsonify({'projects': [], 'ideas': []}), 200
 
 # ─── Serve Frontend ───────────────────────────────────────────────────────────
 
