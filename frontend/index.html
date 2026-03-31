@@ -1082,7 +1082,7 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
           <th style="min-width:200px">📄 รายละเอียด<br><span style="font-size:8px;font-weight:400;color:rgba(255,255,255,.4)">(Description)</span></th>
           <th style="min-width:130px">Category</th>
           <th style="min-width:110px">Owner</th>
-          <th style="min-width:120px">💰 งบประมาณ<br><span style="font-size:8px;font-weight:400;color:rgba(255,255,255,.4)">(Budget)</span></th>
+          <th style="min-width:80px">💰 งบ<br><span style="font-size:8px;font-weight:400;color:rgba(255,255,255,.4)">(Budget)</span></th>
           <th style="min-width:105px">Status</th>
           <th style="min-width:120px">📌 Stage<br><span style="font-size:8px;font-weight:400;color:rgba(255,255,255,.4)">(Summary Matrix)</span></th>
           <th style="min-width:78px">Progress %</th>
@@ -1174,7 +1174,7 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
           <th style="min-width:110px">ผู้เสนอ</th>
           <th style="min-width:96px">Category</th>
           <th style="min-width:100px">วันที่เสนอ</th>
-          <th style="min-width:110px">งบประมาณ (฿)</th>
+          <th style="min-width:75px">งบ (฿)</th>
           <th style="min-width:200px">รายละเอียด / Business Case</th>
           <th style="min-width:110px">
             <span class="th-tip">Impact (1-10)
@@ -2258,7 +2258,7 @@ function buildRow(p,i){
     </td>
     <td>
       <div style="display:flex;align-items:center;gap:6px">
-        <input class="ci" value="${esc(p.name)}" onchange="upd(${i},'name',this.value)" placeholder="ชื่อโครงการ" ${dis} style="flex:1">
+        <div onclick="${dis?'void(0)':'openNamePopup('+i+')'}" style="flex:1;cursor:${dis?'default':'pointer'};padding:5px 8px;border:1px solid var(--div);border-radius:8px;font-size:13px;color:${p.name?'var(--slate)':'var(--muted)'};font-style:${p.name?'normal':'italic'};min-height:32px;line-height:1.5;background:var(--white);transition:border-color .2s" title="คลิกเพื่อแก้ไขชื่อโครงการ">${p.name?esc(p.name):'📝 คลิกเพื่อกรอกชื่อโครงการ...'}</div>
         ${isStale?`<span class="stale-bell" title="ไม่มีการอัปเดต ${sd} วัน" onclick="addLog(${i})">🔔</span>`:''}
       </div>
     </td>
@@ -2268,7 +2268,7 @@ function buildRow(p,i){
     <td style="white-space:nowrap">
       <div style="display:flex;align-items:center;gap:3px;padding:2px 8px">
         <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--gold-d);flex-shrink:0">฿</span>
-        <input class="ci mo" type="number" min="0" step="1000" value="${p.budget||''}" onchange="upd(${i},'budget',+this.value||0)" placeholder="0" ${dis} style="min-width:90px;text-align:right">
+        <input class="ci mo" type="number" min="0" step="1000" value="${p.budget||''}" onchange="upd(${i},'budget',+this.value||0)" placeholder="0" ${dis} style="min-width:65px;max-width:90px;text-align:right">
       </div>
     </td>
     <td><select class="ci" onchange="upd(${i},'status',this.value)" ${dis}>${SOPTS.map(s=>`<option value="${s}"${p.status===s?' selected':''}>${s}</option>`).join('')}</select></td>
@@ -2556,6 +2556,57 @@ async function fullRefreshAndGenIds(){
 }
 function expCSV(){const h='Project ID,Project Name,Category,Project Owner,Status,Progress %,Plan Start,Plan End,Actual Start,Actual End';const rows=P.map(p=>[p.id,p.name,p.pcat||'',p.owner,p.status,p.pct,p.ps||'',p.pe||'',p.as_||'',p.ae||''].map(v=>`"${v}"`).join(','));dl('\uFEFF'+[h,...rows].join('\n'),'text/csv','Gantt_'+fi(TODAY)+'.csv');}
 function impFromCSV(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const lines=ev.target.result.trim().split(/\r?\n/);const hdrs=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,'').toLowerCase());const ix={};hdrs.forEach((h,i)=>{if(/project.?id|^id$/i.test(h))ix.id=i;if(/project.?name|^name$/i.test(h))ix.name=i;if(/category|pcat/i.test(h))ix.pcat=i;if(/owner/i.test(h))ix.owner=i;if(/^status$/i.test(h))ix.status=i;if(/progress/i.test(h))ix.pct=i;if(/plan.?start/i.test(h))ix.ps=i;if(/plan.?end/i.test(h))ix.pe=i;if(/actual.?start/i.test(h))ix.as_=i;if(/actual.?end/i.test(h))ix.ae=i;});P=lines.slice(1).filter(l=>l.trim()).map(line=>{const v=line.split(',').map(x=>x.trim().replace(/^"|"$/g,''));const raw=parseFloat(v[ix.pct]||0);return{id:v[ix.id]||'',name:v[ix.name]||'',pcat:v[ix.pcat]||'',owner:v[ix.owner]||'',status:v[ix.status]||'Not Started',pct:raw<=1?Math.round(raw*100):Math.round(raw),ps:v[ix.ps]||'',pe:v[ix.pe]||'',as_:v[ix.as_]||'',ae:v[ix.ae]||''};}).filter(p=>p.id);renderInput();save();renderDash();}catch(err){alert('Error: '+err.message);}e.target.value='';};r.readAsText(f,'UTF-8');}
+// ── Name/Title Popup ─────────────────────────────────────────
+function openNamePopup(i){
+  const p=P[i];if(!p)return;
+  const existing=document.getElementById('_namePopup');if(existing)existing.remove();
+  const el=document.createElement('div');
+  el.id='_namePopup';
+  el.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)';
+  el.innerHTML=`<div style="background:var(--white);border-radius:14px;width:100%;max-width:520px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.25)">
+    <div style="background:var(--navy);padding:14px 20px;display:flex;align-items:center;justify-content:space-between">
+      <span style="font-family:'Playfair Display',serif;font-size:15px;color:var(--gold)">✏️ ชื่อโครงการ — ${p.id}</span>
+      <button onclick="document.getElementById('_namePopup').remove()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div style="padding:20px">
+      <label style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:block">ชื่อโครงการ *</label>
+      <input id="_nameTa" style="width:100%;border:1px solid var(--div);border-radius:8px;padding:11px 14px;font-family:'Sarabun',sans-serif;font-size:14px;color:var(--slate);outline:none;box-sizing:border-box;transition:border-color .2s" value="${esc(p.name||'')}" placeholder="กรอกชื่อโครงการ..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){document.getElementById('_saveNameBtn').click();}">
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;padding:0 20px 20px">
+      <button onclick="document.getElementById('_namePopup').remove()" style="background:transparent;border:1px solid var(--div);color:var(--muted);border-radius:8px;padding:9px 18px;font-family:'Sarabun',sans-serif;font-size:13px;cursor:pointer">ยกเลิก</button>
+      <button id="_saveNameBtn" onclick="(function(){const v=document.getElementById('_nameTa').value.trim();if(!v)return;upd(${i},'name',v);renderInput();document.getElementById('_namePopup').remove();})()" style="background:var(--gold);color:var(--navy);border:none;border-radius:8px;padding:9px 20px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;cursor:pointer">💾 บันทึก</button>
+    </div>
+  </div>`;
+  el.addEventListener('click',e=>{if(e.target===el)el.remove();});
+  document.body.appendChild(el);
+  setTimeout(()=>{const inp=document.getElementById('_nameTa');if(inp){inp.focus();inp.select();}},80);
+}
+
+function openTitlePopup(i){
+  const x=IDEAS[i];if(!x)return;
+  const existing=document.getElementById('_titlePopup');if(existing)existing.remove();
+  const el=document.createElement('div');
+  el.id='_titlePopup';
+  el.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)';
+  el.innerHTML=`<div style="background:var(--white);border-radius:14px;width:100%;max-width:520px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.25)">
+    <div style="background:var(--navy);padding:14px 20px;display:flex;align-items:center;justify-content:space-between">
+      <span style="font-family:'Playfair Display',serif;font-size:15px;color:var(--gold)">💡 ชื่อ Idea / Project Proposal</span>
+      <button onclick="document.getElementById('_titlePopup').remove()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div style="padding:20px">
+      <label style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:block">ชื่อ Idea *</label>
+      <input id="_titleTa" style="width:100%;border:1px solid var(--div);border-radius:8px;padding:11px 14px;font-family:'Sarabun',sans-serif;font-size:14px;color:var(--slate);outline:none;box-sizing:border-box;transition:border-color .2s" value="${esc(x.title||'')}" placeholder="กรอกชื่อ Idea..." onkeydown="if(event.key==='Enter'){document.getElementById('_saveTitleBtn').click();}">
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;padding:0 20px 20px">
+      <button onclick="document.getElementById('_titlePopup').remove()" style="background:transparent;border:1px solid var(--div);color:var(--muted);border-radius:8px;padding:9px 18px;font-family:'Sarabun',sans-serif;font-size:13px;cursor:pointer">ยกเลิก</button>
+      <button id="_saveTitleBtn" onclick="(function(){const v=document.getElementById('_titleTa').value.trim();if(!v)return;updI(${i},'title',v);renderIdeaTable();document.getElementById('_titlePopup').remove();})()" style="background:var(--gold);color:var(--navy);border:none;border-radius:8px;padding:9px 20px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;cursor:pointer">💾 บันทึก</button>
+    </div>
+  </div>`;
+  el.addEventListener('click',e=>{if(e.target===el)el.remove();});
+  document.body.appendChild(el);
+  setTimeout(()=>{const inp=document.getElementById('_titleTa');if(inp){inp.focus();inp.select();}},80);
+}
+
 function expJSON(){dl(JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY)},null,2),'application/json','Backup_'+fi(TODAY)+'.json');}
 function impFromJSON(e){
   const f=e.target.files[0];if(!f)return;
@@ -2994,11 +3045,11 @@ async function exportSummaryPDF(){
       .legend-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0;margin-right:7px;display:inline-block;}
       /* Matrix */
       .matrix-header{background:#1c2b3a;color:#fff;text-align:center;padding:9px 14px;font-size:11pt;font-weight:700;letter-spacing:1px;margin-bottom:0;border-radius:6px 6px 0 0;}
-      table{width:100%;border-collapse:collapse;font-size:8pt;table-layout:fixed;}
-      table thead th{padding:7px 10px;font-size:8pt;font-weight:700;text-align:center;color:#fff;border:0.5px solid rgba(255,255,255,.25);width:18%;}
-      table thead th.cat-head{background:#eef0f5;color:#1c2b3a;text-align:left;font-weight:700;width:10%;}
-      table tbody td{border:0.5px solid rgba(200,200,200,.6);padding:6px 8px;vertical-align:top;font-size:7.5pt;word-wrap:break-word;overflow-wrap:break-word;}
-      table tbody td.cat-lbl{background:#eef0f5;color:#1c2b3a;font-weight:700;font-size:9pt;vertical-align:middle;white-space:nowrap;border:0.5px solid #dde2ea;width:10%;}
+      table{width:100%;border-collapse:collapse;font-size:8pt;}
+      table thead th{padding:7px 10px;font-size:8pt;font-weight:700;text-align:center;color:#fff;border:0.5px solid rgba(255,255,255,.25);}
+      table thead th.cat-head{background:#eef0f5;color:#1c2b3a;text-align:left;font-weight:700;}
+      table tbody td{border:0.5px solid rgba(200,200,200,.6);padding:6px 8px;vertical-align:top;font-size:7.5pt;}
+      table tbody td.cat-lbl{background:#eef0f5;color:#1c2b3a;font-weight:700;font-size:9pt;vertical-align:middle;white-space:nowrap;border:0.5px solid #dde2ea;}
       .item{margin-bottom:2px;line-height:1.5;color:#1c2b3a;}
       .item-idea{color:#c9a84c;font-style:italic;}
       /* Stage header colors */
@@ -3049,7 +3100,7 @@ async function exportSummaryPDF(){
     <div class="matrix-header">LIST OF PROJECTS : ${monthStr}</div>
     <table>
       <thead><tr>
-        <th class="cat-head"></th>
+        <th class="cat-head" style="width:90px"></th>
         <th class="s-idea">Idea Pitching</th>
         <th class="s-prop">Project Proposal</th>
         <th class="s-exec">Execution</th>
@@ -3230,7 +3281,7 @@ function renderIdeaTable(){
           ${ro?'':(`<button onclick="regenIdeaId(${i})" title="Generate ID ใหม่" style="border:none;background:transparent;cursor:pointer;font-size:13px;padding:2px;line-height:1;color:var(--muted);flex-shrink:0" onmouseover="this.style.color='var(--gold-d)'" onmouseout="this.style.color='var(--muted)'">🔄</button>`)}
         </div>
       </td>
-      <td><input class="ci" value="${esc(x.title)}" onchange="updI(${i},'title',this.value)" placeholder="ชื่อ Idea *" ${dis}></td>
+      <td onclick="${dis?'void(0)':'openTitlePopup('+i+')'}" style="cursor:${dis?'default':'pointer'};padding:0"><div style="padding:6px 8px;min-height:32px;font-size:11px;line-height:1.5;color:${x.title?'var(--slate)':'var(--muted)'};font-style:${x.title?'normal':'italic'}" title="คลิกเพื่อแก้ไขชื่อ Idea">${x.title?esc(x.title):'📝 คลิกเพื่อกรอก...'}</div></td>
       <td><input class="ci" value="${esc(x.owner)}" onchange="updI(${i},'owner',this.value)" placeholder="ชื่อผู้เสนอ" ${dis}></td>
       <td><select class="ci" onchange="updI(${i},'cat',this.value)" ${dis}>
         ${PCAT.map(c=>`<option value="${c.v}" ${x.cat===(c.v)?'selected':''}>${c.lbl}</option>`).join('')}
