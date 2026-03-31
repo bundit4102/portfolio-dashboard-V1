@@ -1066,6 +1066,7 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
       <input type="file" id="impCSV" accept=".csv" style="display:none" onchange="impFromCSV(event)">
       <div class="tsep"></div>
       <button class="btn b-out" onclick="expJSON()">💾 Backup</button>
+      <button class="btn b-out" onclick="syncToServer()" title="Push data to Render so QR VIP can see it" style="background:rgba(26,122,74,.1);border-color:rgba(26,122,74,.3);color:var(--green)">☁️ Sync</button>
       <button class="btn b-out" onclick="$('impJSON').click()">📂 Restore</button>
       <input type="file" id="impJSON" accept=".json" style="display:none" onchange="impFromJSON(event)">
       <div class="today-grp">
@@ -1570,13 +1571,12 @@ async function doLogin(){
         if(d.user.role==='Admin'){await showAdminBox();}
         else{await enterApp();}
         return;
-      } else {
-        showErr('loginErr',d.error||'Username หรือ Password ไม่ถูกต้อง');return;
       }
+      // server returned error — fall through to localStorage
     }
-  }catch(e){}
+  }catch(e){/* server unreachable */}
 
-  // Fallback: localStorage (GitHub Pages)
+  // Fallback: localStorage (works on GitHub Pages & when server DB is empty)
   await refreshUsers();
   const users=getUsers();
   const found=users.find(x=>x.username===u && x.password===p);
@@ -2094,6 +2094,7 @@ function rem(p){if(p.ae)return-1;if(!p.pe)return null;return Math.max(0,Math.rou
 function iScore(x){return Math.round(((+x.impact||5)+(+x.feasibility||5)+(+x.strategic||5))/3*10);}
 function scoreColor(sc){return sc>=70?'var(--green)':sc>=50?'var(--amber)':'var(--red)';}
 const isViewer=()=>currentUser?.role==='Viewer';
+const isAdminOrVIP=()=>currentUser?.role==='Admin'||currentUser?.role==='VIP';
 
 // Returns days since last log update; null if completed/no start
 function staleDays(p){
@@ -2511,6 +2512,19 @@ async function fullRefreshAndGenIds(){
 }
 function expCSV(){const h='Project ID,Project Name,Category,Project Owner,Status,Progress %,Plan Start,Plan End,Actual Start,Actual End';const rows=P.map(p=>[p.id,p.name,p.pcat||'',p.owner,p.status,p.pct,p.ps||'',p.pe||'',p.as_||'',p.ae||''].map(v=>`"${v}"`).join(','));dl('\uFEFF'+[h,...rows].join('\n'),'text/csv','Gantt_'+fi(TODAY)+'.csv');}
 function impFromCSV(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const lines=ev.target.result.trim().split(/\r?\n/);const hdrs=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,'').toLowerCase());const ix={};hdrs.forEach((h,i)=>{if(/project.?id|^id$/i.test(h))ix.id=i;if(/project.?name|^name$/i.test(h))ix.name=i;if(/category|pcat/i.test(h))ix.pcat=i;if(/owner/i.test(h))ix.owner=i;if(/^status$/i.test(h))ix.status=i;if(/progress/i.test(h))ix.pct=i;if(/plan.?start/i.test(h))ix.ps=i;if(/plan.?end/i.test(h))ix.pe=i;if(/actual.?start/i.test(h))ix.as_=i;if(/actual.?end/i.test(h))ix.ae=i;});P=lines.slice(1).filter(l=>l.trim()).map(line=>{const v=line.split(',').map(x=>x.trim().replace(/^"|"$/g,''));const raw=parseFloat(v[ix.pct]||0);return{id:v[ix.id]||'',name:v[ix.name]||'',pcat:v[ix.pcat]||'',owner:v[ix.owner]||'',status:v[ix.status]||'Not Started',pct:raw<=1?Math.round(raw*100):Math.round(raw),ps:v[ix.ps]||'',pe:v[ix.pe]||'',as_:v[ix.as_]||'',ae:v[ix.ae]||''};}).filter(p=>p.id);renderInput();save();renderDash();}catch(err){alert('Error: '+err.message);}e.target.value='';};r.readAsText(f,'UTF-8');}
+async function syncToServer(){
+  const btn=document.querySelector('[onclick="syncToServer()"]');
+  if(btn){btn.textContent='⏳...';btn.disabled=true;}
+  const base=location.hostname.includes('onrender.com')||location.hostname==='localhost'?'':'https://portfolio-dashboard-v1.onrender.com';
+  try{
+    await fetch(base+'/api/auth/login',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'admin',password:'admin2026'})});
+    const res=await fetch(base+'/api/data',{method:'PUT',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({projects:P,ideas:IDEAS})});
+    if(res.ok){showToast('✅ Synced! QR VIP will now show your data.','var(--green)');}
+    else{showToast('⚠ Sync failed: '+res.status,'var(--amber)');}
+  }catch(e){showToast('⚠ Cannot reach server','var(--amber)');}
+  if(btn){btn.textContent='☁️ Sync';btn.disabled=false;}
+}
+
 function expJSON(){dl(JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY)},null,2),'application/json','Backup_'+fi(TODAY)+'.json');}
 function impFromJSON(e){
   const f=e.target.files[0];if(!f)return;
@@ -3176,6 +3190,8 @@ function updIdeaUndoBtns(){
 
 function renderIdeaTable(){
   const ro=isViewer();const dis=ro?'disabled':'';
+  const canScore=isAdminOrVIP();const disScore=canScore?'':'disabled';
+  const lockTip=canScore?'':'🔒 Admin & VIP only';
   $('ideaBody').innerHTML=IDEAS.map((x,i)=>{
     const sc=iScore(x),bc=scoreColor(sc);
     return`<tr id="ir${i}" class="pop">
@@ -3194,17 +3210,17 @@ function renderIdeaTable(){
       <td><input class="ci mo" type="date" value="${x.date||''}" onchange="updI(${i},'date',this.value)" ${dis}></td>
       <td><input class="ci mo" type="number" min="0" value="${x.budget||''}" onchange="updI(${i},'budget',+this.value)" placeholder="0" ${dis}></td>
       <td><input class="ci" value="${esc(x.desc)}" onchange="updI(${i},'desc',this.value)" placeholder="รายละเอียดโดยย่อ" ${dis}></td>
-      <td><div class="score-mini"><input type="range" id="si${i}imp" min="1" max="10" value="${x.impact||5}" oninput="updIScore(${i})" ${dis}><span id="sv${i}imp">${x.impact||5}</span></div></td>
-      <td><div class="score-mini"><input type="range" id="si${i}feas" min="1" max="10" value="${x.feasibility||5}" oninput="updIScore(${i})" ${dis}><span id="sv${i}feas">${x.feasibility||5}</span></div></td>
-      <td><div class="score-mini"><input type="range" id="si${i}str" min="1" max="10" value="${x.strategic||5}" oninput="updIScore(${i})" ${dis}><span id="sv${i}str">${x.strategic||5}</span></div></td>
+      <td><div class="score-mini"><input type="range" id="si${i}imp" min="1" max="10" value="${x.impact||5}" oninput="updIScore(${i})" ${disScore} title="${lockTip}"><span id="sv${i}imp">${x.impact||5}</span></div></td>
+      <td><div class="score-mini"><input type="range" id="si${i}feas" min="1" max="10" value="${x.feasibility||5}" oninput="updIScore(${i})" ${disScore} title="${lockTip}"><span id="sv${i}feas">${x.feasibility||5}</span></div></td>
+      <td><div class="score-mini"><input type="range" id="si${i}str" min="1" max="10" value="${x.strategic||5}" oninput="updIScore(${i})" ${disScore} title="${lockTip}"><span id="sv${i}str">${x.strategic||5}</span></div></td>
       <td class="total-badge" id="sc${i}" style="color:${bc}">${sc}</td>
-      <td><select class="ci" onchange="updI(${i},'status',this.value)" ${dis}>
+      <td title="${lockTip}"><select class="ci" onchange="updI(${i},'status',this.value)" ${disScore}>
         <option value="new" ${x.status==='new'?'selected':''}>🆕 New</option>
         <option value="review" ${x.status==='review'?'selected':''}>🔍 Review</option>
         <option value="approved" ${x.status==='approved'?'selected':''}>✅ Approved</option>
         <option value="rejected" ${x.status==='rejected'?'selected':''}>❌ Rejected</option>
       </select></td>
-      <td><input class="ci" value="${esc(x.note)}" onchange="updI(${i},'note',this.value)" placeholder="ความเห็น" ${dis}></td>
+      <td title="${lockTip}"><input class="ci" value="${esc(x.note)}" onchange="updI(${i},'note',this.value)" placeholder="ความเห็น" ${disScore}></td>
       <td>${ro?'':('<button class="del" onclick="delIdea('+i+')">✕</button>')}</td>
     </tr>`;
   }).join('');
@@ -3212,6 +3228,7 @@ function renderIdeaTable(){
 }
 function updI(i,f,v){
   if(isViewer())return;
+  if((f==='status'||f==='note'||f==='impact'||f==='feasibility'||f==='strategic')&&!isAdminOrVIP())return;
   pushIdeaUndo();
   IDEAS[i][f]=v;
   // Auto-regen ID when cat or owner changes
@@ -3225,6 +3242,7 @@ function updI(i,f,v){
   sched();renderKanban();renderIdeaKPIs();
 }
 function updIScore(i){
+  if(!isAdminOrVIP())return;
   const imp=+$('si'+i+'imp').value,feas=+$('si'+i+'feas').value,str=+$('si'+i+'str').value;
   $('sv'+i+'imp').textContent=imp;$('sv'+i+'feas').textContent=feas;$('sv'+i+'str').textContent=str;
   IDEAS[i].impact=imp;IDEAS[i].feasibility=feas;IDEAS[i].strategic=str;
@@ -4208,6 +4226,10 @@ function initVipModeFromSnap(snap){
   const dl=$('vipDateLbl');
   if(dl)dl.textContent='ข้อมูล ณ วันที่ '+TODAY.toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'});
 
+  // VIP user = same edit rights as Admin
+  if(!currentUser){
+    currentUser={id:'__vip__',username:'vip',name:'VIP Viewer',dept:'Executive',role:'VIP',status:'approved'};
+  }
   renderVipContent();
 }
 
