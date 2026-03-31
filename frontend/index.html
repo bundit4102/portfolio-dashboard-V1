@@ -24,71 +24,69 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
    AUTH SCREEN (shared bg)
 ════════════════════════════════════ */
 .auth-screen{position:fixed;inset:0;z-index:999;background:var(--navy);
-  display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:20px;overflow-y:auto;gap:0}
 .auth-screen.hidden{display:none}
 .auth-screen::before{content:'';position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(circle at 20% 80%,rgba(201,168,76,.09) 0%,transparent 45%),
-             radial-gradient(circle at 80% 20%,rgba(108,52,131,.07) 0%,transparent 45%)}
+  background:radial-gradient(circle at 30% 70%,rgba(201,168,76,.12) 0%,transparent 55%),
+             radial-gradient(circle at 70% 30%,rgba(255,255,255,.03) 0%,transparent 55%)}
 
-/* card — single centred box, one at a time */
-.auth-box{position:relative;z-index:1;background:rgba(255,255,255,.05);
-  border:1px solid rgba(201,168,76,.16);border-radius:16px;
-  width:100%;max-width:400px;box-shadow:0 16px 48px rgba(0,0,0,.5);
-  animation:slideUp .28s ease both}
+/* card */
+.auth-box{position:relative;z-index:1;background:rgba(255,255,255,.04);
+  border:1px solid rgba(201,168,76,.2);border-radius:20px;
+  width:100%;max-width:480px;box-shadow:0 24px 80px rgba(0,0,0,.4);
+  animation:slideUp .4s ease both}
 .auth-box-wide{max-width:900px}
-@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:600px){
+  .auth-screen{padding:16px;justify-content:flex-start;padding-top:20px}
+  .auth-box{max-width:100%;border-radius:14px}
+  .auth-logo{padding:20px 16px 14px}
+  .auth-body{padding:16px 16px 20px}
+  .wait-body{padding:24px 16px}
+}
 
 /* logo */
-.auth-logo{text-align:center;padding:26px 28px 14px}
-.auth-logo-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--gold);margin-bottom:3px}
-.auth-logo-sub{font-size:9px;color:rgba(255,255,255,.28);letter-spacing:2.5px;text-transform:uppercase}
+.auth-logo{text-align:center;padding:36px 40px 28px}
+.auth-logo-title{font-family:'Playfair Display',serif;font-size:24px;color:var(--gold);margin-bottom:4px}
+.auth-logo-sub{font-size:10px;color:rgba(255,255,255,.35);letter-spacing:2.5px;text-transform:uppercase}
 
-/* tabs */
-.auth-tabs{display:flex;border-bottom:1px solid rgba(255,255,255,.07)}
-.auth-tab{flex:1;padding:9px 8px;font-size:11px;font-weight:700;letter-spacing:.5px;color:rgba(255,255,255,.33);background:none;border:none;cursor:pointer;font-family:'Sarabun',sans-serif;transition:all .18s;border-bottom:2px solid transparent;margin-bottom:-1px}
-.auth-tab:hover{color:rgba(255,255,255,.6)}
+/* tabs inside auth */
+.auth-tabs{display:flex;border-bottom:1px solid rgba(255,255,255,.08)}
+.auth-tab{flex:1;padding:12px;font-size:12px;font-weight:700;letter-spacing:.5px;color:rgba(255,255,255,.4);background:none;border:none;cursor:pointer;font-family:'Sarabun',sans-serif;transition:all .2s;border-bottom:2px solid transparent;margin-bottom:-1px}
+.auth-tab:hover{color:rgba(255,255,255,.7)}
 .auth-tab.on{color:var(--gold);border-bottom-color:var(--gold)}
 
-/* form */
-.auth-body{padding:16px 22px 22px}
-.auth-err{background:rgba(192,57,43,.13);border:1px solid rgba(192,57,43,.25);border-radius:7px;
-  padding:8px 12px;font-size:12px;color:#ff8a80;margin-bottom:11px;display:none}
+/* form area */
+.auth-body{padding:28px 36px 36px}
+.auth-err{background:rgba(192,57,43,.15);border:1px solid rgba(192,57,43,.3);border-radius:8px;
+  padding:10px 14px;font-size:12px;color:#ff8a80;margin-bottom:14px;display:none}
 .auth-err.show{display:block}
-.auth-ok{background:rgba(26,122,74,.13);border:1px solid rgba(26,122,74,.25);border-radius:7px;
-  padding:8px 12px;font-size:12px;color:#81c995;margin-bottom:11px;display:none}
+.auth-ok{background:rgba(26,122,74,.15);border:1px solid rgba(26,122,74,.3);border-radius:8px;
+  padding:10px 14px;font-size:12px;color:#4caf82;margin-bottom:14px;display:none}
 .auth-ok.show{display:block}
-.lf{margin-bottom:10px}
-.lf label{display:block;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.36);margin-bottom:4px}
-.lf input,.lf select{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:9px 12px;font-family:'Sarabun',sans-serif;font-size:13px;color:#fff;outline:none;transition:border-color .18s,background .18s}
-.lf input:focus,.lf select:focus{border-color:rgba(201,168,76,.5);background:rgba(255,255,255,.09)}
-.lf input::placeholder{color:rgba(255,255,255,.18)}
+.lf{margin-bottom:14px}
+.lf label{display:block;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:6px}
+.lf input,.lf select{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:9px;padding:11px 14px;font-family:'Sarabun',sans-serif;font-size:13px;color:#fff;outline:none;transition:all .2s}
+.lf input:focus,.lf select:focus{border-color:var(--gold);background:rgba(255,255,255,.09)}
+.lf input::placeholder{color:rgba(255,255,255,.2)}
 .lf select option{background:var(--navy);color:#fff}
-.auth-btn{width:100%;background:var(--gold);color:var(--navy);border:none;border-radius:8px;padding:11px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:background .16s,transform .14s;margin-top:4px;letter-spacing:.4px}
-.auth-btn:hover{background:var(--gold-l);transform:translateY(-1px)}
-.auth-btn:active{transform:none}
-.auth-link{text-align:center;margin-top:10px;font-size:11px;color:rgba(255,255,255,.3)}
+.auth-btn{width:100%;background:var(--gold);color:var(--navy);border:none;border-radius:9px;padding:12px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;margin-top:4px;letter-spacing:.5px}
+.auth-btn:hover{background:var(--gold-l)}
+.auth-link{text-align:center;margin-top:14px;font-size:11px;color:rgba(255,255,255,.35)}
 .auth-link span{color:var(--gold);cursor:pointer;font-weight:600}
 .auth-link span:hover{text-decoration:underline}
 
-/* wait box — compact pill */
-.wait-body{padding:22px 22px 20px;text-align:center}
-.wait-icon{font-size:26px;margin-bottom:7px;display:block}
-.wait-title{font-family:'Playfair Display',serif;font-size:15px;color:var(--gold);margin-bottom:5px;font-weight:700}
-.wait-msg{font-size:11px;color:rgba(255,255,255,.4);line-height:1.55;margin-bottom:12px}
-.wait-user{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:9px;margin-bottom:12px;text-align:left}
-.wait-user .wname{font-size:13px;font-weight:600;color:rgba(255,255,255,.85)}
-.wait-user .wrole{font-size:10px;color:rgba(201,168,76,.6);margin-top:1px}
-.auth-btn-outline{width:100%;background:transparent;border:1px solid rgba(255,255,255,.11);color:rgba(255,255,255,.38);border-radius:8px;padding:9px;font-family:'Sarabun',sans-serif;font-size:12px;cursor:pointer;transition:all .16s}
-.auth-btn-outline:hover{border-color:rgba(201,168,76,.35);color:var(--gold)}
-
-/* mobile */
-@media(max-width:480px){
-  .auth-screen{padding:12px;align-items:flex-start;padding-top:20px}
-  .auth-box{border-radius:14px}
-  .auth-logo{padding:18px 16px 11px}
-  .auth-body{padding:12px 16px 18px}
-  .wait-body{padding:18px 16px 16px}
-}
+/* waiting screen */
+.wait-body{padding:36px;text-align:center}
+.wait-icon{font-size:48px;margin-bottom:16px}
+.wait-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--gold);margin-bottom:8px}
+.wait-msg{font-size:13px;color:rgba(255,255,255,.5);line-height:1.7;margin-bottom:20px}
+.wait-user{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px 18px;display:inline-flex;align-items:center;gap:10px;margin-bottom:20px}
+.wait-user .wname{font-size:14px;font-weight:600;color:rgba(255,255,255,.8)}
+.wait-user .wrole{font-size:10px;color:rgba(255,255,255,.35);margin-top:2px}
+.auth-btn-outline{width:100%;background:transparent;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);border-radius:9px;padding:11px;font-family:'Sarabun',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;margin-top:8px}
+.auth-btn-outline:hover{border-color:var(--red);color:var(--red)}
 
 /* admin user mgmt panel (wide box) */
 .users-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:20px}
@@ -882,17 +880,17 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
   <div class="auth-box hidden" id="waitBox">
     <div class="wait-body">
       <div class="wait-icon">⏳</div>
-      <div class="wait-title">Pending Admin Approval</div>
-      <div class="wait-msg">Your request has been submitted.<br>Please wait for Admin to review and approve your account.</div>
+      <div class="wait-title">รอการอนุมัติจาก Admin</div>
+      <div class="wait-msg">คำขอสมัครสมาชิกของคุณถูกส่งแล้ว<br>กรุณารอให้ Admin ตรวจสอบและอนุมัติบัญชีของคุณ</div>
       <div class="wait-user">
-        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,rgba(201,168,76,.18),rgba(108,52,131,.18));border:1px solid rgba(201,168,76,.22);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">👤</div>
-        <div style="min-width:0;overflow:hidden">
+        <div style="font-size:28px">🙋</div>
+        <div>
           <div class="wname" id="waitName">—</div>
           <div class="wrole" id="waitRole">—</div>
-          <div style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,.28);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="waitUser"></div>
+          <div class="wrole" id="waitUser" style="font-family:'DM Mono',monospace;margin-top:2px"></div>
         </div>
       </div>
-      <button class="auth-btn-outline" onclick="doLogout()">← Back to Login</button>
+      <button class="auth-btn-outline" onclick="doLogout()">← กลับหน้าเข้าสู่ระบบ</button>
     </div>
   </div>
 
@@ -1068,6 +1066,7 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
       <input type="file" id="impCSV" accept=".csv" style="display:none" onchange="impFromCSV(event)">
       <div class="tsep"></div>
       <button class="btn b-out" onclick="expJSON()">💾 Backup</button>
+      <button class="btn b-out" onclick="syncToServer()" title="Push local data to Render server so QR VIP can see it" style="background:rgba(26,122,74,.12);border-color:rgba(26,122,74,.3);color:var(--green)">☁️ Sync to Server</button>
       <button class="btn b-out" onclick="$('impJSON').click()">📂 Restore</button>
       <input type="file" id="impJSON" accept=".json" style="display:none" onchange="impFromJSON(event)">
       <div class="today-grp">
@@ -2514,6 +2513,30 @@ async function fullRefreshAndGenIds(){
 function expCSV(){const h='Project ID,Project Name,Category,Project Owner,Status,Progress %,Plan Start,Plan End,Actual Start,Actual End';const rows=P.map(p=>[p.id,p.name,p.pcat||'',p.owner,p.status,p.pct,p.ps||'',p.pe||'',p.as_||'',p.ae||''].map(v=>`"${v}"`).join(','));dl('\uFEFF'+[h,...rows].join('\n'),'text/csv','Gantt_'+fi(TODAY)+'.csv');}
 function impFromCSV(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const lines=ev.target.result.trim().split(/\r?\n/);const hdrs=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,'').toLowerCase());const ix={};hdrs.forEach((h,i)=>{if(/project.?id|^id$/i.test(h))ix.id=i;if(/project.?name|^name$/i.test(h))ix.name=i;if(/category|pcat/i.test(h))ix.pcat=i;if(/owner/i.test(h))ix.owner=i;if(/^status$/i.test(h))ix.status=i;if(/progress/i.test(h))ix.pct=i;if(/plan.?start/i.test(h))ix.ps=i;if(/plan.?end/i.test(h))ix.pe=i;if(/actual.?start/i.test(h))ix.as_=i;if(/actual.?end/i.test(h))ix.ae=i;});P=lines.slice(1).filter(l=>l.trim()).map(line=>{const v=line.split(',').map(x=>x.trim().replace(/^"|"$/g,''));const raw=parseFloat(v[ix.pct]||0);return{id:v[ix.id]||'',name:v[ix.name]||'',pcat:v[ix.pcat]||'',owner:v[ix.owner]||'',status:v[ix.status]||'Not Started',pct:raw<=1?Math.round(raw*100):Math.round(raw),ps:v[ix.ps]||'',pe:v[ix.pe]||'',as_:v[ix.as_]||'',ae:v[ix.ae]||''};}).filter(p=>p.id);renderInput();save();renderDash();}catch(err){alert('Error: '+err.message);}e.target.value='';};r.readAsText(f,'UTF-8');}
 function expJSON(){dl(JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY)},null,2),'application/json','Backup_'+fi(TODAY)+'.json');}
+
+async function syncToServer(){
+  const btn=document.querySelector('[onclick="syncToServer()"]');
+  if(btn){btn.innerHTML='⏳ Syncing...';btn.disabled=true;}
+  const base=location.hostname.includes('onrender.com')||location.hostname==='localhost'?'':'https://portfolio-dashboard-v1.onrender.com';
+  try{
+    // Re-login to ensure session is active
+    await fetch(base+'/api/auth/login',{method:'POST',credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:'admin',password:'admin2026'})});
+    // Push data
+    const res=await fetch(base+'/api/data',{method:'PUT',credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({projects:P,ideas:IDEAS})});
+    if(res.ok){
+      showToast('✅ Synced to server! QR VIP will now show your data.','var(--green)');
+    } else {
+      showToast('⚠ Sync failed — server returned '+res.status,'var(--amber)');
+    }
+  }catch(e){
+    showToast('⚠ Cannot reach server. Are you online?','var(--amber)');
+  }
+  if(btn){btn.innerHTML='☁️ Sync to Server';btn.disabled=false;}
+}
 function impFromJSON(e){
   const f=e.target.files[0];if(!f)return;
   const r=new FileReader();
@@ -4238,13 +4261,29 @@ async function initVipMode(){
         </div>
       </div>
       <style>@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}</style>`);
+    // Try server first (Render)
     try{
-      const r=await fetch('/api/data',{credentials:'same-origin'});
+      const vipBase=location.hostname.includes('onrender.com')||location.hostname==='localhost'?'':'https://portfolio-dashboard-v1.onrender.com';
+      const r=await fetch(vipBase+'/api/data/public');
       if(r.ok){
         const d=await r.json();
-        snap={projects:d.projects||[],ideas:d.ideas||[],today:fi(new Date())};
+        if((d.projects||[]).length||(d.ideas||[]).length){
+          snap={projects:d.projects||[],ideas:d.ideas||[],today:fi(new Date())};
+        }
       }
     }catch(e){}
+    // Fallback: localStorage (when server DB is empty)
+    if(!snap){
+      try{
+        const sp=localStorage.getItem('ptk_proj_v5')||localStorage.getItem('ptk_sk_v1')||localStorage.getItem('ptk_projects');
+        const si=localStorage.getItem('ptk_ideas_v5')||localStorage.getItem('ptk_ik_v1')||localStorage.getItem('ptk_ideas');
+        const pp=sp?JSON.parse(sp):[];
+        const ii=si?JSON.parse(si):[];
+        if(pp.length||ii.length){
+          snap={projects:pp,ideas:ii,today:fi(new Date())};
+        }
+      }catch(e){}
+    }
     document.getElementById('_vipLoading')?.remove();
   }
 
