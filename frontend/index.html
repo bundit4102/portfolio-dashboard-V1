@@ -88,6 +88,25 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 .auth-btn-outline{width:100%;background:transparent;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);border-radius:9px;padding:11px;font-family:'Sarabun',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;margin-top:8px}
 .auth-btn-outline:hover{border-color:var(--red);color:var(--red)}
 
+/* Description Popup */
+.desc-popup-overlay{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)}
+.desc-popup-box{background:var(--white);border-radius:14px;width:100%;max-width:560px;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden}
+.desc-popup-head{background:var(--navy);padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
+.desc-popup-title{font-family:'Playfair Display',serif;font-size:15px;color:var(--gold)}
+.desc-popup-body{padding:20px}
+.desc-popup-label{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:block}
+.desc-popup-textarea{width:100%;min-height:180px;border:1px solid var(--div);border-radius:8px;padding:12px 14px;font-family:'Sarabun',sans-serif;font-size:13px;color:var(--slate);resize:vertical;outline:none;line-height:1.7;box-sizing:border-box;transition:border-color .2s}
+.desc-popup-textarea:focus{border-color:var(--gold)}
+.desc-popup-footer{display:flex;gap:10px;justify-content:flex-end;padding:0 20px 20px}
+.desc-trigger{cursor:pointer;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:6px;padding:4px 8px;font-size:11px;color:var(--gold-d);white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;display:block}
+.desc-trigger:hover{background:rgba(201,168,76,.15)}
+/* Name popup trigger */
+.name-trigger{display:flex;align-items:center;justify-content:space-between;gap:6px;cursor:pointer;background:var(--white);border:1px solid var(--div);border-radius:7px;padding:5px 10px;font-size:12px;font-weight:600;color:var(--slate);min-width:140px;max-width:220px;transition:all .15s;white-space:nowrap;overflow:hidden}
+.name-trigger:hover{border-color:var(--gold);background:rgba(201,168,76,.04)}
+.name-trigger-disabled{cursor:default;background:var(--cream);border-color:var(--div2)}
+.name-trigger-disabled:hover{border-color:var(--div2);background:var(--cream)}
+.name-edit-icon{font-size:10px;opacity:0;transition:opacity .15s;flex-shrink:0}
+.name-trigger:hover .name-edit-icon{opacity:1}
 /* admin user mgmt panel (wide box) */
 .users-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:20px}
 .u-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px 18px}
@@ -347,9 +366,9 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
 .tg-GEN{background:var(--cream);color:var(--muted);border:1px solid var(--div)}
 .tg-biz{background:#fef9e7;color:var(--amber)} .tg-hr{background:#f5eef8;color:var(--purple)}
 .tg-other{background:var(--cream);color:var(--muted)}
-.score-mini{display:flex;align-items:center;gap:4px;padding:6px 8px}
-.score-mini input[type=range]{flex:1;accent-color:var(--gold);cursor:pointer;min-width:50px}
-.score-mini span{font-family:'DM Mono',monospace;font-size:10px;color:var(--gold-d);min-width:16px;text-align:right;font-weight:700}
+.score-mini{display:flex;align-items:center;gap:4px;padding:4px 6px}
+.score-mini input[type=range]{flex:1;accent-color:var(--gold);cursor:pointer;min-width:36px}
+.score-mini span{font-family:'DM Mono',monospace;font-size:10px;color:var(--gold-d);min-width:14px;text-align:right;font-weight:700}
 .total-badge{font-family:'DM Mono',monospace;font-size:13px;font-weight:700;text-align:center;padding:7px 8px}
 .kanban-mini{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:20px}
 .km-col{background:var(--white);border:1px solid var(--div);border-radius:10px;overflow:hidden;box-shadow:var(--sh)}
@@ -1082,7 +1101,7 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
           <th style="min-width:200px">📄 รายละเอียด<br><span style="font-size:8px;font-weight:400;color:rgba(255,255,255,.4)">(Description)</span></th>
           <th style="min-width:130px">Category</th>
           <th style="min-width:110px">Owner</th>
-          <th style="min-width:80px">💰 งบ<br><span style="font-size:8px;font-weight:400;color:rgba(255,255,255,.4)">(Budget)</span></th>
+          <th style="min-width:120px">💰 งบประมาณ<br><span style="font-size:8px;font-weight:400;color:rgba(255,255,255,.4)">(Budget)</span></th>
           <th style="min-width:105px">Status</th>
           <th style="min-width:120px">📌 Stage<br><span style="font-size:8px;font-weight:400;color:rgba(255,255,255,.4)">(Summary Matrix)</span></th>
           <th style="min-width:78px">Progress %</th>
@@ -1170,13 +1189,13 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
         <tr>
           <th style="width:32px">#</th>
           <th style="min-width:160px">Idea ID</th>
-          <th style="min-width:180px">ชื่อ Idea / Project Proposal</th>
+          <th style="min-width:220px">ชื่อ Idea / Project Proposal</th>
           <th style="min-width:110px">ผู้เสนอ</th>
           <th style="min-width:96px">Category</th>
           <th style="min-width:100px">วันที่เสนอ</th>
-          <th style="min-width:75px">งบ (฿)</th>
+          <th style="min-width:115px">งบประมาณ (฿)</th>
           <th style="min-width:200px">รายละเอียด / Business Case</th>
-          <th style="min-width:110px">
+          <th style="min-width:80px">
             <span class="th-tip">Impact (1-10)
               <div class="tip-box">
                 <span class="tip-title">🔵 Impact = ผลกระทบ / ประโยชน์ที่ได้</span>
@@ -1191,7 +1210,7 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
               </div>
             </span>
           </th>
-          <th style="min-width:110px">
+          <th style="min-width:80px">
             <span class="th-tip">Feasibility (1-10)
               <div class="tip-box">
                 <span class="tip-title">🟢 Feasibility = ความเป็นไปได้ / ทำได้จริงแค่ไหน</span>
@@ -1206,7 +1225,7 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
               </div>
             </span>
           </th>
-          <th style="min-width:110px">
+          <th style="min-width:80px">
             <span class="th-tip">Strategic (1-10)
               <div class="tip-box">
                 <span class="tip-title">🟠 Strategic = ความสอดคล้องกับกลยุทธ์องค์กร</span>
@@ -2258,17 +2277,20 @@ function buildRow(p,i){
     </td>
     <td>
       <div style="display:flex;align-items:center;gap:6px">
-        <div onclick="${dis?'void(0)':'openNamePopup('+i+')'}" style="flex:1;cursor:${dis?'default':'pointer'};padding:5px 8px;border:1px solid var(--div);border-radius:8px;font-size:13px;color:${p.name?'var(--slate)':'var(--muted)'};font-style:${p.name?'normal':'italic'};min-height:32px;line-height:1.5;background:var(--white);transition:border-color .2s" title="คลิกเพื่อแก้ไขชื่อโครงการ">${p.name?esc(p.name):'📝 คลิกเพื่อกรอกชื่อโครงการ...'}</div>
+        <div class="name-trigger${dis?' name-trigger-disabled':''}" onclick="${dis?'':('openNamePopup(\'ชื่อโครงการ — '+esc(p.id||'')+'\',\''+esc(p.name.replace(/'/g,"\\'"))+'\',function(v){upd('+i+',\'name\',v);renderInput();});')}">
+          <span style="color:${p.name?'var(--slate)':'var(--muted)'};font-style:${p.name?'normal':'italic'}">${p.name?esc(p.name):'✏️ คลิกเพื่อใส่ชื่อ...'}</span>
+          ${dis?'':'<span class="name-edit-icon">✏️</span>'}
+        </div>
         ${isStale?`<span class="stale-bell" title="ไม่มีการอัปเดต ${sd} วัน" onclick="addLog(${i})">🔔</span>`:''}
       </div>
     </td>
-    <td><textarea class="ci" rows="2" onchange="upd(${i},'desc',this.value)" placeholder="รายละเอียดโครงการ..." ${dis} style="resize:vertical;min-height:40px;font-size:11px;line-height:1.5">${esc(p.desc||'')}</textarea></td>
+    <td style="cursor:${dis?'default':'pointer'};padding:0" onclick="${dis?'':('openDescPopup(`รายละเอียด`,`'+esc(p.desc||'')+'`,v=>{upd('+i+',`desc`,v);renderInput();})')}"><div style="padding:6px 8px;min-height:32px;font-size:11px;line-height:1.5;color:${p.desc?'var(--slate)':'var(--muted)'};font-style:${p.desc?'normal':'italic'}">${p.desc?esc(p.desc.length>50?p.desc.slice(0,50)+'…':p.desc):'📝 คลิกเพื่อกรอก...'}</div></td>
     <td><select class="ci" style="font-size:11px" onchange="upd(${i},'pcat',this.value)" ${dis}>${PCAT.map(c=>`<option value="${c.v}"${(p.pcat||'')===(c.v)?'selected':''}>${c.lbl}</option>`).join('')}</select></td>
     <td><input class="ci" value="${esc(p.owner)}" onchange="upd(${i},'owner',this.value)" placeholder="ผู้รับผิดชอบ" ${dis}></td>
     <td style="white-space:nowrap">
       <div style="display:flex;align-items:center;gap:3px;padding:2px 8px">
         <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--gold-d);flex-shrink:0">฿</span>
-        <input class="ci mo" type="number" min="0" step="1000" value="${p.budget||''}" onchange="upd(${i},'budget',+this.value||0)" placeholder="0" ${dis} style="min-width:65px;max-width:90px;text-align:right">
+        <input class="ci mo" type="number" min="0" step="1000" value="${p.budget||''}" onchange="upd(${i},'budget',+this.value||0)" placeholder="0" ${dis} style="min-width:90px;text-align:right">
       </div>
     </td>
     <td><select class="ci" onchange="upd(${i},'status',this.value)" ${dis}>${SOPTS.map(s=>`<option value="${s}"${p.status===s?' selected':''}>${s}</option>`).join('')}</select></td>
@@ -2556,55 +2578,66 @@ async function fullRefreshAndGenIds(){
 }
 function expCSV(){const h='Project ID,Project Name,Category,Project Owner,Status,Progress %,Plan Start,Plan End,Actual Start,Actual End';const rows=P.map(p=>[p.id,p.name,p.pcat||'',p.owner,p.status,p.pct,p.ps||'',p.pe||'',p.as_||'',p.ae||''].map(v=>`"${v}"`).join(','));dl('\uFEFF'+[h,...rows].join('\n'),'text/csv','Gantt_'+fi(TODAY)+'.csv');}
 function impFromCSV(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const lines=ev.target.result.trim().split(/\r?\n/);const hdrs=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,'').toLowerCase());const ix={};hdrs.forEach((h,i)=>{if(/project.?id|^id$/i.test(h))ix.id=i;if(/project.?name|^name$/i.test(h))ix.name=i;if(/category|pcat/i.test(h))ix.pcat=i;if(/owner/i.test(h))ix.owner=i;if(/^status$/i.test(h))ix.status=i;if(/progress/i.test(h))ix.pct=i;if(/plan.?start/i.test(h))ix.ps=i;if(/plan.?end/i.test(h))ix.pe=i;if(/actual.?start/i.test(h))ix.as_=i;if(/actual.?end/i.test(h))ix.ae=i;});P=lines.slice(1).filter(l=>l.trim()).map(line=>{const v=line.split(',').map(x=>x.trim().replace(/^"|"$/g,''));const raw=parseFloat(v[ix.pct]||0);return{id:v[ix.id]||'',name:v[ix.name]||'',pcat:v[ix.pcat]||'',owner:v[ix.owner]||'',status:v[ix.status]||'Not Started',pct:raw<=1?Math.round(raw*100):Math.round(raw),ps:v[ix.ps]||'',pe:v[ix.pe]||'',as_:v[ix.as_]||'',ae:v[ix.ae]||''};}).filter(p=>p.id);renderInput();save();renderDash();}catch(err){alert('Error: '+err.message);}e.target.value='';};r.readAsText(f,'UTF-8');}
-// ── Name/Title Popup ─────────────────────────────────────────
-function openNamePopup(i){
-  const p=P[i];if(!p)return;
-  const existing=document.getElementById('_namePopup');if(existing)existing.remove();
+// ── Description Popup ────────────────────────────────────────
+function openDescPopup(label, value, onSave){
+  const existing=document.getElementById('_descPopup');
+  if(existing)existing.remove();
   const el=document.createElement('div');
-  el.id='_namePopup';
-  el.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)';
-  el.innerHTML=`<div style="background:var(--white);border-radius:14px;width:100%;max-width:520px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.25)">
-    <div style="background:var(--navy);padding:14px 20px;display:flex;align-items:center;justify-content:space-between">
-      <span style="font-family:'Playfair Display',serif;font-size:15px;color:var(--gold)">✏️ ชื่อโครงการ — ${p.id}</span>
-      <button onclick="document.getElementById('_namePopup').remove()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;line-height:1">✕</button>
-    </div>
-    <div style="padding:20px">
-      <label style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:block">ชื่อโครงการ *</label>
-      <input id="_nameTa" style="width:100%;border:1px solid var(--div);border-radius:8px;padding:11px 14px;font-family:'Sarabun',sans-serif;font-size:14px;color:var(--slate);outline:none;box-sizing:border-box;transition:border-color .2s" value="${esc(p.name||'')}" placeholder="กรอกชื่อโครงการ..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){document.getElementById('_saveNameBtn').click();}">
-    </div>
-    <div style="display:flex;gap:10px;justify-content:flex-end;padding:0 20px 20px">
-      <button onclick="document.getElementById('_namePopup').remove()" style="background:transparent;border:1px solid var(--div);color:var(--muted);border-radius:8px;padding:9px 18px;font-family:'Sarabun',sans-serif;font-size:13px;cursor:pointer">ยกเลิก</button>
-      <button id="_saveNameBtn" onclick="(function(){const v=document.getElementById('_nameTa').value.trim();if(!v)return;upd(${i},'name',v);renderInput();document.getElementById('_namePopup').remove();})()" style="background:var(--gold);color:var(--navy);border:none;border-radius:8px;padding:9px 20px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;cursor:pointer">💾 บันทึก</button>
-    </div>
-  </div>`;
+  el.id='_descPopup';
+  el.className='desc-popup-overlay';
+  el.innerHTML=`
+    <div class="desc-popup-box">
+      <div class="desc-popup-head">
+        <span class="desc-popup-title">📝 ${label}</span>
+        <button onclick="document.getElementById('_descPopup').remove()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;line-height:1">✕</button>
+      </div>
+      <div class="desc-popup-body">
+        <span class="desc-popup-label">รายละเอียด</span>
+        <textarea id="_descTa" class="desc-popup-textarea" placeholder="กรอกรายละเอียด...">${value||''}</textarea>
+      </div>
+      <div class="desc-popup-footer">
+        <button onclick="document.getElementById('_descPopup').remove()" style="background:transparent;border:1px solid var(--div);color:var(--muted);border-radius:8px;padding:9px 18px;font-family:'Sarabun',sans-serif;font-size:13px;cursor:pointer">ยกเลิก</button>
+        <button onclick="(function(){const v=document.getElementById('_descTa').value;(${onSave})(v);document.getElementById('_descPopup').remove();})()" style="background:var(--gold);color:var(--navy);border:none;border-radius:8px;padding:9px 20px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;cursor:pointer">💾 บันทึก</button>
+      </div>
+    </div>`;
   el.addEventListener('click',e=>{if(e.target===el)el.remove();});
   document.body.appendChild(el);
-  setTimeout(()=>{const inp=document.getElementById('_nameTa');if(inp){inp.focus();inp.select();}},80);
+  setTimeout(()=>document.getElementById('_descTa')?.focus(),80);
 }
 
-function openTitlePopup(i){
-  const x=IDEAS[i];if(!x)return;
-  const existing=document.getElementById('_titlePopup');if(existing)existing.remove();
+function openNamePopup(label, value, onSave){
+  const existing=document.getElementById('_namePopup');
+  if(existing)existing.remove();
+  window._namePopupSave=onSave;
   const el=document.createElement('div');
-  el.id='_titlePopup';
-  el.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)';
-  el.innerHTML=`<div style="background:var(--white);border-radius:14px;width:100%;max-width:520px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.25)">
-    <div style="background:var(--navy);padding:14px 20px;display:flex;align-items:center;justify-content:space-between">
-      <span style="font-family:'Playfair Display',serif;font-size:15px;color:var(--gold)">💡 ชื่อ Idea / Project Proposal</span>
-      <button onclick="document.getElementById('_titlePopup').remove()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;line-height:1">✕</button>
-    </div>
-    <div style="padding:20px">
-      <label style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:block">ชื่อ Idea *</label>
-      <input id="_titleTa" style="width:100%;border:1px solid var(--div);border-radius:8px;padding:11px 14px;font-family:'Sarabun',sans-serif;font-size:14px;color:var(--slate);outline:none;box-sizing:border-box;transition:border-color .2s" value="${esc(x.title||'')}" placeholder="กรอกชื่อ Idea..." onkeydown="if(event.key==='Enter'){document.getElementById('_saveTitleBtn').click();}">
-    </div>
-    <div style="display:flex;gap:10px;justify-content:flex-end;padding:0 20px 20px">
-      <button onclick="document.getElementById('_titlePopup').remove()" style="background:transparent;border:1px solid var(--div);color:var(--muted);border-radius:8px;padding:9px 18px;font-family:'Sarabun',sans-serif;font-size:13px;cursor:pointer">ยกเลิก</button>
-      <button id="_saveTitleBtn" onclick="(function(){const v=document.getElementById('_titleTa').value.trim();if(!v)return;updI(${i},'title',v);renderIdeaTable();document.getElementById('_titlePopup').remove();})()" style="background:var(--gold);color:var(--navy);border:none;border-radius:8px;padding:9px 20px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;cursor:pointer">💾 บันทึก</button>
-    </div>
-  </div>`;
+  el.id='_namePopup';
+  el.className='desc-popup-overlay';
+  el.innerHTML=`
+    <div class="desc-popup-box" style="max-width:480px">
+      <div class="desc-popup-head">
+        <span class="desc-popup-title">✏️ ${label}</span>
+        <button onclick="document.getElementById('_namePopup').remove()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;line-height:1">✕</button>
+      </div>
+      <div class="desc-popup-body">
+        <span class="desc-popup-label">ชื่อโครงการ *</span>
+        <input id="_nameTa" class="desc-popup-textarea" style="min-height:unset;height:44px;padding:10px 14px;font-size:14px;font-weight:600" placeholder="กรอกชื่อโครงการ..." value="${(value||'').replace(/"/g,'&quot;')}">
+      </div>
+      <div class="desc-popup-footer">
+        <button onclick="document.getElementById('_namePopup').remove()" style="background:transparent;border:1px solid var(--div);color:var(--muted);border-radius:8px;padding:9px 18px;font-family:'Sarabun',sans-serif;font-size:13px;cursor:pointer">ยกเลิก</button>
+        <button onclick="(function(){const v=document.getElementById('_nameTa').value.trim();if(!v)return;window._namePopupSave&&window._namePopupSave(v);document.getElementById('_namePopup').remove();})()" style="background:var(--gold);color:var(--navy);border:none;border-radius:8px;padding:9px 20px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;cursor:pointer">💾 บันทึก</button>
+      </div>
+    </div>`;
   el.addEventListener('click',e=>{if(e.target===el)el.remove();});
+  // Also allow Enter key to save
+  el.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){
+      const v=document.getElementById('_nameTa')?.value?.trim();
+      if(v){window._namePopupSave&&window._namePopupSave(v);el.remove();}
+    }
+    if(e.key==='Escape')el.remove();
+  });
   document.body.appendChild(el);
-  setTimeout(()=>{const inp=document.getElementById('_titleTa');if(inp){inp.focus();inp.select();}},80);
+  setTimeout(()=>{const inp=document.getElementById('_nameTa');if(inp){inp.focus();inp.select();}},80);
 }
 
 function expJSON(){dl(JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY)},null,2),'application/json','Backup_'+fi(TODAY)+'.json');}
@@ -3281,17 +3314,20 @@ function renderIdeaTable(){
           ${ro?'':(`<button onclick="regenIdeaId(${i})" title="Generate ID ใหม่" style="border:none;background:transparent;cursor:pointer;font-size:13px;padding:2px;line-height:1;color:var(--muted);flex-shrink:0" onmouseover="this.style.color='var(--gold-d)'" onmouseout="this.style.color='var(--muted)'">🔄</button>`)}
         </div>
       </td>
-      <td onclick="${dis?'void(0)':'openTitlePopup('+i+')'}" style="cursor:${dis?'default':'pointer'};padding:0"><div style="padding:6px 8px;min-height:32px;font-size:11px;line-height:1.5;color:${x.title?'var(--slate)':'var(--muted)'};font-style:${x.title?'normal':'italic'}" title="คลิกเพื่อแก้ไขชื่อ Idea">${x.title?esc(x.title):'📝 คลิกเพื่อกรอก...'}</div></td>
+      <td><div class="name-trigger${dis?' name-trigger-disabled':''}" onclick="${dis?'':('openNamePopup(\'ชื่อ Idea — '+esc(x.id||'')+'\',\''+esc((x.title||'').replace(/'/g,"\\'"))+'\',function(v){updI('+i+',\'title\',v);renderIdeaTable();});')}">
+        <span style="color:${x.title?'var(--slate)':'var(--muted)'};font-style:${x.title?'normal':'italic'}">${x.title?esc(x.title):'✏️ คลิกเพื่อใส่ชื่อ...'}</span>
+        ${dis?'':'<span class="name-edit-icon">✏️</span>'}
+      </div></td>
       <td><input class="ci" value="${esc(x.owner)}" onchange="updI(${i},'owner',this.value)" placeholder="ชื่อผู้เสนอ" ${dis}></td>
       <td><select class="ci" onchange="updI(${i},'cat',this.value)" ${dis}>
         ${PCAT.map(c=>`<option value="${c.v}" ${x.cat===(c.v)?'selected':''}>${c.lbl}</option>`).join('')}
       </select></td>
       <td><input class="ci mo" type="date" value="${x.date||''}" onchange="updI(${i},'date',this.value)" ${dis}></td>
-      <td><input class="ci mo" type="number" min="0" value="${x.budget||''}" onchange="updI(${i},'budget',+this.value)" placeholder="0" ${dis}></td>
-      <td><input class="ci" value="${esc(x.desc)}" onchange="updI(${i},'desc',this.value)" placeholder="รายละเอียดโดยย่อ" ${dis}></td>
-      <td><div class="score-mini"><input type="range" id="si${i}imp" min="1" max="10" value="${x.impact||5}" oninput="updIScore(${i})" ${dis}><span id="sv${i}imp">${x.impact||5}</span></div></td>
-      <td><div class="score-mini"><input type="range" id="si${i}feas" min="1" max="10" value="${x.feasibility||5}" oninput="updIScore(${i})" ${dis}><span id="sv${i}feas">${x.feasibility||5}</span></div></td>
-      <td><div class="score-mini"><input type="range" id="si${i}str" min="1" max="10" value="${x.strategic||5}" oninput="updIScore(${i})" ${dis}><span id="sv${i}str">${x.strategic||5}</span></div></td>
+      <td><input class="ci mo" type="number" min="0" value="${x.budget||''}" onchange="updI(${i},'budget',+this.value)" placeholder="0" ${dis} style="max-width:105px;text-align:right"></td>
+      <td style="cursor:${dis?'default':'pointer'};padding:0" onclick="${dis?'':('openDescPopup(`Business Case`,`'+esc(x.desc||'')+'`,v=>{updI('+i+',`desc`,v);renderIdeaTable();})')}"><div style="padding:6px 8px;min-height:32px;font-size:11px;line-height:1.5;color:${x.desc?'var(--slate)':'var(--muted)'};font-style:${x.desc?'normal':'italic'}">${x.desc?esc(x.desc.length>50?x.desc.slice(0,50)+'…':x.desc):'📝 คลิกเพื่อกรอก...'}</div></td>
+      <td style="min-width:80px"><div class="score-mini"><input type="range" id="si${i}imp" min="1" max="10" value="${x.impact||5}" oninput="updIScore(${i})" ${dis} style="min-width:36px"><span id="sv${i}imp">${x.impact||5}</span></div></td>
+      <td style="min-width:80px"><div class="score-mini"><input type="range" id="si${i}feas" min="1" max="10" value="${x.feasibility||5}" oninput="updIScore(${i})" ${dis} style="min-width:36px"><span id="sv${i}feas">${x.feasibility||5}</span></div></td>
+      <td style="min-width:80px"><div class="score-mini"><input type="range" id="si${i}str" min="1" max="10" value="${x.strategic||5}" oninput="updIScore(${i})" ${dis} style="min-width:36px"><span id="sv${i}str">${x.strategic||5}</span></div></td>
       <td class="total-badge" id="sc${i}" style="color:${bc}">${sc}</td>
       <td><select class="ci" onchange="updI(${i},'status',this.value)" ${dis}>
         <option value="new" ${x.status==='new'?'selected':''}>🆕 New</option>
