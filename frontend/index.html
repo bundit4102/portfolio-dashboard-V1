@@ -1098,10 +1098,6 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
       <button class="btn b-out" onclick="expCSV()">⬇ Export CSV</button>
       <button class="btn b-out" onclick="$('impCSV').click()">⬆ Import CSV</button>
       <input type="file" id="impCSV" accept=".csv" style="display:none" onchange="impFromCSV(event)">
-      <div class="tsep"></div>
-      <button class="btn b-out" onclick="expJSON()">💾 Backup</button>
-      <button class="btn b-out" onclick="$('impJSON').click()">📂 Restore</button>
-      <input type="file" id="impJSON" accept=".json" style="display:none" onchange="impFromJSON(event)">
       <div class="today-grp">
         <label>📅 Today:</label>
         <input type="date" id="tdInput" onchange="chgToday()">
@@ -1286,6 +1282,9 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
         <div style="font-size:11px;color:var(--muted);margin-bottom:6px">จัดการผู้ใช้ สิทธิ์ และการอนุมัติบัญชี</div>
         <div style="display:flex;gap:8px;justify-content:flex-end">
           <button class="btn b-out" onclick="refreshAdminPanel()" title="โหลดข้อมูลผู้ใช้ใหม่">🔄 Refresh</button>
+          <button class="btn b-out" onclick="expJSON()" title="Backup ข้อมูลทั้งหมดเป็นไฟล์ JSON">💾 Backup</button>
+          <button class="btn b-out" onclick="$('impJSON').click()" title="Restore ข้อมูลจากไฟล์ Backup">📂 Restore</button>
+          <input type="file" id="impJSON" accept=".json" style="display:none" onchange="impFromJSON(event)">
           <button class="btn b-out" onclick="copyRegLink()" title="คัดลอก Link สมัครสมาชิก ส่งให้ผู้ใช้ใหม่" style="color:var(--blue);border-color:rgba(26,111,168,.3)">🔗 Copy Link สมัคร</button>
           <button class="btn b-navy" onclick="openCreateUserModal()">＋ สร้างผู้ใช้ใหม่</button>
         </div>
@@ -1587,9 +1586,23 @@ async function refreshUsers(){
     const r=await fetch(base+'/api/users',{credentials:'include',headers});
     if(r.ok){const data=await r.json();if(Array.isArray(data))server=data;}
   }catch(e){}
-  const merged=[...server];
-  local.forEach(u=>{if(!merged.find(x=>x.username===u.username))merged.push(u);});
+  // Merge: start with local as base (always has latest passwords from this device)
+  // Override with server data where it exists, but preserve local password if server has none
+  const merged=[...local];
+  server.forEach(su=>{
+    const li=merged.findIndex(x=>x.username===su.username||x.id===su.id);
+    if(li>=0){
+      // Keep local password if server doesn't have it or it's empty
+      const localPw=merged[li].password;
+      merged[li]={...merged[li],...su};
+      if(!su.password&&localPw) merged[li].password=localPw;
+    } else {
+      merged.push(su);
+    }
+  });
   USERS_CACHE=[ADMIN_USER,...merged];
+  // Save merged back to localStorage so next load has latest data
+  try{localStorage.setItem(UK,JSON.stringify(merged));}catch(e){}
 }
 
 let USERS_CACHE=[ADMIN_USER,VIP_USER];
@@ -2046,12 +2059,14 @@ function viewPassword(id){
         <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">ชื่อ</div>
         <div style="font-size:14px;font-weight:700;color:var(--slate);background:var(--cream);padding:10px 14px;border-radius:8px;margin-bottom:14px">${u.name}</div>
         <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Username</div>
-        <div style="font-family:'DM Mono',monospace;font-size:14px;color:var(--gold-d);background:var(--cream);padding:10px 14px;border-radius:8px;margin-bottom:14px">@${u.username}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:14px;color:var(--gold-d);background:var(--cream);padding:10px 14px;border-radius:8px;margin-bottom:14px;user-select:all">@${u.username}</div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Password ปัจจุบัน</div>
+        <div style="position:relative;margin-bottom:14px">
+          <div id="_pwDisplay" style="font-family:'DM Mono',monospace;font-size:14px;color:var(--green);background:#f0faf4;border:1px solid rgba(26,122,74,.2);padding:10px 42px 10px 14px;border-radius:8px;user-select:all;letter-spacing:1px">${u.password||'—'}</div>
+          <button onclick="navigator.clipboard?.writeText('${(u.password||'').replace(/'/g,"\\'")}');this.textContent='✅';setTimeout(()=>this.textContent='📋',1500)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px;color:var(--muted)" title="Copy password">📋</button>
+        </div>
         <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">สิทธิ์ / แผนก</div>
         <div style="font-size:13px;color:var(--slate);background:var(--cream);padding:10px 14px;border-radius:8px;margin-bottom:20px">${u.role} · ${u.dept||'—'}</div>
-        <div style="background:rgba(200,122,0,.08);border:1px solid rgba(200,122,0,.2);border-radius:8px;padding:12px;margin-bottom:16px;font-size:12px;color:var(--amber)">
-          🔒 Password ถูกเข้ารหัสแล้ว ไม่สามารถดูได้โดยตรง<br>หากต้องการเปลี่ยน กด "Reset Password" ได้เลยครับ
-        </div>
         <div style="display:flex;gap:10px">
           <button onclick="document.getElementById('_pwModal').remove()" style="flex:1;background:transparent;border:1px solid var(--div);color:var(--muted);border-radius:8px;padding:9px;font-family:'Sarabun',sans-serif;font-size:13px;cursor:pointer">ปิด</button>
           <button onclick="document.getElementById('_pwModal').remove();resetPassword('${id}')" style="flex:1;background:var(--amber);color:#fff;border:none;border-radius:8px;padding:9px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;cursor:pointer">🔑 Reset Password</button>
@@ -2111,17 +2126,23 @@ async function confirmResetPw(id){
   if(!pw){showErr('กรุณากรอก Password ใหม่');return;}
   if(pw.length<6){showErr('Password ต้องมีอย่างน้อย 6 ตัวอักษร');return;}
   if(pw!==pw2){showErr('Password ไม่ตรงกัน');return;}
+  // Save to localStorage FIRST (always works, no server dependency)
+  const users=getUsers();
+  const u=users.find(x=>x.id===id);
+  if(!u){showErr('ไม่พบผู้ใช้');return;}
+  u.password=pw;
+  saveUsers(users);
+  // Try server (best effort — don't block if fails)
   try{
-    const res=await fetch(`/api/users/${id}/password`,{
-      method:'PUT',credentials:'same-origin',
-      headers:{'Content-Type':'application/json'},
+    const base=location.hostname.includes('onrender.com')||location.hostname==='localhost'?'':'https://portfolio-dashboard-v1.onrender.com';
+    const token=localStorage.getItem('ptk_token')||'';
+    await fetch(base+`/api/users/${id}/password`,{
+      method:'PUT',credentials:'include',
+      headers:{'Content-Type':'application/json','Authorization':token?'Bearer '+token:''},
       body:JSON.stringify({password:pw})
     });
-    const data=await res.json();
-    if(!data.success){showErr(data.error||'เกิดข้อผิดพลาด');return;}
-  }catch(e){showErr('ไม่สามารถเชื่อมต่อ Server ได้');return;}
-  const u=getUsers().find(x=>x.id===id);
-  if(u)logActivity('🔑','rgba(200,122,0,.1)',`Reset password ให้ <strong>${u.name} (@${u.username})</strong>`);
+  }catch(e){/* server offline — localStorage already updated */}
+  logActivity('🔑','rgba(200,122,0,.1)',`Reset password ให้ <strong>${u.name} (@${u.username})</strong>`);
   document.getElementById('_resetModal')?.remove();
   showToast('✅ Reset Password เรียบร้อยแล้ว! แจ้ง user ได้เลย','var(--green)');
   renderAdminPanel();
