@@ -90,7 +90,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 
 /* Description Popup */
 .desc-popup-overlay{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)}
-.desc-popup-box{background:var(--white);border-radius:14px;width:100%;max-width:560px;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden}
+.desc-popup-box{background:var(--white);border-radius:14px;width:100%;max-width:940px;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden}
 .desc-popup-head{background:var(--navy);padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
 .desc-popup-title{font-family:'Playfair Display',serif;font-size:15px;color:var(--gold)}
 .desc-popup-body{padding:20px}
@@ -101,10 +101,10 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 .desc-trigger{cursor:pointer;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:6px;padding:4px 8px;font-size:11px;color:var(--gold-d);white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;display:block}
 .desc-trigger:hover{background:rgba(201,168,76,.15)}
 /* Name popup trigger */
-.name-trigger{display:flex;align-items:center;justify-content:space-between;gap:6px;cursor:pointer;background:var(--white);border:1px solid var(--div);border-radius:7px;padding:5px 10px;font-size:12px;font-weight:600;color:var(--slate);min-width:140px;max-width:220px;transition:all .15s;white-space:nowrap;overflow:hidden}
-.name-trigger:hover{border-color:var(--gold);background:rgba(201,168,76,.04)}
-.name-trigger-disabled{cursor:default;background:var(--cream);border-color:var(--div2)}
-.name-trigger-disabled:hover{border-color:var(--div2);background:var(--cream)}
+.name-trigger{display:flex;align-items:center;justify-content:space-between;gap:6px;cursor:pointer;background:transparent;border:none;border-radius:0;padding:4px 6px;font-size:12px;font-weight:600;color:var(--slate);min-width:140px;max-width:220px;transition:all .15s;white-space:nowrap;overflow:hidden}
+.name-trigger:hover{background:rgba(201,168,76,.06);border-radius:5px}
+.name-trigger-disabled{cursor:default;background:transparent;border:none}
+.name-trigger-disabled:hover{background:transparent}
 .name-edit-icon{font-size:10px;opacity:0;transition:opacity .15s;flex-shrink:0}
 .name-trigger:hover .name-edit-icon{opacity:1}
 /* admin user mgmt panel (wide box) */
@@ -233,11 +233,11 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 .b-red{background:transparent;border:1px solid #fcecea;color:var(--red)} .b-red:hover{background:#fcecea}
 .badge{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:700;padding:3px 8px;border-radius:20px;white-space:nowrap}
 .bdot{width:4px;height:4px;border-radius:50%}
-.s-on-track{background:#d4edda;color:#155724;border:1px solid #b8dfc4} .s-on-track .bdot{background:#155724}
-.s-delay{background:#fad7d7;color:#842029;border:1px solid #f5c2c7} .s-delay .bdot{background:#842029}
-.s-completed{background:#e2d9f3;color:#4a235a;border:1px solid #d0bfed} .s-completed .bdot{background:#4a235a}
+.s-on-track{background:#d5f0e3;color:#1a6b40;border:1px solid #a3d9be} .s-on-track .bdot{background:#3aaa6a}
+.s-delay{background:#fad7d7;color:#842029;border:1px solid #f5a0a0} .s-delay .bdot{background:#d9534f}
+.s-completed{background:#ede0f7;color:#5a2d82;border:1px solid #c9a8e8} .s-completed .bdot{background:#8e5cb5}
 .s-not-started{background:var(--cream);color:var(--muted);border:1px solid var(--div)} .s-not-started .bdot{background:var(--muted)}
-.s-at-risk{background:#fff3cd;color:#856404;border:1px solid #ffd98a} .s-at-risk .bdot{background:#856404}
+.s-at-risk{background:#fef3d0;color:#7a5500;border:1px solid #f5d580} .s-at-risk .bdot{background:#d9960a}
 .mn{font-family:'DM Mono',monospace;font-size:10px}
 .lock-banner{background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:8px;padding:9px 14px;font-size:12px;color:var(--gold-d);margin-bottom:12px;display:none;align-items:center;gap:8px}
 .lock-banner.show{display:flex}
@@ -277,13 +277,14 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 .pf{height:100%;border-radius:3px}
 .tl{position:relative;height:32px}
 .tb{position:absolute;border-radius:3px}
-.tplan{height:6px;top:4px;background:var(--cream);border:1px solid var(--div)}
-.tact{height:10px;top:17px}
-.t-on-track{background:linear-gradient(90deg,#1a7a4a,#27ae60)} .t-delay{background:linear-gradient(90deg,#c0392b,#e74c3c)}
-.t-completed{background:linear-gradient(90deg,#6c3483,#9b59b6)} .t-at-risk{background:linear-gradient(90deg,#c87a00,#f39c12)}
-.t-not-started{background:var(--muted);opacity:.3}
-.tmk{position:absolute;top:0;bottom:0;width:1.5px;background:var(--gold);z-index:10}
-.tmk::before{content:'▼';position:absolute;top:-2px;left:50%;transform:translateX(-50%);font-size:7px;color:var(--gold)}
+.tplan{height:5px;top:5px;background:#c8c2b8;border:1px solid #b0aa9e}
+.tplan-revised{height:5px;top:5px;background:#aaa49a;border:1px solid #918b82}
+.tact{height:7px;top:19px;opacity:.88}
+.t-on-track{background:linear-gradient(90deg,#3aaa6a,#5dc98a)} .t-delay{background:linear-gradient(90deg,#d9534f,#e8837f)}
+.t-completed{background:linear-gradient(90deg,#8e5cb5,#b48fd4)} .t-at-risk{background:linear-gradient(90deg,#d9960a,#f0bc45)}
+.t-not-started{background:var(--muted);opacity:.2}
+.tmk{position:absolute;top:2px;bottom:2px;width:1px;background:var(--gold);z-index:10;opacity:.8}
+.tmk::before{content:'▼';position:absolute;top:-3px;left:50%;transform:translateX(-50%);font-size:6px;color:var(--gold)}
 .mgl{position:absolute;top:0;bottom:0;width:1px;background:var(--cream);z-index:1}
 
 /* BOTTOM */
@@ -389,7 +390,7 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
 /* detail overlay */
 .ov{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)}
 .ov.hidden{display:none}
-.dp-box{background:var(--white);border-radius:16px;width:100%;max-width:640px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.dp-box{background:var(--white);border-radius:16px;width:100%;max-width:92vw;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
 .dp-head{padding:16px 20px;border-bottom:1px solid var(--div);display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
 .dp-body{padding:18px 20px;display:flex;flex-direction:column;gap:14px}
 .dp-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -411,7 +412,7 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
 .stbtn-approved{border-color:var(--green);color:var(--green);background:#eafaf1}
 .stbtn-rejected{border-color:var(--red);color:var(--red);background:#fcecea}
 
-.t-revised{background:linear-gradient(90deg,#f0a500,#f5c842);opacity:.75;height:6px;top:5px}
+.t-revised{background:#8a8278;opacity:1;height:5px;top:5px}
 /* Update Log cell */
 .log-cell{padding:6px 8px;display:flex;flex-direction:column;gap:3px;min-width:200px}
 .log-entry{display:flex;gap:5px;align-items:flex-start;font-size:10px;line-height:1.4;border-radius:5px;padding:3px 4px;transition:background .15s}
@@ -431,7 +432,7 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
 /* history modal */
 .hist-ov{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:20px}
 .hist-ov.hidden{display:none}
-.hist-box{background:var(--white);border-radius:16px;width:100%;max-width:600px;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.hist-box{background:var(--white);border-radius:16px;width:100%;max-width:92vw;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.2)}
 .hist-head{background:var(--navy);padding:16px 22px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .hist-head h3{font-family:'Playfair Display',serif;font-size:16px;color:var(--gold)}
 .hist-head .sub{font-size:11px;color:rgba(255,255,255,.4);margin-top:2px}
@@ -448,7 +449,7 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
 .hist-line{position:absolute;left:4px;top:18px;bottom:-8px;width:2px;background:var(--cream)}
 .hist-item:last-child .hist-line{display:none}
 .hist-date{font-family:'DM Mono',monospace;font-size:10px;color:var(--gold-d);min-width:75px;flex-shrink:0;padding-top:1px}
-.hist-text{font-size:12px;color:var(--slate);line-height:1.5;flex:1}
+.hist-text{font-size:12px;color:var(--slate);line-height:1.5;flex:1;word-break:break-word;white-space:pre-wrap}
 .hist-empty{text-align:center;padding:28px;font-size:12px;color:var(--muted)}
 /* ── PROJECT CATEGORY BADGES ── */
 .pcat{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:800;padding:2px 7px;border-radius:12px;white-space:nowrap;letter-spacing:.4px}
@@ -977,7 +978,7 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
       <div class="sec-t">Gantt Timeline · Apr 2025 – Sep 2026</div><div class="sec-line"></div>
       <div style="display:flex;gap:10px;font-size:10px;color:var(--muted);align-items:center;white-space:nowrap;flex-shrink:0;flex-wrap:wrap">
         <span><i style="display:inline-block;width:13px;height:5px;background:var(--cream);border:1px solid var(--div);border-radius:2px;vertical-align:middle;margin-right:2px"></i>Plan เดิม</span>
-        <span><i style="display:inline-block;width:13px;height:5px;background:#f0a500;border-radius:2px;vertical-align:middle;margin-right:2px;opacity:.7"></i>Plan ใหม่ (ปรับ)</span>
+        <span><i style="display:inline-block;width:13px;height:5px;background:#aaa49a;border-radius:2px;vertical-align:middle;margin-right:2px"></i>Plan ใหม่ (ปรับ)</span>
         <span><i style="display:inline-block;width:13px;height:6px;background:#1a7a4a;border-radius:2px;vertical-align:middle;margin-right:2px"></i>On Track</span>
         <span><i style="display:inline-block;width:13px;height:6px;background:#c0392b;border-radius:2px;vertical-align:middle;margin-right:2px"></i>Delay</span>
         <span><i style="display:inline-block;width:13px;height:6px;background:#6c3483;border-radius:2px;vertical-align:middle;margin-right:2px"></i>Completed</span>
@@ -1022,8 +1023,8 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
       <div style="text-align:right">
         <div class="mn" style="color:var(--muted);margin-bottom:6px">รายงาน ณ วันที่ &nbsp;<span id="sumDateLbl" style="color:var(--slate);font-weight:600"></span></div>
         <div style="display:flex;gap:6px;justify-content:flex-end">
-          <button class="btn b-pdf" onclick="exportSummaryPDF()" id="btnExportPDF" style="font-size:11px;padding:6px 14px;background:rgba(192,57,43,.12);border:1px solid rgba(192,57,43,.25);color:#e87060" title="Download เป็นไฟล์ PDF">
-            📄 Export PDF
+          <button class="btn b-pdf" onclick="exportAllPDF()" id="btnExportPDF" style="font-size:11px;padding:6px 14px;background:rgba(192,57,43,.12);border:1px solid rgba(192,57,43,.25);color:#e87060" title="Download PDF — Summary + Project + Idea Dashboard">
+            📄 Export PDF (ทั้งหมด)
           </button>
           <button class="btn b-out" onclick="printSummary()" id="btnPrintSummary" style="font-size:11px;padding:6px 14px" title="Print / Print to PDF">
             🖨️ Print
@@ -1042,15 +1043,12 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
         <div style="background:var(--navy);padding:10px 18px;display:flex;align-items:center;gap:8px">
           <span style="font-size:14px">📁</span>
           <span style="font-family:'Playfair Display',serif;font-size:13px;color:var(--gold);letter-spacing:.5px">PROJECT</span>
-          <span id="sumProjPanelCount" style="background:rgba(201,168,76,.2);border:1px solid rgba(201,168,76,.3);color:var(--gold);font-family:'DM Mono',monospace;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:2px"></span>
-          <span style="margin-left:auto;font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,.35)">by Category &amp; Status</span>
+          <span style="margin-left:auto;font-family:'DM Mono',monospace;font-size:11px;color:rgba(255,255,255,.4)">by Category &amp; Status</span>
         </div>
         <div style="padding:16px 18px">
-          <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">BY CATEGORY</div>
           <div id="sumCatBars" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
-          <div style="height:1px;background:var(--div2);margin-bottom:10px"></div>
-          <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">BY STATUS</div>
-          <div id="sumStatBars" style="display:flex;flex-direction:column;gap:8px"></div>
+          <div style="height:1px;background:var(--div2);margin-bottom:12px"></div>
+          <div id="sumStatBars" style="display:flex;flex-direction:column;gap:7px"></div>
         </div>
       </div>
       <!-- IDEA / PROPOSAL summary -->
@@ -1058,15 +1056,12 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
         <div style="background:var(--navy);padding:10px 18px;display:flex;align-items:center;gap:8px">
           <span style="font-size:14px">💡</span>
           <span style="font-family:'Playfair Display',serif;font-size:13px;color:var(--gold);letter-spacing:.5px">IDEA &amp; PROPOSAL</span>
-          <span id="sumIdeaPanelCount" style="background:rgba(201,168,76,.2);border:1px solid rgba(201,168,76,.3);color:var(--gold);font-family:'DM Mono',monospace;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:2px"></span>
-          <span style="margin-left:auto;font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,.35)">by Stage &amp; Status</span>
+          <span style="margin-left:auto;font-family:'DM Mono',monospace;font-size:11px;color:rgba(255,255,255,.4)">by Stage &amp; Status</span>
         </div>
         <div style="padding:16px 18px">
-          <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">BY STAGE</div>
           <div id="sumIdeaStageBars" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
-          <div style="height:1px;background:var(--div2);margin-bottom:10px"></div>
-          <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">BY STATUS</div>
-          <div id="sumIdeaStatBars" style="display:flex;flex-direction:column;gap:8px"></div>
+          <div style="height:1px;background:var(--div2);margin-bottom:12px"></div>
+          <div id="sumIdeaStatBars" style="display:flex;flex-direction:column;gap:7px"></div>
         </div>
       </div>
     </div>
@@ -1131,7 +1126,7 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
           <th style="min-width:104px">Actual Start</th><th style="min-width:104px">Actual End</th>
           <th style="min-width:88px">Duration</th><th style="min-width:88px">Remaining</th>
           <th style="min-width:76px">Delay</th>
-          <th style="min-width:200px">📝 Update Log<br><span style="font-size:8px;font-weight:400;color:rgba(255,255,255,.4)">(บันทึกความคืบหน้า)</span></th>
+          <th style="min-width:220px">📝 Update Log &amp; 📎 ไฟล์<br><span style="font-size:8px;font-weight:400;color:rgba(255,255,255,.4)">(บันทึกความคืบหน้า + แนบไฟล์)</span></th>
           <th style="width:32px"></th>
         </tr>
         <tr class="sub">
@@ -1263,13 +1258,13 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
           <th style="min-width:80px">Score</th>
           <th style="min-width:140px">ขั้นตอน</th>
           <th style="min-width:100px">สถานะ</th>
-          <th style="min-width:130px">หมายเหตุ</th>
+          <th style="min-width:200px">📝 บันทึก &amp; 📎 ไฟล์</th>
           <th style="width:32px"></th>
         </tr>
         <tr class="sub">
           <th></th><th>auto</th><th>กรอกข้อมูล *</th><th>กรอก</th><th>เลือก▼</th><th>วันที่</th><th>ตัวเลข</th>
           <th>กรอก</th><th>เลื่อน slider</th><th>เลื่อน slider</th><th>เลื่อน slider</th>
-          <th style="color:rgba(201,168,76,.5)">⚙ Auto</th><th>เลือก▼</th><th>เลือก▼</th><th>กรอก</th><th></th>
+          <th style="color:rgba(201,168,76,.5)">⚙ Auto</th><th>เลือก▼</th><th>เลือก▼</th><th>บันทึก+ไฟล์</th><th></th>
         </tr>
       </thead>
       <tbody id="ideaBody"></tbody>
@@ -1345,9 +1340,20 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
     </div>
 
     <!-- Activity log -->
-    <div class="sec"><div class="sec-t">Recent Activity</div><div class="sec-line"></div></div>
+    <div class="sec"><div class="sec-t">📋 บันทึกการเปลี่ยนแปลงทั้งหมด</div><div class="sec-line"></div>
+      <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+        <select id="actLogFilter" onchange="renderAdminPanel()" style="border:1px solid var(--div);background:var(--white);color:var(--slate);border-radius:5px;padding:2px 8px;font-size:10px;font-family:'Sarabun',sans-serif">
+          <option value="all">ทั้งหมด</option>
+          <option value="user">👤 User</option>
+          <option value="project">📁 Project</option>
+          <option value="idea">💡 Idea</option>
+          <option value="log">📝 บันทึกความคืบหน้า</option>
+        </select>
+        <button onclick="actLog=[];renderAdminPanel()" style="border:1px solid var(--div);background:transparent;color:var(--muted);border-radius:5px;padding:2px 10px;font-size:10px;cursor:pointer;font-family:'Sarabun',sans-serif;flex-shrink:0" title="ล้างประวัติทั้งหมด">🗑 ล้าง</button>
+      </div>
+    </div>
     <div class="card" style="padding:0;overflow:hidden">
-      <div id="activityLog" style="padding:16px;display:flex;flex-direction:column;gap:8px;max-height:220px;overflow-y:auto"></div>
+      <div id="activityLog" style="padding:16px;display:flex;flex-direction:column;gap:6px;max-height:600px;overflow-y:auto"></div>
     </div>
 
   </div>
@@ -1373,6 +1379,21 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
         <div class="dp-field"><label>งบประมาณ</label><div class="val" style="font-family:'DM Mono',monospace;font-size:12px" id="dpBudget"></div></div>
       </div>
       <div><div class="dp-field"><label>รายละเอียด</label></div><div class="dp-desc" style="margin-top:5px" id="dpDesc"></div></div>
+      <div id="dpNoteSection" style="display:none">
+        <div class="dp-field" style="margin-top:10px"><label>ความเห็น / หมายเหตุ</label></div>
+        <div id="dpNote" style="font-size:12px;color:var(--slate);background:var(--paper);padding:10px 13px;border-radius:8px;border-left:3px solid var(--amber);line-height:1.7;white-space:pre-wrap;margin-top:4px"></div>
+      </div>
+      <div id="dpFilesSection" style="display:none;margin-top:10px">
+        <div class="dp-field"><label>📎 ไฟล์แนบ</label></div>
+        <div id="dpFilesList" style="display:flex;flex-direction:column;gap:6px;margin-top:6px"></div>
+      </div>
+      <div style="margin-top:14px">
+        <div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold-d);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
+          <span>📋 UPDATE LOG</span>
+          <span id="dpLogAddBtn"></span>
+        </div>
+        <div id="dpLogTimeline" style="display:flex;flex-direction:column;gap:0;font-size:12px"></div>
+      </div>
       <div>
         <div class="dp-field"><label>คะแนนประเมิน</label></div>
         <div class="sc-disp">
@@ -1531,7 +1552,7 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
 // ══════════════════════════════════════════════
 // USER SYSTEM
 // ══════════════════════════════════════════════
-const UK='ptk_users_v3', SK='ptk_proj_v5', TK='ptk_today_v5', IK='ptk_ideas_v5';
+const UK='ptk_users_v3', SK='ptk_proj_v5', TK='ptk_today_v5', IK='ptk_ideas_v5', AK='ptk_actlog_v1';
 
 // $ shorthand — must be defined first before any function that calls it
 const $=id=>document.getElementById(id);
@@ -1900,11 +1921,13 @@ function renderAdminPanel(){
           ? `<span style="font-size:11px;color:var(--muted);font-style:italic">Built-in Admin</span>`
           : `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
               ${u.status==='pending'?`<button class="act-btn ab-approve" onclick="approveUser('${u.id}')">✅ อนุมัติ</button>`:''}
+              ${u.status==='approved'?`<span style="font-size:9px;color:#1a7a4a;font-weight:700;padding:2px 6px;background:rgba(26,122,74,.08);border-radius:4px">✔ อนุมัติแล้ว</span>`:''}
               ${u.status!=='rejected'&&!isBuiltin?`<button class="act-btn ab-reject" onclick="rejectUser('${u.id}')">❌ ปฏิเสธ</button>`:''}
               ${u.status==='rejected'?`<button class="act-btn ab-approve" onclick="approveUser('${u.id}')">♻️ เปิดใหม่</button>`:''}
               <button class="act-btn" style="background:rgba(26,111,168,.08);color:#1a6fa8;border-color:rgba(26,111,168,.25)" onclick="viewPassword('${u.id}')">👁 ดู PW</button>
               <button class="act-btn" style="background:rgba(200,122,0,.08);color:var(--amber);border-color:rgba(200,122,0,.25)" onclick="resetPassword('${u.id}')">🔑 Reset PW</button>
-              <button class="act-btn ab-del" onclick="deleteUser('${u.id}')">🗑 ลบ</button>
+              <span style="width:1px;height:20px;background:var(--div);flex-shrink:0;display:inline-block"></span>
+              <button onclick="deleteUser('${u.id}')" style="background:rgba(192,57,43,.15);color:var(--red);border:1px solid rgba(192,57,43,.4);border-radius:6px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Sarabun',sans-serif;white-space:nowrap">🗑 ลบออก</button>
              </div>`;
         return`<tr>
           <td style="padding:10px 10px">
@@ -1931,19 +1954,50 @@ function renderAdminPanel(){
         </tr>`;
       }).join('');
 
-  // Activity log
-  $('activityLog').innerHTML = actLog.length
-    ? actLog.slice().reverse().slice(0,20).map(a=>`
-        <div class="act-item">
+  // Activity log with filter
+  const filterVal=(document.getElementById('actLogFilter')?.value)||'all';
+  const filterFn=a=>{
+    if(filterVal==='all')return true;
+    if(filterVal==='user')return ['✅','❌','🗑','🔄','➕','🔑','♻️'].includes(a.icon);
+    if(filterVal==='project')return ['📊','📈'].includes(a.icon);
+    if(filterVal==='idea')return a.icon==='💡'&&!a.isLog;
+    if(filterVal==='log')return a.isLog===true;
+    return true;
+  };
+  const catTag=a=>{
+    if(a.isLog) return `<span style="font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(26,122,74,.1);color:var(--green);flex-shrink:0">📝 บันทึก</span>`;
+    if(['✅','❌','🗑','🔄','➕','🔑','♻️'].includes(a.icon)) return `<span style="font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(28,43,58,.08);color:var(--slate);flex-shrink:0">USER</span>`;
+    if(['📊','📈'].includes(a.icon)) return `<span style="font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(26,111,168,.1);color:#1a6fa8;flex-shrink:0">PROJECT</span>`;
+    if(a.icon==='💡') return `<span style="font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(201,168,76,.12);color:var(--gold-d);flex-shrink:0">IDEA</span>`;
+    return '';
+  };
+  const filtered=actLog.filter(filterFn).slice().reverse().slice(0,100);
+  $('activityLog').innerHTML = filtered.length
+    ? filtered.map(a=>`
+        <div class="act-item" style="padding:8px 10px;background:var(--paper);border-radius:8px;border:1px solid var(--div2)">
           <div class="act-icon" style="background:${a.bg}">${a.icon}</div>
-          <div class="act-text">${a.msg}</div>
-          <div class="act-time">${a.time}</div>
+          <div style="flex:1;min-width:0">
+            <div class="act-text">${a.msg}</div>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:3px;flex-wrap:wrap">
+              ${catTag(a)}
+              <span style="font-size:9px;color:var(--muted)">${a.user||''}</span>
+              ${a.lastLog?`<span style="font-size:9px;font-weight:700;color:#1a7a4a;background:rgba(26,122,74,.08);border-radius:3px;padding:1px 5px">🕐 บันทึกล่าสุด ${a.lastLog}</span>`:''}
+            </div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div class="act-time" style="font-size:10px;color:#1a7a4a;font-weight:600">${a.time}</div>
+          </div>
         </div>`).join('')
-    : '<div style="font-size:12px;color:var(--muted);text-align:center;padding:16px">ยังไม่มี Activity</div>';
+    : '<div style="font-size:12px;color:var(--muted);text-align:center;padding:24px">ยังไม่มี Activity</div>';
 }
 
-function logActivity(icon,bg,msg){
-  actLog.push({icon,bg,msg,time:new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})});
+function logActivity(icon,bg,msg,isLog=false,lastLog=null){
+  const now=new Date();
+  const pad=n=>String(n).padStart(2,'0');
+  const dateStr=fi(now)+' '+pad(now.getHours())+':'+pad(now.getMinutes());
+  actLog.push({icon,bg,msg,time:dateStr,user:currentUser?.name||'Unknown',isLog,lastLog});
+  if(actLog.length>200)actLog.shift();
+  try{localStorage.setItem(AK,JSON.stringify(actLog));}catch(e){}
 }
 
 async function approveUser(id){
@@ -2149,7 +2203,7 @@ const PCAT=[
 ];
 function pcatInfo(v){return PCAT.find(x=>x.v===v)||PCAT[0];}
 function pcatBadge(v){const c=pcatInfo(v);return`<span class="pcat ${c.cls}">${c.name}</span>`;}
-const SCOL={'On Track':'#1a7a4a','Delay':'#c0392b','Completed':'#6c3483','At Risk':'#c87a00','Not Started':'#8a9bb0'};
+const SCOL={'On Track':'#3aaa6a','Delay':'#d9534f','Completed':'#8e5cb5','At Risk':'#d9960a','Not Started':'#8a9bb0'};
 const CAT_CLS={ENE:'tg-ENE',CST:'tg-CST',QLT:'tg-QLT',PRD:'tg-PRD',SAF:'tg-SAF',MRL:'tg-MRL',ENV:'tg-ENV','':'tg-GEN'};
 const CAT_LBL={ENE:'⚡ Energy',CST:'💰 Cost',QLT:'✅ Quality',PRD:'📈 Productivity',SAF:'🦺 Safety',MRL:'😊 Morale',ENV:'🌿 Environment','':'— ไม่ระบุ'};
 const ISTAT_LBL={new:'🆕 New',review:'🔍 Review',approved:'✅ Approved',rejected:'❌ Rejected'};
@@ -2201,11 +2255,40 @@ function staleDays(p){
 // ══════════════════════════════════════════════
 // STORAGE (data)
 // ══════════════════════════════════════════════
+const FK='ptk_files_v1'; // separate key for file binary data
+
+// Strip file data before saving to main storage (keep only metadata)
+function stripFilesForSave(records){
+  return records.map(r=>{
+    if(!r.files||!r.files.length)return r;
+    return {...r,files:r.files.map(f=>({name:f.name,type:f.type,size:f.size,addedAt:f.addedAt,logRef:f.logRef,_hasData:!!f.data}))};
+  });
+}
+// Save file data separately keyed by record id + file index
+function saveFileSeparate(){
+  const fd={};
+  P.forEach(p=>{(p.files||[]).forEach((f,fi)=>{if(f.data)fd['P:'+p.id+':'+fi]=f.data;});});
+  IDEAS.forEach(x=>{(x.files||[]).forEach((f,fi)=>{if(f.data)fd['I:'+x.id+':'+fi]=f.data;});});
+  try{localStorage.setItem(FK,JSON.stringify(fd));}catch(e){console.warn('File storage quota exceeded',e);}
+}
+// Restore file data after loading
+function restoreFilesFromSave(){
+  let fd={};
+  try{const s=localStorage.getItem(FK);if(s)fd=JSON.parse(s);}catch(e){}
+  P.forEach(p=>{(p.files||[]).forEach((f,fi)=>{const k='P:'+p.id+':'+fi;if(fd[k])f.data=fd[k];});});
+  IDEAS.forEach(x=>{(x.files||[]).forEach((f,fi)=>{const k='I:'+x.id+':'+fi;if(fd[k])f.data=fd[k];});});
+}
+
 async function save(){
   setSave('go');
   const base=location.hostname.includes('onrender.com')||location.hostname==='localhost'?'':'https://portfolio-dashboard-v1.onrender.com';
-  try{localStorage.setItem(SK,JSON.stringify(P));localStorage.setItem(IK,JSON.stringify(IDEAS));}catch(e){}
-  try{await fetch(base+'/api/data',{method:'PUT',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({projects:P,ideas:IDEAS})});}catch(e){}
+  // Save file binary data separately, main data without base64
+  try{
+    localStorage.setItem(SK,JSON.stringify(stripFilesForSave(P)));
+    localStorage.setItem(IK,JSON.stringify(stripFilesForSave(IDEAS)));
+    saveFileSeparate();
+  }catch(e){}
+  try{await fetch(base+'/api/data',{method:'PUT',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({projects:stripFilesForSave(P),ideas:stripFilesForSave(IDEAS)})});}catch(e){}
   setSave('ok');
 }
 async function load(){
@@ -2214,6 +2297,7 @@ async function load(){
   try{const r=await fetch(base+'/api/data',{credentials:'include'});if(r.ok){const d=await r.json();if(d.projects&&d.projects.length)P=d.projects;if(d.ideas&&d.ideas.length)IDEAS=d.ideas;}}catch(e){}
   if(!P.length){try{const s=localStorage.getItem(SK);if(s)P=JSON.parse(s);}catch(e){}}
   if(!IDEAS.length){try{const s=localStorage.getItem(IK);if(s)IDEAS=JSON.parse(s);}catch(e){}}
+  restoreFilesFromSave(); // Restore file binary data
   if(!P.length)loadDemoP();if(!IDEAS.length)loadDemoI();
 }
 function loadDemoP(){P=[
@@ -2280,17 +2364,51 @@ function buildRow(p,i){
   const sd=staleDays(p);
   const isStale=sd!==null&&sd>=10;
   const logs=p.logs||[];
-  const logHTML=logs.map((l,li)=>{
+  const logHTML=(p.logs||[]).map((l,li)=>{
     const canEdit=!ro;
-    return`<div class="log-entry">
-      <span class="log-date">${l.date}</span>
-      ${canEdit
-        ?`<span class="log-text" contenteditable="true" onblur="editLog(${i},${li},this.textContent)" style="outline:none;min-width:60px">${esc(l.text)}</span>
-           <button class="log-del" onclick="delLog(${i},${li})" title="ลบบันทึก">✕</button>`
-        :`<span class="log-text">${esc(l.text)}</span>`
-      }
+    // Parse log date for file attachment on same entry
+    const entryFiles=(p.files||[]).filter(f=>f.logRef===li);
+    // 72hr lock check
+    const now72=new Date();
+    const parseLogDate=s=>{
+      if(!s)return null;
+      const thM={'ม.ค.':0,'ก.พ.':1,'มี.ค.':2,'เม.ย.':3,'พ.ค.':4,'มิ.ย.':5,'ก.ค.':6,'ส.ค.':7,'ก.ย.':8,'ต.ค.':9,'พ.ย.':10,'ธ.ค.':11};
+      const m=s.match(/(\d+)\s+(\S+)\s+(\d+)(?:\s+(\d+):(\d+))?/);
+      if(!m)return null;
+      const yr=parseInt(m[3])+(parseInt(m[3])<100?2500:0)-543;
+      return new Date(yr,thM[m[2]]||0,parseInt(m[1]),m[4]?+m[4]:0,m[5]?+m[5]:0);
+    };
+    const logDt=parseLogDate(l.date);
+    const isLocked=logDt&&(now72-logDt)>72*3600*1000&&currentUser?.role!=='Admin';
+    return`<div class="log-entry" style="border-bottom:1px solid var(--div2);padding-bottom:5px;margin-bottom:4px">
+      <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+        <span class="log-date">${l.date}</span>
+        ${canEdit&&!isLocked
+          ?`<span class="log-text" contenteditable="true" onblur="editLog(${i},${li},this.textContent)" style="outline:none;min-width:60px;flex:1">${esc(l.text)}</span>
+             <button class="log-del" onclick="delLog(${i},${li})" title="ลบบันทึก">✕</button>`
+          :`<span class="log-text" style="flex:1">${esc(l.text)}</span>${isLocked?'<span style="font-size:9px;color:var(--muted)">🔒</span>':''}`
+        }
+        ${canEdit&&!isLocked?`<label style="cursor:pointer;font-size:10px;color:var(--gold-d);background:rgba(201,168,76,.1);border-radius:4px;padding:1px 5px;flex-shrink:0" title="แนบไฟล์ในบันทึกนี้">📎<input type="file" accept=".pdf,image/*" style="display:none" onchange="addFileToLog(event,'P',${i},${li})"></label>`:''}
+      </div>
+      ${entryFiles.length?`<div style="display:flex;flex-direction:column;gap:3px;margin-top:3px">${entryFiles.map((f,fIdx)=>{
+        const globalFi=(p.files||[]).indexOf(f);
+        const fLocked=f.addedAt&&(now72-parseLogDate(f.addedAt))>72*3600*1000&&currentUser?.role!=='Admin';
+        return`<div style="display:flex;align-items:center;gap:5px;padding:3px 6px;background:var(--paper);border-radius:5px;border:1px solid var(--div2)">
+          <span style="font-size:12px">${f.type&&f.type.includes('pdf')?'📄':'🖼️'}</span>
+          <span style="font-size:10px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--slate)">${f.name}</span>
+          <button onclick="viewFile(${globalFi},'P',${i})" style="border:none;background:var(--navy);color:var(--gold);border-radius:4px;padding:1px 6px;font-size:9px;cursor:pointer">ดู</button>
+          ${!fLocked&&canEdit?`<button onclick="removeFile(${globalFi},'P',${i})" style="border:none;background:transparent;color:var(--red);font-size:11px;cursor:pointer">✕</button>`:''}
+          ${fLocked?'<span style="font-size:9px;color:var(--muted)">🔒</span>':''}
+        </div>`;}).join('')}</div>`:''}
     </div>`;
   }).join('');
+  const logCount=(p.logs||[]).length;
+  const fileCount=(p.files||[]).length;
+  const lastLog=logCount>0?(p.logs[p.logs.length-1].date):'';
+  const logBtnLabel=logCount>0?`📋 ${logCount} บันทึก${fileCount>0?' · 📎 '+fileCount:''}`:fileCount>0?`📎 ${fileCount} ไฟล์`:'＋ เพิ่มบันทึก';
+  const logBtnStyle=logCount>0||fileCount>0?`background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);color:var(--gold-d);font-weight:700`:`background:transparent;border:1px dashed var(--div);color:var(--muted)`;
+  const lastUpdatedBadge=lastLog?`<div style="font-size:9px;color:#1a7a4a;margin-top:3px;font-family:'DM Mono',monospace">🕐 ${lastLog}</div>`:'';
+  const logBtn=`<div><button onclick="openLogPopup('P',${i})" style="${logBtnStyle};border-radius:6px;padding:4px 10px;font-size:11px;font-family:'Sarabun',sans-serif;cursor:pointer;width:100%">${logBtnLabel}</button>${lastUpdatedBadge}</div>`;
   return`<tr id="r${i}" class="pop${isStale?' stale-row':''}">
     <td class="td-n">${i+1}</td>
     <td style="white-space:nowrap;padding:6px 8px">
@@ -2326,14 +2444,14 @@ function buildRow(p,i){
     <td><div class="pcell"><div class="pb2"><div class="pf2" id="pf${i}" style="width:${p.pct}%;background:${pc(p.status)}"></div></div><input class="pp" type="number" min="0" max="100" value="${p.pct}" onchange="upd(${i},'pct',+this.value)" ${dis}>%</div></td>
     <td><input class="ci mo" type="date" value="${p.ps||''}" onchange="upd(${i},'ps',this.value)" ${dis}></td>
     <td><input class="ci mo" type="date" value="${p.pe||''}" onchange="upd(${i},'pe',this.value)" ${dis}></td>
-    <td style="background:#fffbf0"><input class="ci mo" type="date" value="${p.rps||''}" onchange="upd(${i},'rps',this.value)" title="Revised Plan Start — ปรับแผนเริ่มต้นใหม่" ${dis}></td>
+    <td style="background:#fffbf0"><input class="ci mo" type="date" value="${p.rps||(p.rpe&&p.pe?p.pe:'')}" onchange="upd(${i},'rps',this.value)" title="Revised Plan Start — ปรับแผนเริ่มต้นใหม่" ${dis}></td>
     <td style="background:#fffbf0"><input class="ci mo" type="date" value="${p.rpe||''}" onchange="upd(${i},'rpe',this.value)" title="Revised Plan End — ปรับแผนสิ้นสุดใหม่" ${dis}></td>
     <td><input class="ci mo" type="date" value="${p.as_||''}" onchange="upd(${i},'as_',this.value)" ${dis}></td>
     <td><input class="ci mo" type="date" value="${p.ae||''}" onchange="upd(${i},'ae',this.value)" ${dis}></td>
     <td class="fc" id="fcd${i}">${d3!==null?d3+' วัน':'—'}</td>
     <td class="fc ${r2===-1?'gv':''}" id="fcr${i}">${remTxt}</td>
     <td class="fc ${d2>0?'dv':''}" id="fck${i}">${d2>0?'+'+d2+' วัน':'—'}</td>
-    <td><div class="log-cell">${logHTML}${ro?'':(`<button class="log-add-btn" onclick="addLog(${i})">＋ เพิ่มบันทึก</button>`)}</div></td>
+    <td style="padding:4px 6px;min-width:120px">${logBtn}</td>
     <td>${ro?'':('<button class="del" onclick="delRow('+i+')">✕</button>')}</td>
   </tr>`;
 }
@@ -2376,6 +2494,13 @@ function upd(i,f,v){
   if(e('fcr'+i)){e('fcr'+i).textContent=remTxt;e('fcr'+i).className='fc '+(r2===-1?'gv':'');}
   if(e('fck'+i)){e('fck'+i).textContent=d2>0?'+'+d2+' วัน':'—';e('fck'+i).className='fc '+(d2>0?'dv':'');}
   if(f==='pct'||f==='status'){const pf=e('pf'+i);if(pf){pf.style.width=P[i].pct+'%';pf.style.background=pc(P[i].status);}}
+  // Log important changes
+  if(f==='status'){const now2=new Date();const p2=n=>String(n).padStart(2,'0');const t2=fi(now2)+' '+p2(now2.getHours())+':'+p2(now2.getMinutes());logActivity('📊','rgba(28,43,58,.08)',`Project <strong>${P[i].name||P[i].id}</strong> เปลี่ยนสถานะเป็น <strong>${v}</strong>`,false,t2);}
+  else if(f==='pct'){const now2=new Date();const p2=n=>String(n).padStart(2,'0');const t2=fi(now2)+' '+p2(now2.getHours())+':'+p2(now2.getMinutes());logActivity('📈','rgba(201,168,76,.08)',`Project <strong>${P[i].name||P[i].id}</strong> อัพเดต Progress → <strong>${v}%</strong>`,false,t2);}
+  else if(f==='name') logActivity('📝','rgba(28,43,58,.06)',`เปลี่ยนชื่อ Project → <strong>${v}</strong>`);
+  else if(f==='pe') logActivity('📅','rgba(26,111,168,.08)',`Project <strong>${P[i].name||P[i].id}</strong> แก้ Plan End → <strong>${v}</strong>`);
+  else if(f==='rpe') logActivity('📅','rgba(200,122,0,.08)',`Project <strong>${P[i].name||P[i].id}</strong> แก้ Revised End → <strong>${v}</strong>`);
+  else if(f==='ae') logActivity('✔️','rgba(26,122,74,.08)',`Project <strong>${P[i].name||P[i].id}</strong> บันทึก Actual End → <strong>${v}</strong>`);
   sched();if($('panel-dash').classList.contains('on'))renderDash();
 }
 // ── Project ID generator ─────────────────────
@@ -2475,15 +2600,162 @@ function addRow(){
   renderInput();sched();
   setTimeout(()=>{const b=$('ibody');if(b&&b.lastElementChild)b.lastElementChild.scrollIntoView({behavior:'smooth',block:'nearest'});},60);
 }
+function openLogPopup(type,idx){
+  const rec=type==='P'?P[idx]:IDEAS[idx];
+  if(!rec)return;
+  const ro=isViewer();
+  const label=type==='P'?(rec.name||rec.id):(rec.title||rec.id);
+  const existing=document.getElementById('_logViewPopup');
+  if(existing)existing.remove();
+  const el=document.createElement('div');
+  el.id='_logViewPopup';
+  el.className='desc-popup-overlay';
+  const now72=new Date();
+  const parseD=s=>{if(!s)return null;const thM={'ม.ค.':0,'ก.พ.':1,'มี.ค.':2,'เม.ย.':3,'พ.ค.':4,'มิ.ย.':5,'ก.ค.':6,'ส.ค.':7,'ก.ย.':8,'ต.ค.':9,'พ.ย.':10,'ธ.ค.':11};const m=s.match(/(\d+)\s+(\S+)\s+(\d+)(?:\s+(\d+):(\d+))?/);if(!m)return null;const yr=parseInt(m[3])+(parseInt(m[3])<100?2500:0)-543;return new Date(yr,thM[m[2]]||0,+m[1],m[4]?+m[4]:0,m[5]?+m[5]:0);};
+  const isAdminUser=currentUser?.role==='Admin';
+  const logs=rec.logs||[];
+  const renderContent=()=>{
+    const logsHtml=logs.length?[...logs].reverse().map((l,ri)=>{
+      const li=logs.length-1-ri;
+      const entryFiles=(rec.files||[]).filter(f=>f.logRef===li);
+      const logDt=parseD(l.date);
+      const isLocked=logDt&&(now72-logDt)>72*3600*1000&&!isAdminUser;
+      return`<div style="border-bottom:1px solid var(--div2);padding-bottom:8px;margin-bottom:8px">
+        <div style="display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap">
+          <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);white-space:nowrap;padding-top:2px;flex-shrink:0">${l.date}</span>
+          <span style="font-size:12px;color:var(--slate);flex:1;line-height:1.6;word-break:break-word;white-space:pre-wrap">${esc(l.text)}</span>
+          <div style="display:flex;gap:4px;flex-shrink:0">
+            ${!ro&&!isLocked?`<label style="cursor:pointer;font-size:10px;color:var(--gold-d);background:rgba(201,168,76,.1);border-radius:4px;padding:1px 6px" title="แนบไฟล์">📎<input type="file" accept=".pdf,image/*" style="display:none" onchange="addFileToLog(event,'${type}',${idx},${li});setTimeout(()=>openLogPopup('${type}',${idx}),300)"></label>`:''}
+            ${!ro&&!isLocked?`<button onclick="(function(){const t=prompt('แก้ไขบันทึก:','${esc(l.text).replace(/'/g,"\\'")}');if(t!=null&&t.trim()){${type==='P'?'editLog':'editIdeaLog'}(${idx},${li},t);openLogPopup('${type}',${idx});}})()" style="border:none;background:rgba(28,43,58,.08);color:var(--slate);border-radius:4px;padding:1px 6px;font-size:10px;cursor:pointer">✏️</button>`:''}
+            ${!ro&&!isLocked?`<button onclick="${type==='P'?'delLog':'delIdeaLog'}(${idx},${li});openLogPopup('${type}',${idx})" style="border:none;background:transparent;color:var(--red);font-size:11px;cursor:pointer">✕</button>`:''}
+            ${isLocked?'<span style="font-size:9px;color:var(--muted)">🔒</span>':''}
+          </div>
+        </div>
+        ${entryFiles.length?`<div style="display:flex;flex-direction:column;gap:3px;margin-top:5px;margin-left:8px">${entryFiles.map(f=>{
+          const gFi=(rec.files||[]).indexOf(f);
+          const fLocked=f.addedAt&&(now72-parseD(f.addedAt))>72*3600*1000&&!isAdminUser;
+          return`<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--paper);border-radius:6px;border:1px solid var(--div2)">
+            <span style="font-size:13px">${f.type&&f.type.includes('pdf')?'📄':'🖼️'}</span>
+            <span style="font-size:10px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--slate)">${f.name}</span>
+            <span style="font-size:9px;color:var(--muted)">${f.addedAt||''}</span>
+            <button onclick="viewFile(${gFi},'${type}',${idx})" style="border:none;background:var(--navy);color:var(--gold);border-radius:4px;padding:2px 8px;font-size:10px;cursor:pointer">👁 ดู</button>
+            ${!fLocked&&!ro?`<button onclick="removeFile(${gFi},'${type}',${idx});openLogPopup('${type}',${idx})" style="border:none;background:transparent;color:var(--red);font-size:11px;cursor:pointer">✕</button>`:''}
+            ${fLocked?'<span style="font-size:9px;color:var(--muted)">🔒</span>':''}
+          </div>`;}).join('')}</div>`:''}
+      </div>`;}).join('')
+    :'<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px;font-style:italic">ยังไม่มีบันทึก</div>';
+    return logsHtml;
+  };
+  el.innerHTML=`
+    <div class="desc-popup-box" style="max-width:92vw;width:92vw">
+      <div class="desc-popup-head">
+        <span class="desc-popup-title">📋 Update Log — ${esc(label)}</span>
+        <button onclick="document.getElementById('_logViewPopup').remove()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;line-height:1">✕</button>
+      </div>
+      <div class="desc-popup-body" style="max-height:75vh;overflow-y:auto;padding:16px 20px;overflow-x:hidden">
+        <div id="_logViewContent">${renderContent()}</div>
+      </div>
+      <div class="desc-popup-footer" style="justify-content:space-between">
+        ${ro?'<span></span>':`<button onclick="document.getElementById('_logViewPopup').remove();${type==='P'?'addLog':'addIdeaLog'}(${idx})" style="background:var(--gold);color:var(--navy);border:none;border-radius:8px;padding:9px 20px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;cursor:pointer">＋ เพิ่มบันทึก</button>`}
+        <button onclick="document.getElementById('_logViewPopup').remove()" style="background:transparent;border:1px solid var(--div);color:var(--muted);border-radius:8px;padding:9px 18px;font-family:'Sarabun',sans-serif;font-size:13px;cursor:pointer">ปิด</button>
+      </div>
+    </div>`;
+  el.addEventListener('click',e=>{if(e.target===el)el.remove();});
+  document.body.appendChild(el);
+}
+
 function addLog(i){
-  const txt=prompt('บันทึกความคืบหน้า:');if(!txt||!txt.trim())return;
-  if(!P[i].logs)P[i].logs=[];
-  // Auto date+time = TODAY
-  const now=new Date();
-  const pad=n=>String(n).padStart(2,'0');
-  const logDate=fi(now)+' '+pad(now.getHours())+':'+pad(now.getMinutes());
-  P[i].logs.push({date:logDate,text:txt.trim()});
-  renderInput();sched();
+  if(isViewer())return;
+  const existing=document.getElementById('_logPopup');
+  if(existing)existing.remove();
+  const el=document.createElement('div');
+  el.id='_logPopup';
+  el.className='desc-popup-overlay';
+  el.innerHTML=`
+    <div class="desc-popup-box" style="max-width:900px">
+      <div class="desc-popup-head">
+        <span class="desc-popup-title">📝 บันทึกความคืบหน้า</span>
+        <button onclick="document.getElementById('_logPopup').remove()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;line-height:1">✕</button>
+      </div>
+      <div class="desc-popup-body">
+        <span class="desc-popup-label">บันทึก / ความคืบหน้า</span>
+        <textarea id="_logTa" class="desc-popup-textarea" style="min-height:140px" placeholder="กรอกบันทึกความคืบหน้า..."></textarea>
+        <div style="margin-top:10px">
+          <span class="desc-popup-label">📎 แนบไฟล์ (PDF / รูปภาพ) — ถ้ามี</span>
+          <div id="_logFileList" style="display:flex;flex-direction:column;gap:4px;margin-bottom:6px"></div>
+          <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;background:rgba(201,168,76,.1);border:1px dashed var(--gold-d);border-radius:7px;padding:6px 12px;font-size:11px;color:var(--gold-d)">
+            ＋ เพิ่มไฟล์
+            <input id="_logFileInput" type="file" accept=".pdf,image/*" multiple style="display:none" onchange="previewLogFiles(this)">
+          </label>
+        </div>
+      </div>
+      <div class="desc-popup-footer">
+        <button onclick="document.getElementById('_logPopup').remove()" style="background:transparent;border:1px solid var(--div);color:var(--muted);border-radius:8px;padding:9px 18px;font-family:'Sarabun',sans-serif;font-size:13px;cursor:pointer">ยกเลิก</button>
+        <button id="_logSaveBtn" style="background:var(--gold);color:var(--navy);border:none;border-radius:8px;padding:9px 20px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;cursor:pointer">💾 บันทึก</button>
+      </div>
+    </div>`;
+  el.addEventListener('click',e=>{if(e.target===el)el.remove();});
+  document.body.appendChild(el);
+  const ta=document.getElementById('_logTa');
+  const saveBtn=document.getElementById('_logSaveBtn');
+  saveBtn.onclick=()=>{
+    const txt=ta.value.trim();
+    if(!txt)return;
+    if(!P[i].logs)P[i].logs=[];
+    const now=new Date();
+    const pad=n=>String(n).padStart(2,'0');
+    const logDate=fi(now)+' '+pad(now.getHours())+':'+pad(now.getMinutes());
+    P[i].logs.push({date:logDate,text:txt});
+    logActivity('📝','rgba(26,122,74,.08)',`บันทึกความคืบหน้า Project <strong>${P[i].name||P[i].id}</strong>: "${txt.length>40?txt.slice(0,40)+'…':txt}"`,true,logDate);
+    const logIdx=P[i].logs.length-1;
+    // Attach pending files to this log entry
+    const fileInput=document.getElementById('_logFileInput');
+    if(fileInput&&fileInput.files.length){
+      if(!P[i].files)P[i].files=[];
+      const files=[...fileInput.files];
+      const readers=files.map(f=>new Promise(res=>{
+        const r=new FileReader();
+        r.onload=ev=>res({name:f.name,type:f.type,size:f.size,data:ev.target.result,addedAt:logDate,logRef:logIdx});
+        r.readAsDataURL(f);
+      }));
+      Promise.all(readers).then(results=>{P[i].files.push(...results);renderInput();sched();});
+    }
+    renderInput();sched();
+    el.remove();
+  };
+  setTimeout(()=>ta?.focus(),80);
+}
+function previewLogFiles(input){
+  const list=document.getElementById('_logFileList');
+  if(!list)return;
+  list.innerHTML=[...input.files].map(f=>`
+    <div style="display:flex;align-items:center;gap:6px;padding:3px 8px;background:var(--paper);border-radius:6px;border:1px solid var(--div2)">
+      <span style="font-size:12px">${f.type&&f.type.includes('pdf')?'📄':'🖼️'}</span>
+      <span style="font-size:11px;color:var(--slate);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.name}</span>
+      <span style="font-size:9px;color:var(--muted)">${Math.round(f.size/1024)}KB</span>
+    </div>`).join('');
+}
+function addFileToLog(e,type,idx,logIdx){
+  const rec=type==='P'?P[idx]:IDEAS[idx];
+  if(!rec||isViewer())return;
+  if(!rec.files)rec.files=[];
+  const files=[...e.target.files];
+  const readers=files.map(f=>new Promise(res=>{
+    const r=new FileReader();
+    r.onload=ev=>{
+      const now=new Date();
+      const pad=n=>String(n).padStart(2,'0');
+      const addedAt=fi(now)+' '+pad(now.getHours())+':'+pad(now.getMinutes());
+      res({name:f.name,type:f.type,size:f.size,data:ev.target.result,addedAt,logRef:logIdx});
+    };
+    r.readAsDataURL(f);
+  }));
+  Promise.all(readers).then(results=>{
+    rec.files.push(...results);
+    sched();
+    if(type==='P')renderInput();else renderIdeaTable();
+  });
+  e.target.value='';
 }
 function editLog(i,li,newText){
   const t=(newText||'').trim();
@@ -2515,26 +2787,75 @@ function openHist(i){
       <div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold-d);margin-bottom:6px">📄 รายละเอียดโครงการ</div>
       <div style="font-size:12px;color:var(--slate);line-height:1.7;background:var(--paper);padding:11px 13px;border-radius:8px;border-left:3px solid var(--gold);white-space:pre-wrap">${esc(p.desc)}</div>
     </div>`:'';
+  // Files + Logs unified time series — เรียงตามวันที่
+  const logs=(p.logs||[]).map(l=>({type:'log',date:l.date,text:l.text,sortKey:l.date||''}));
+  const fileItems=(p.files||[]).map((f,fi)=>({type:'file',date:f.addedAt||'',name:f.name,ftype:f.type,fi,sortKey:f.addedAt||''}));
+  // Sort all events by date string (format same: "2 เม.ย. 69" etc.)
+  const allEvents=[...logs,...fileItems].sort((a,b)=>{
+    // Parse Thai date for sort
+    const parseThDate=s=>{
+      if(!s)return 0;
+      const thMonths={'ม.ค.':1,'ก.พ.':2,'มี.ค.':3,'เม.ย.':4,'พ.ค.':5,'มิ.ย.':6,'ก.ค.':7,'ส.ค.':8,'ก.ย.':9,'ต.ค.':10,'พ.ย.':11,'ธ.ค.':12};
+      const m=s.match(/(\d+)\s+(\S+)\s+(\d+)/);
+      if(!m)return 0;
+      const yr=parseInt(m[3])+(parseInt(m[3])<100?2500:0)-543;
+      const mo=thMonths[m[2]]||0;
+      return new Date(yr,mo-1,parseInt(m[1])).getTime();
+    };
+    return parseThDate(b.sortKey)-parseThDate(a.sortKey); // newest first
+  });
+
+  const timelineHTML=(()=>{
+    if(!allEvents.length) return '<div class="hist-empty">⏳ ยังไม่มีบันทึกความคืบหน้า</div>';
+    // Extract date part only (strip time) for grouping
+    const dateOf=s=>{if(!s)return'';const m=s.match(/^(\d+\s+\S+\s+\d+)/);return m?m[1]:s.split(' ').slice(0,3).join(' ');};
+    // Group by date
+    const groups=[];
+    allEvents.forEach(ev=>{
+      const d=dateOf(ev.date);
+      const last=groups[groups.length-1];
+      if(last&&last.date===d) last.items.push(ev);
+      else groups.push({date:d,items:[ev]});
+    });
+    return groups.map(g=>`
+      <div class="hist-item">
+        <div class="hist-line"></div>
+        <div class="hist-dot" style="${g.items.some(e=>e.type==='file')?'background:var(--gold-d);border-color:var(--gold)':''}"></div>
+        <div class="hist-date">${g.date}</div>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-top:2px">
+          ${g.items.map(ev=>{
+            const timeOnly=ev.date.replace(g.date,'').trim();
+            if(ev.type==='log'){
+              return`<div style="display:flex;gap:6px;align-items:flex-start">
+                ${timeOnly?`<span style="font-size:9px;color:var(--muted);font-family:'DM Mono',monospace;white-space:nowrap;padding-top:2px">${timeOnly}</span>`:''}
+                <span class="hist-text" style="flex:1">${esc(ev.text)}</span>
+              </div>`;
+            } else {
+              return`<div style="display:flex;gap:6px;align-items:center">
+                ${timeOnly?`<span style="font-size:9px;color:var(--muted);font-family:'DM Mono',monospace;white-space:nowrap">${timeOnly}</span>`:''}
+                <div style="display:flex;align-items:center;gap:8px;padding:5px 10px;background:var(--paper);border-radius:7px;border:1px solid var(--div2);flex:1">
+                  <span style="font-size:14px">${ev.ftype&&ev.ftype.includes('pdf')?'📄':'🖼️'}</span>
+                  <span style="font-size:11px;font-weight:600;color:var(--slate);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ev.name}</span>
+                  <button onclick="viewFile(${ev.fi},'P',${i})" style="border:none;background:var(--navy);color:var(--gold);border-radius:5px;padding:2px 9px;font-size:10px;cursor:pointer;flex-shrink:0">ดู</button>
+                </div>
+              </div>`;
+            }
+          }).join('')}
+        </div>
+      </div>`).join('');
+  })();
+
   const timelineEl=$('histTimeline');
   const descEl=document.getElementById('histDesc');
   if(descEl)descEl.innerHTML=descHtml;
   else{
-    // inject before timeline if not exists
     const box=timelineEl.parentNode;
     let dDiv=document.createElement('div');
     dDiv.id='histDesc';
     dDiv.innerHTML=descHtml;
     box.insertBefore(dDiv,timelineEl.previousElementSibling);
   }
-  const logs=(p.logs||[]).slice().reverse();
-  $('histTimeline').innerHTML=!logs.length
-    ?'<div class="hist-empty">⏳ ยังไม่มีบันทึกความคืบหน้า</div>'
-    :logs.map(l=>`<div class="hist-item">
-        <div class="hist-line"></div>
-        <div class="hist-dot"></div>
-        <div class="hist-date">${l.date}</div>
-        <div class="hist-text">${esc(l.text)}</div>
-      </div>`).join('');
+  $('histTimeline').innerHTML=timelineHTML;
   $('histModal').classList.remove('hidden');
 }
 function closeHist(){$('histModal').classList.add('hidden');}
@@ -2634,7 +2955,7 @@ function openNamePopup(label, value, onSave){
   el.id='_namePopup';
   el.className='desc-popup-overlay';
   el.innerHTML=`
-    <div class="desc-popup-box" style="max-width:480px">
+    <div class="desc-popup-box" style="max-width:860px">
       <div class="desc-popup-head">
         <span class="desc-popup-title">✏️ ${label}</span>
         <button onclick="document.getElementById('_namePopup').remove()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;line-height:1">✕</button>
@@ -2669,6 +2990,145 @@ function goToSummaryStage(stg){
     const ths=document.querySelectorAll('#panel-summary th');
     for(const th of ths){if(th.textContent.trim()===lbl){th.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});break;}}
   },300);
+}
+
+function isOver72h(addedAt){
+  if(!addedAt)return false;
+  // Parse Thai date+time string like "2 เม.ย. 69 09:18"
+  const thMonths={'ม.ค.':1,'ก.พ.':2,'มี.ค.':3,'เม.ย.':4,'พ.ค.':5,'มิ.ย.':6,'ก.ค.':7,'ส.ค.':8,'ก.ย.':9,'ต.ค.':10,'พ.ย.':11,'ธ.ค.':12};
+  const m=addedAt.match(/(\d+)\s+(\S+)\s+(\d+)(?:\s+(\d+):(\d+))?/);
+  if(!m)return false;
+  const yr=parseInt(m[3])+(parseInt(m[3])<100?2500:0)-543;
+  const mo=(thMonths[m[2]]||1)-1;
+  const dd2=parseInt(m[1]);
+  const hh=parseInt(m[4]||0),mm2=parseInt(m[5]||0);
+  const dt=new Date(yr,mo,dd2,hh,mm2);
+  return(Date.now()-dt.getTime())>72*60*60*1000;
+}
+
+function openFilesPopup(type, idx){
+  const isViewer_=isViewer();
+  const rec=type==='P'?P[idx]:IDEAS[idx];
+  if(!rec)return;
+  const label=type==='P'?(rec.name||rec.id||'Project'):(rec.title||rec.id||'Idea');
+  if(!rec.files)rec.files=[];
+  const existing=document.getElementById('_filesPopup');
+  if(existing)existing.remove();
+  const el=document.createElement('div');
+  el.id='_filesPopup';
+  el.className='desc-popup-overlay';
+  const renderFiles=()=>{
+    const list=document.getElementById('_filesList');
+    if(!list)return;
+    const isAdminUser=currentUser&&currentUser.role==='Admin';
+    list.innerHTML=rec.files.length?rec.files.map((f,fi)=>{
+      const locked=!isAdminUser&&isOver72h(f.addedAt);
+      return`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--paper);border-radius:8px;border:1px solid var(--div2)">
+        <span style="font-size:18px">${f.type&&f.type.includes('pdf')?'📄':'🖼️'}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:11px;font-weight:600;color:var(--slate);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.name}</div>
+          <div style="font-size:9px;color:var(--muted)">${f.size?Math.round(f.size/1024)+'KB':''} · ${f.addedAt||''}${locked?' 🔒':''}</div>
+        </div>
+        <button onclick="viewFile(${fi},'${type}',${idx})" style="border:none;background:var(--navy);color:var(--gold);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer">👁 ดู</button>
+        ${isViewer_?'':(locked
+          ?`<span style="font-size:10px;color:var(--muted);padding:4px 8px;background:var(--cream);border-radius:6px;white-space:nowrap">🔒 เกิน 72ชม.</span>`
+          :`<label style="border:none;background:rgba(26,111,168,.12);color:var(--blue);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;white-space:nowrap">✏️ แก้<input type="file" accept=".pdf,image/*" style="display:none" onchange="replaceFile(event,${fi},'${type}',${idx})"></label>
+           <button onclick="removeFile(${fi},'${type}',${idx})" style="border:none;background:rgba(192,57,43,.1);color:var(--red);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer">🗑 ลบ</button>`
+        )}
+      </div>`;
+    }).join('')
+    :'<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px;font-style:italic">ยังไม่มีไฟล์แนบ</div>';
+  };
+  el.innerHTML=`
+    <div class="desc-popup-box" style="max-width:900px">
+      <div class="desc-popup-head">
+        <span class="desc-popup-title">📎 ไฟล์แนบ — ${label}</span>
+        <button onclick="document.getElementById('_filesPopup').remove()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;line-height:1">✕</button>
+      </div>
+      <div class="desc-popup-body" style="max-height:360px;overflow-y:auto">
+        <div id="_filesList" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+      <div class="desc-popup-footer" style="justify-content:space-between">
+        ${isViewer_?'<span></span>':`<label style="display:inline-flex;align-items:center;gap:6px;background:var(--navy);color:var(--gold);border-radius:8px;padding:9px 16px;font-size:12px;font-weight:700;cursor:pointer">
+          ＋ เพิ่มไฟล์ PDF / รูปภาพ
+          <input type="file" accept=".pdf,image/*" multiple style="display:none" onchange="addFiles(event,'${type}',${idx})">
+        </label>`}
+        <button onclick="document.getElementById('_filesPopup').remove()" style="background:transparent;border:1px solid var(--div);color:var(--muted);border-radius:8px;padding:9px 18px;font-family:'Sarabun',sans-serif;font-size:13px;cursor:pointer">ปิด</button>
+      </div>
+    </div>`;
+  el.addEventListener('click',e=>{if(e.target===el)el.remove();});
+  document.body.appendChild(el);
+  renderFiles();
+}
+function addFiles(e,type,idx){
+  const rec=type==='P'?P[idx]:IDEAS[idx];
+  if(!rec||isViewer())return;
+  if(!rec.files)rec.files=[];
+  const files=[...e.target.files];
+  const readers=files.map(f=>new Promise(res=>{
+    const r=new FileReader();
+    r.onload=ev=>{
+      const now=new Date();
+      const pad=n=>String(n).padStart(2,'0');
+      const addedAt=fi(now)+' '+pad(now.getHours())+':'+pad(now.getMinutes());
+      res({name:f.name,type:f.type,size:f.size,data:ev.target.result,addedAt});
+    };
+    r.readAsDataURL(f);
+  }));
+  Promise.all(readers).then(results=>{
+    rec.files.push(...results);
+    sched();
+    const list=document.getElementById('_filesList');
+    if(list){
+      // re-render list inside popup
+      openFilesPopup(type,idx);
+    }
+    if(type==='P')renderInput();else renderIdeaTable();
+  });
+  e.target.value='';
+}
+function removeFile(fi,type,idx){
+  const rec=type==='P'?P[idx]:IDEAS[idx];
+  if(!rec||!rec.files||isViewer())return;
+  if(!confirm('ลบไฟล์นี้?'))return;
+  rec.files.splice(fi,1);
+  sched();
+  openFilesPopup(type,idx);
+  if(type==='P')renderInput();else renderIdeaTable();
+}
+function viewFile(fi,type,idx){
+  const rec=type==='P'?P[idx]:IDEAS[idx];
+  if(!rec||!rec.files||!rec.files[fi])return;
+  const f=rec.files[fi];
+  if(!f.data){
+    alert('ไม่พบข้อมูลไฟล์ในอุปกรณ์นี้\n\nไฟล์อาจถูกบันทึกจากอุปกรณ์อื่น หรือ cache ถูกล้าง\nกรุณาแนบไฟล์ใหม่อีกครั้ง');
+    return;
+  }
+  const win=window.open('','_blank');
+  if(f.type&&f.type.includes('pdf')){
+    win.document.write(`<html><body style="margin:0"><embed src="${f.data}" width="100%" height="100%" type="application/pdf"></body></html>`);
+  } else {
+    win.document.write(`<html><body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh"><img src="${f.data}" style="max-width:100%;max-height:100vh;object-fit:contain"></body></html>`);
+  }
+  win.document.title=f.name;
+}
+
+function replaceFile(e,fileIdx,type,idx){
+  const rec=type==='P'?P[idx]:IDEAS[idx];
+  if(!rec||!rec.files||isViewer())return;
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    const now=new Date();
+    const pad=n=>String(n).padStart(2,'0');
+    const addedAt=fi(now)+' '+pad(now.getHours())+':'+pad(now.getMinutes());
+    rec.files[fileIdx]={name:f.name,type:f.type,size:f.size,data:ev.target.result,addedAt};
+    sched();
+    openFilesPopup(type,idx);
+    if(type==='P')renderInput();else renderIdeaTable();
+  };
+  r.readAsDataURL(f);
+  e.target.value='';
 }
 
 function expJSON(){dl(JSON.stringify({projects:P,ideas:IDEAS,today:fi(TODAY)},null,2),'application/json','Backup_'+fi(TODAY)+'.json');}
@@ -2763,16 +3223,40 @@ function renderDash(){
       const ps=pdx(p.ps),pe=pdx(p.pe),as=pdx(p.as_),ae=pdx(p.ae);
       const rps=pdx(p.rps),rpe=pdx(p.rpe);
       const pL=pp(ps),pR=pp(pe),aL=pp(as);
-      let aR=ae?pp(ae):(as&&pe?Math.min(100,aL+(p.pct/100)*(pR-aL)):aL);
+      // actBar right edge: if not completed → always extend to today
+      let aR;
+      if(p.status==='Completed') aR=ae?pp(ae):(as&&pe?Math.min(100,aL+(p.pct/100)*(pR-aL)):aL);
+      else if(as) aR=Math.min(tp,100); // not completed → run to today
+      else aR=aL;
+      // plan bar: original (light gray)
       const planBar=(pL!==null&&pR!==null)?`<div class="tb tplan" style="left:${pL}%;width:${Math.max(.4,pR-pL)}%"></div>`:'';
-      const revisedBar=(rps||rpe)?`<div class="tb t-revised" style="left:${pp(rps||ps)||pL}%;width:${Math.max(.4,(pp(rpe||pe)||pR)-(pp(rps||ps)||pL))}%"></div>`:'';
+      // revised plan bar: auto rps = pe when rpe set but rps empty
+      const effRps=rps||(rpe&&pe?pe:null);
+      const revisedBar=(effRps||rpe)?`<div class="tb tplan-revised" style="left:${pp(effRps||ps)||pL}%;width:${Math.max(.4,(pp(rpe||pe)||pR)-(pp(effRps||ps)||pL))}%"></div>`:'';
       const actBar=(aL!==null&&aR!==null)?`<div class="tb tact t-${sk(p.status)}" style="left:${aL}%;width:${Math.max(.4,aR-aL)}%"></div>`:'';
-      const gl=months.slice(1).map(m=>`<div class="mgl" style="left:${pp(m)}%"></div>`).join('');
-      return`<div class="gr"><div class="rn">${String(i+1).padStart(2,'0')}</div>
-        <div><div class="pid2"><span style="font-size:9px;font-family:'DM Mono',monospace;color:var(--gold-d)">${p.id}</span></div><div class="pn">${p.name||'(ไม่ระบุ)'}</div></div>
-        <div><span class="badge s-${sk(p.status)}" style="font-size:9px;padding:2px 7px"><span class="bdot"></span>${p.status}</span></div>
-        <div class="pw"><div class="pt">${p.pct}%</div><div class="pb"><div class="pf" style="width:${p.pct}%;background:${pc(p.status)}"></div></div></div>
-        <div class="tl">${gl}<div class="tmk" style="left:${tp}%"></div>${planBar}${revisedBar}${actBar}</div>
+      // overrunBar: only show stripe BEYOND actBar (when actBar doesn't already reach today)
+      const overrunBar='';      const gl=months.slice(1).map(m=>`<div class="mgl" style="left:${pp(m)}%"></div>`).join('');
+      // date label under bar — show only countdown for incomplete projects
+      const fmtD=d=>d?d.toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'}):'—';
+      const endDate=rpe||pe;
+      let dateLine='';
+      if(p.status!=='Completed' && endDate){
+        const d=Math.round((endDate-TODAY)/(864e5));
+        let badge='';
+        if(d>0) badge=`<span style="font-size:9px;font-weight:700;color:#1a7a4a;background:#d4edda;border-radius:4px;padding:1px 6px;white-space:nowrap;font-family:'DM Mono',monospace">เหลือ ${d} วัน</span>`;
+        else if(d===0) badge=`<span style="font-size:9px;font-weight:700;color:#c87a00;background:#fff3cd;border-radius:4px;padding:1px 6px;white-space:nowrap;font-family:'DM Mono',monospace">ครบกำหนดวันนี้</span>`;
+        else badge=`<span style="font-size:9px;font-weight:700;color:#c0392b;background:#fad7d7;border-radius:4px;padding:1px 6px;white-space:nowrap;font-family:'DM Mono',monospace">เกิน ${Math.abs(d)} วัน</span>`;
+        dateLine=`<div style="margin-top:3px">${badge}</div>`;
+      }
+      return`<div class="gr" style="height:auto;padding:6px 14px;align-items:flex-start">
+        <div class="rn" style="margin-top:4px">${String(i+1).padStart(2,'0')}</div>
+        <div><div class="pid2"><span style="font-size:9px;font-family:'DM Mono',monospace;color:var(--gold-d)">${p.id}</span></div><div class="pn" onclick="openHist(${i})" style="cursor:pointer;text-decoration:underline;text-decoration-color:rgba(201,168,76,.4);text-underline-offset:2px" title="คลิกเพื่อดูรายละเอียด">${p.name||'(ไม่ระบุ)'}</div></div>
+        <div style="margin-top:4px"><span class="badge s-${sk(p.status)}" style="font-size:9px;padding:2px 7px"><span class="bdot"></span>${p.status}</span></div>
+        <div class="pw" style="margin-top:4px"><div class="pt">${p.pct}%</div><div class="pb"><div class="pf" style="width:${p.pct}%;background:${pc(p.status)}"></div></div></div>
+        <div>
+          <div class="tl" style="margin-top:4px">${gl}<div class="tmk" style="left:${tp}%"></div>${planBar}${revisedBar}${actBar}${overrunBar}</div>
+          ${dateLine}
+        </div>
       </div>`;
     }).join('');
   $('dtB').innerHTML=P.map((p,i)=>{
@@ -2782,7 +3266,7 @@ function renderDash(){
     <td class="mn" style="color:var(--gold-d)">${p.id}</td>
     <td style="font-weight:600;font-size:11px">
       <div style="display:flex;align-items:center;gap:6px">
-        <span>${p.name||'—'}</span>
+        <span onclick="openHist(${i})" style="cursor:pointer;color:var(--slate);text-decoration:underline;text-decoration-color:rgba(201,168,76,.4);text-underline-offset:2px" title="คลิกเพื่อดูรายละเอียด">${p.name||'—'}</span>
         ${isStale?`<span class="stale-bell" style="font-size:13px" title="ไม่มีการอัปเดต ${sd} วัน">🔔</span>`:''}
       </div>
     </td>
@@ -2904,84 +3388,71 @@ function renderSummary(){
   const doneP=P.filter(p=>p.status==='Completed').length;
   const totalBudget=P.reduce((a,p)=>a+(+p.budget||0),0);
   const kpiData=[
-    {icon:'📁',num:totalP,   lbl:'Total Projects',sub:'โครงการทั้งหมด',col:'var(--gold-d)'},
-    {icon:'✅',num:onTrackP, lbl:'On Track',       sub:'เป็นไปตามแผน', col:'var(--green)'},
-    {icon:'⚠️',num:delayedP,lbl:'Delayed',         sub:'ล่าช้ากว่าแผน',col:'var(--red)'},
-    {icon:'🏁',num:doneP,    lbl:'Completed',       sub:'แล้วเสร็จ',    col:'var(--purple)'},
-    {icon:'💰',num:totalBudget?'฿'+Number(Math.round(totalBudget/1000)).toLocaleString('en-US')+'K':'—',lbl:'Total Budget',sub:'งบประมาณรวม',col:'var(--gold-d)',raw:true},
+    {icon:'📁',num:totalP,lbl:'Total Projects',col:'var(--gold-d)'},
+    {icon:'✅',num:onTrackP,lbl:'On Track',col:'var(--green)'},
+    {icon:'⚠️',num:delayedP,lbl:'Delayed',col:'var(--red)'},
+    {icon:'🏁',num:doneP,lbl:'Completed',col:'var(--purple)'},
+    {icon:'💰',num:totalBudget?'฿'+Number(Math.round(totalBudget/1000)).toLocaleString('en-US')+'K':'—',lbl:'Total Budget',col:'var(--gold-d)',raw:true},
   ];
   const kr=$('sumKpiRow');
-  if(kr)kr.innerHTML=kpiData.map(k=>`
-    <div class="sum-kpi-card" style="--kc:${k.col}">
+  if(kr)kr.innerHTML=kpiData.map((k,i)=>{
+    const cols=['var(--gold-d)','var(--amber)','var(--blue)','var(--green)','var(--purple)'];
+    return`<div class="sum-kpi-card" style="--kc:${k.col}">
       <div style="position:absolute;bottom:0;left:0;right:0;height:4px;background:${k.col}"></div>
       <div class="sum-kpi-icon">${k.icon}</div>
       <div class="sum-kpi-num" style="color:${k.col}">${k.num}</div>
       <div class="sum-kpi-lbl">${k.lbl}</div>
-      <div style="font-size:10px;color:var(--muted);margin-top:3px;font-weight:400;letter-spacing:0;text-transform:none">${k.sub}</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
-  // ── Helper: bar row with 2-line label ────────
-  function barRow2(label,sub,n,total,color,icon){
+  // ── Helper: horizontal bar row ───────────────
+  function barRow(label,n,total,color,icon){
     const pct=total>0?Math.round(n/total*100):0;
+    // lighter bar color for summary (70% opacity feel)
     return`<div style="display:flex;align-items:center;gap:8px">
-      <span style="font-size:12px;flex-shrink:0;width:18px;text-align:center">${icon}</span>
-      <div style="min-width:108px;flex-shrink:0">
-        <div style="font-size:11px;color:var(--slate);font-weight:600;line-height:1.25">${label}</div>
-        <div style="font-size:9px;color:var(--muted);line-height:1.2">${sub}</div>
+      <span style="font-size:12px;flex-shrink:0">${icon}</span>
+      <span style="font-size:11px;color:var(--slate);min-width:90px;flex-shrink:0">${label}</span>
+      <div style="flex:1;background:var(--div2);border-radius:4px;height:8px;overflow:hidden">
+        <div style="width:${pct}%;background:${color};height:100%;border-radius:4px;transition:width .4s;opacity:.75"></div>
       </div>
-      <div style="flex:1;background:var(--div2);border-radius:4px;height:9px;overflow:hidden">
-        <div style="width:${pct}%;background:${color};height:100%;border-radius:4px;transition:width .5s ease"></div>
-      </div>
-      <span style="font-family:'DM Mono',monospace;font-size:13px;font-weight:700;color:${color};min-width:24px;text-align:right">${n}</span>
-      <span style="font-size:10px;color:var(--muted);min-width:32px;text-align:right">${pct}%</span>
+      <span style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;color:${color};min-width:28px;text-align:right">${n}</span>
+      <span style="font-size:10px;color:var(--muted);min-width:30px;text-align:right">${pct}%</span>
     </div>`;
   }
 
-  // ── PROJECT panel — badge count ──────────────
-  const projCountEl=$('sumProjPanelCount');
-  if(projCountEl) projCountEl.textContent=P.length+' โครงการ';
-
   // ── PROJECT — by Category ────────────────────
-  const CAT_COLORS={ENE:'#1a6fa8',CST:'#e67e22',QLT:'#2980b9',PRD:'#c9a84c',SAF:'#e74c3c',MRL:'#9b59b6',ENV:'#27ae60',hr:'#16a085'};
-  const CAT_TH={ENE:'พลังงาน',CST:'ลดต้นทุน',QLT:'คุณภาพ',PRD:'ผลิตภาพ',SAF:'ความปลอดภัย',MRL:'บุคลากร',ENV:'สิ่งแวดล้อม',hr:'HR'};
+  // Match Gantt CAT_COLORS (same hue, slightly lighter)
+  const CAT_COLORS={ENE:'#2980b9',CST:'#e67e22',QLT:'#8395a7',PRD:'#c9a84c',SAF:'#e74c3c',MRL:'#9b59b6',ENV:'#27ae60',hr:'#16a085'};
   const catEl=$('sumCatBars');
   if(catEl){
     const activeCatRows=CATS.filter(c=>P.some(p=>p.pcat===c.v));
     catEl.innerHTML=activeCatRows.length
-      ? activeCatRows.map(c=>{
-          const nm=c.name.replace(/[^\wก-๙\s]/g,'').trim()||c.v;
-          const th=CAT_TH[c.v]||nm;
-          return barRow2(nm,th,P.filter(p=>p.pcat===c.v).length,P.length,CAT_COLORS[c.v]||'#5d6d7e','📂');
-        }).join('')
+      ? activeCatRows.map(c=>barRow(c.name.replace(/[^\wก-๙\s]/g,'').trim()||c.v, P.filter(p=>p.pcat===c.v).length, P.length, CAT_COLORS[c.v]||'#aaa','📂')).join('')
       : '<div style="font-size:11px;color:var(--muted);font-style:italic">ไม่มีข้อมูล Category</div>';
   }
 
-  // ── PROJECT — by Status ──────────────────────
+  // ── PROJECT — by Status — match Gantt SCOL ───
   const statEl=$('sumStatBars');
   if(statEl){
     const statDef=[
-      {key:'On Track',   lbl:'On Track',    sub:'เป็นไปตามแผน',  icon:'✅', col:'#1a7a4a'},
-      {key:'Delay',      lbl:'Delay',       sub:'ล่าช้ากว่าแผน', icon:'⚠️', col:'#c0392b'},
-      {key:'At Risk',    lbl:'At Risk',     sub:'มีความเสี่ยง',  icon:'🔶', col:'#c87a00'},
-      {key:'Completed',  lbl:'Completed',   sub:'แล้วเสร็จ',     icon:'🏁', col:'#6c3483'},
-      {key:'Not Started',lbl:'Not Started', sub:'ยังไม่เริ่ม',   icon:'⏳', col:'#8a9bb0'},
+      {key:'On Track',   icon:'✅', col:'#3aaa6a'},
+      {key:'Delay',      icon:'⚠️', col:'#d9534f'},
+      {key:'At Risk',    icon:'🔶', col:'#d9960a'},
+      {key:'Completed',  icon:'🏁', col:'#8e5cb5'},
+      {key:'Not Started',icon:'⏳', col:'#8a9bb0'},
     ];
-    statEl.innerHTML=statDef.map(s=>barRow2(s.lbl,s.sub,P.filter(p=>p.status===s.key).length,P.length,s.col,s.icon)).join('');
+    statEl.innerHTML=statDef.map(s=>barRow(s.key, P.filter(p=>p.status===s.key).length, P.length, s.col, s.icon)).join('');
   }
 
-  // ── IDEA panel — badge count ─────────────────
-  const ideaCountEl=$('sumIdeaPanelCount');
-  if(ideaCountEl) ideaCountEl.textContent=IDEAS.length+' รายการ';
-
   // ── IDEA — by Stage ──────────────────────────
-  const ideaCnt=IDEAS.length;
-  const ideasIdea=IDEAS.filter(x=>(x.istage||'idea')==='idea').length;
-  const ideasProp=IDEAS.filter(x=>x.istage==='prop').length;
   const ideaStageEl=$('sumIdeaStageBars');
   if(ideaStageEl){
+    const ideaCnt=IDEAS.length;
+    const ideasIdea=IDEAS.filter(x=>(x.istage||'idea')==='idea').length;
+    const ideasProp=IDEAS.filter(x=>x.istage==='prop').length;
     ideaStageEl.innerHTML=[
-      barRow2('Idea Pitching',   'กำลังเสนอไอเดีย', ideasIdea, ideaCnt, '#c9a84c','💡'),
-      barRow2('Project Proposal','เสนอขออนุมัติ',    ideasProp, ideaCnt, '#1a6fa8','📋'),
+      barRow('Idea Pitching', ideasIdea, ideaCnt, '#c9a84c','💡'),
+      barRow('Project Proposal', ideasProp, ideaCnt, '#1a6fa8','📋'),
     ].join('');
   }
 
@@ -2991,12 +3462,12 @@ function renderSummary(){
     const ikCnt={new:0,review:0,approved:0,rejected:0};
     IDEAS.forEach(x=>{if(ikCnt[x.status]!==undefined)ikCnt[x.status]++;});
     const ideaStatDef=[
-      {key:'new',      lbl:'New',          sub:'รอพิจารณา',    icon:'🆕', col:'var(--blue)'},
-      {key:'review',   lbl:'Under Review', sub:'กำลังพิจารณา', icon:'🔍', col:'var(--amber)'},
-      {key:'approved', lbl:'Approved',     sub:'อนุมัติแล้ว',  icon:'✅', col:'var(--green)'},
-      {key:'rejected', lbl:'Rejected',     sub:'ไม่ผ่าน',      icon:'❌', col:'var(--red)'},
+      {key:'new',      label:'New',          icon:'🆕', col:'var(--blue)'},
+      {key:'review',   label:'Under Review', icon:'🔍', col:'var(--amber)'},
+      {key:'approved', label:'Approved',     icon:'✅', col:'var(--green)'},
+      {key:'rejected', label:'Rejected',     icon:'❌', col:'var(--red)'},
     ];
-    ideaStatEl.innerHTML=ideaStatDef.map(s=>barRow2(s.lbl,s.sub,ikCnt[s.key]||0,IDEAS.length,s.col,s.icon)).join('');
+    ideaStatEl.innerHTML=ideaStatDef.map(s=>barRow(s.label, ikCnt[s.key]||0, IDEAS.length, s.col, s.icon)).join('');
   }
 
   // ── Idea KPI Row (hidden, kept for compatibility) ──
@@ -3051,6 +3522,37 @@ function renderSummary(){
   sm.innerHTML=html;
 }
 
+async function exportAllPDF(){
+  const btn=$('btnExportPDF');
+  if(btn){btn.innerHTML='⏳ กำลังสร้าง...';btn.disabled=true;}
+  // Load html2pdf if needed
+  if(!window.html2pdf){
+    await new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});
+  }
+  const panels=['summary','dash','idash'];
+  const names=['Summary','ProjectDashboard','IdeaDashboard'];
+  const fname='Portfolio_'+TODAY.toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit'}).replace(/\//g,'-')+'.pdf';
+  // Switch to each panel, capture, merge via sequential save
+  for(let pi=0;pi<panels.length;pi++){
+    sw(panels[pi]);
+    await new Promise(r=>setTimeout(r,600));
+    const el=document.getElementById('panel-'+panels[pi]);
+    if(!el)continue;
+    const opts={
+      margin:[6,6,6,6],
+      filename:`Portfolio_${names[pi]}_${fi(TODAY)}.pdf`,
+      image:{type:'jpeg',quality:0.95},
+      html2canvas:{scale:1.5,useCORS:true,scrollY:0},
+      jsPDF:{unit:'mm',format:'a3',orientation:'landscape'},
+      pagebreak:{mode:['avoid-all','css']}
+    };
+    try{await html2pdf().set(opts).from(el).save();}catch(e){console.error(e);}
+    await new Promise(r=>setTimeout(r,300));
+  }
+  sw('summary');
+  if(btn){btn.innerHTML='📄 Export PDF (ทั้งหมด)';btn.disabled=false;}
+}
+
 async function exportSummaryPDF(){
   const btn=$('btnExportPDF');
   if(btn){btn.innerHTML='⏳ กำลังสร้าง...';btn.disabled=true;}
@@ -3065,7 +3567,7 @@ async function exportSummaryPDF(){
     const monthStr=TODAY.toLocaleString('en',{month:'long',year:'numeric'}).toUpperCase();
     const STAGE_COLS=['#c9a84c','#b8953a','#1c2b3a','#162236','#6aaa3f'];
     const STAGE_LBLS=['Idea Pitching','Project Proposal','Execution','Closing','Result Follow'];
-    const SCOL={'On Track':'#1a7a4a','Delay':'#c0392b','Completed':'#6c3483','At Risk':'#c87a00','Not Started':'#8a9bb0'};
+    const SCOL={'On Track':'#3aaa6a','Delay':'#d9534f','Completed':'#8e5cb5','At Risk':'#d9960a','Not Started':'#8a9bb0'};
     const PCAT_LBL={ENE:'Energy',CST:'Cost',QLT:'Quality',PRD:'Productivity',SAF:'Safety',MRL:'Morale',ENV:'Environment'};
 
     // KPIs
@@ -3391,7 +3893,6 @@ function renderIdeaTable(){
       <td style="white-space:nowrap">
         <div style="display:flex;align-items:center;gap:4px">
           <input class="ci mo" id="ideainp${i}" value="${esc(x.id||'')}" onchange="updI(${i},'id',this.value)" placeholder="auto" ${dis} style="min-width:130px;font-size:10px;font-family:'DM Mono',monospace;color:var(--gold-d)">
-          ${ro?'':(`<button onclick="regenIdeaId(${i})" title="Generate ID ใหม่" style="border:none;background:transparent;cursor:pointer;font-size:13px;padding:2px;line-height:1;color:var(--muted);flex-shrink:0" onmouseover="this.style.color='var(--gold-d)'" onmouseout="this.style.color='var(--muted)'">🔄</button>`)}
         </div>
       </td>
       <td><div class="name-trigger${dis?' name-trigger-disabled':''}" onclick="${dis?'':('openNamePopup(\'ชื่อ Idea — '+esc(x.id||'')+'\',\''+esc((x.title||'').replace(/'/g,"\\'"))+'\',function(v){updI('+i+',\'title\',v);renderIdeaTable();});')}">
@@ -3421,12 +3922,92 @@ function renderIdeaTable(){
         <option value="approved" ${x.status==='approved'?'selected':''}>✅ Approved</option>
         <option value="rejected" ${x.status==='rejected'?'selected':''}>❌ Rejected</option>
       </select></td>
-      <td><input class="ci" value="${esc(x.note)}" onchange="updI(${i},'note',this.value)" placeholder="ความเห็น" ${dis}></td>
+      <td style="padding:4px 6px;min-width:120px">
+        ${(()=>{
+          const iLogCount=(x.logs||[]).length;
+          const iFileCount=(x.files||[]).length;
+          const iLastLog=iLogCount>0?(x.logs[x.logs.length-1].date):'';
+          const lbl=iLogCount>0?`📋 ${iLogCount} บันทึก${iFileCount>0?' · 📎 '+iFileCount:''}`:iFileCount>0?`📎 ${iFileCount} ไฟล์`:'＋ เพิ่มบันทึก';
+          const sty=iLogCount>0||iFileCount>0?`background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);color:var(--gold-d);font-weight:700`:`background:transparent;border:1px dashed var(--div);color:var(--muted)`;
+          const iLastBadge=iLastLog?`<div style="font-size:9px;color:#1a7a4a;margin-top:3px;font-family:'DM Mono',monospace">🕐 ${iLastLog}</div>`:'';
+          return`<div><button onclick="openLogPopup('I',${i})" style="${sty};border-radius:6px;padding:4px 10px;font-size:11px;font-family:'Sarabun',sans-serif;cursor:pointer;width:100%">${lbl}</button>${iLastBadge}</div>`;
+        })()}
+      </td>
       <td>${ro?'':('<button class="del" onclick="delIdea('+i+')">✕</button>')}</td>
     </tr>`;
   }).join('');
   updIdeaUndoBtns();
 }
+function addIdeaLog(i){
+  if(isViewer())return;
+  const existing=document.getElementById('_logPopup');
+  if(existing)existing.remove();
+  const el=document.createElement('div');
+  el.id='_logPopup';
+  el.className='desc-popup-overlay';
+  el.innerHTML=`
+    <div class="desc-popup-box" style="max-width:900px">
+      <div class="desc-popup-head">
+        <span class="desc-popup-title">📝 บันทึก Idea</span>
+        <button onclick="document.getElementById('_logPopup').remove()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;line-height:1">✕</button>
+      </div>
+      <div class="desc-popup-body">
+        <span class="desc-popup-label">บันทึก / ความเห็น</span>
+        <textarea id="_logTa" class="desc-popup-textarea" style="min-height:140px" placeholder="กรอกบันทึก..."></textarea>
+        <div style="margin-top:10px">
+          <span class="desc-popup-label">📎 แนบไฟล์ (PDF / รูปภาพ) — ถ้ามี</span>
+          <div id="_logFileList" style="display:flex;flex-direction:column;gap:4px;margin-bottom:6px"></div>
+          <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;background:rgba(201,168,76,.1);border:1px dashed var(--gold-d);border-radius:7px;padding:6px 12px;font-size:11px;color:var(--gold-d)">
+            ＋ เพิ่มไฟล์
+            <input id="_logFileInput" type="file" accept=".pdf,image/*" multiple style="display:none" onchange="previewLogFiles(this)">
+          </label>
+        </div>
+      </div>
+      <div class="desc-popup-footer">
+        <button onclick="document.getElementById('_logPopup').remove()" style="background:transparent;border:1px solid var(--div);color:var(--muted);border-radius:8px;padding:9px 18px;font-family:'Sarabun',sans-serif;font-size:13px;cursor:pointer">ยกเลิก</button>
+        <button id="_logSaveBtn" style="background:var(--gold);color:var(--navy);border:none;border-radius:8px;padding:9px 20px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;cursor:pointer">💾 บันทึก</button>
+      </div>
+    </div>`;
+  el.addEventListener('click',e=>{if(e.target===el)el.remove();});
+  document.body.appendChild(el);
+  const ta=document.getElementById('_logTa');
+  document.getElementById('_logSaveBtn').onclick=()=>{
+    const txt=ta.value.trim();if(!txt)return;
+    if(!IDEAS[i].logs)IDEAS[i].logs=[];
+    const now=new Date();const pad=n=>String(n).padStart(2,'0');
+    const logDate=fi(now)+' '+pad(now.getHours())+':'+pad(now.getMinutes());
+    IDEAS[i].logs.push({date:logDate,text:txt});
+    logActivity('💡','rgba(201,168,76,.06)',`บันทึก Idea <strong>${IDEAS[i].title||IDEAS[i].id}</strong>: "${txt.length>40?txt.slice(0,40)+'…':txt}"`,true,logDate);
+    const logIdx=IDEAS[i].logs.length-1;
+    // Attach pending files to this log entry
+    const fileInput=document.getElementById('_logFileInput');
+    if(fileInput&&fileInput.files.length){
+      if(!IDEAS[i].files)IDEAS[i].files=[];
+      const files=[...fileInput.files];
+      const readers=files.map(f=>new Promise(res=>{
+        const r=new FileReader();
+        r.onload=ev=>res({name:f.name,type:f.type,size:f.size,data:ev.target.result,addedAt:logDate,logRef:logIdx});
+        r.readAsDataURL(f);
+      }));
+      Promise.all(readers).then(results=>{IDEAS[i].files.push(...results);pushIdeaUndo();renderIdeaTable();sched();});
+    }
+    pushIdeaUndo();renderIdeaTable();sched();el.remove();
+    // Re-open detail if it was open
+    if(document.getElementById('detailOv')&&!document.getElementById('detailOv').classList.contains('hidden'))openDetail(i);
+  };
+  setTimeout(()=>ta?.focus(),80);
+}
+function editIdeaLog(i,li,newText){
+  const t=(newText||'').trim();
+  if(!t){delIdeaLog(i,li);return;}
+  if(IDEAS[i].logs&&IDEAS[i].logs[li]){IDEAS[i].logs[li].text=t;sched();}
+}
+function delIdeaLog(i,li){
+  if(!IDEAS[i].logs)return;
+  IDEAS[i].logs.splice(li,1);
+  renderIdeaTable();sched();
+}
+
 function updI(i,f,v){
   if(isViewer())return;
   pushIdeaUndo();
@@ -3440,8 +4021,8 @@ function updI(i,f,v){
     }
   }
   sched();renderKanban();renderIdeaKPIs();
-}
-function updIScore(i){
+  // Log important Idea changes
+  if(f==='status'){const now2=new Date();const p2=n=>String(n).padStart(2,'0');const t2=fi(now2)+' '+p2(now2.getHours())+':'+p2(now2.getMinutes());logActivity('💡','rgba(201,168,76,.08)',`Idea <strong>${IDEAS[i].title||IDEAS[i].id}</strong> เปลี่ยนสถานะเป็น <strong>${v}</strong>`,false,t2);}
   const imp=+$('si'+i+'imp').value,feas=+$('si'+i+'feas').value,str=+$('si'+i+'str').value;
   $('sv'+i+'imp').textContent=imp;$('sv'+i+'feas').textContent=feas;$('sv'+i+'str').textContent=str;
   IDEAS[i].impact=imp;IDEAS[i].feasibility=feas;IDEAS[i].strategic=str;
@@ -3490,6 +4071,74 @@ function openDetail(idx){
   $('dpImp').textContent=x.impact+'/10';$('dpFeas').textContent=x.feasibility+'/10';$('dpStrat').textContent=x.strategic+'/10';
   $('dpTotal').textContent=iScore(x)+' / 100';
   $('dpStChg').innerHTML=['new','review','approved','rejected'].map(st=>`<button class="stbtn stbtn-${st} ${x.status===st?'on':''}" onclick="chgStat(${idx},'${st}')">${ISTAT_LBL[st]}</button>`).join('');
+  // Note section
+  const noteSection=$('dpNoteSection');
+  if(noteSection){
+    if(x.note&&x.note.trim()){noteSection.style.display='block';$('dpNote').textContent=x.note;}
+    else noteSection.style.display='none';
+  }
+  // Files section (standalone files not linked to any log)
+  const filesSection=$('dpFilesSection');
+  const filesList=$('dpFilesList');
+  const standAloneFiles=(x.files||[]).filter(f=>f.logRef===undefined||f.logRef===null);
+  if(filesSection&&filesList){
+    if(standAloneFiles.length){
+      filesSection.style.display='block';
+      filesList.innerHTML=standAloneFiles.map((f,fi)=>{
+        const gFi=(x.files||[]).indexOf(f);
+        return`<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--paper);border-radius:8px;border:1px solid var(--div2)">
+          <span style="font-size:16px">${f.type&&f.type.includes('pdf')?'📄':'🖼️'}</span>
+          <div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.name}</div><div style="font-size:9px;color:var(--muted)">${f.addedAt||''}</div></div>
+          <button onclick="viewFile(${gFi},'I',${idx})" style="border:none;background:var(--navy);color:var(--gold);border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer">👁 ดู</button>
+        </div>`;}).join('');
+    } else filesSection.style.display='none';
+  }
+  // Add log button
+  const logAddBtn=$('dpLogAddBtn');
+  if(logAddBtn&&!isViewer()) logAddBtn.innerHTML=`<button onclick="addIdeaLog(${idx})" style="border:1px solid var(--gold-d);background:rgba(201,168,76,.1);color:var(--gold-d);border-radius:6px;padding:3px 10px;font-size:10px;font-family:'Sarabun',sans-serif;cursor:pointer;font-weight:700">＋ เพิ่มบันทึก</button>`;
+  // Log timeline — group by date, merged with files per log entry
+  const logTl=$('dpLogTimeline');
+  if(logTl){
+    const logs=x.logs||[];
+    const parseD=s=>{if(!s)return null;const thM={'ม.ค.':0,'ก.พ.':1,'มี.ค.':2,'เม.ย.':3,'พ.ค.':4,'มิ.ย.':5,'ก.ค.':6,'ส.ค.':7,'ก.ย.':8,'ต.ค.':9,'พ.ย.':10,'ธ.ค.':11};const m=s.match(/(\d+)\s+(\S+)\s+(\d+)(?:\s+(\d+):(\d+))?/);if(!m)return null;const yr=parseInt(m[3])+(parseInt(m[3])<100?2500:0)-543;return new Date(yr,thM[m[2]]||0,+m[1],m[4]?+m[4]:0,m[5]?+m[5]:0);};
+    const dateOf=s=>{if(!s)return'';const m=s.match(/^(\d+\s+\S+\s+\d+)/);return m?m[1]:s.split(' ').slice(0,3).join(' ');};
+    if(!logs.length){logTl.innerHTML='<div style="color:var(--muted);font-style:italic;font-size:11px;padding:8px 0">ยังไม่มีบันทึก</div>';}
+    else {
+    // Group logs by date
+    const groups=[];
+    [...logs].reverse().forEach((l,ri)=>{
+      const li=logs.length-1-ri;
+      const d=dateOf(l.date);
+      const last=groups[groups.length-1];
+      if(last&&last.date===d) last.entries.push({l,li});
+      else groups.push({date:d,entries:[{l,li}]});
+    });
+    logTl.innerHTML=groups.map(g=>`
+      <div class="hist-item">
+        <div class="hist-line"></div>
+        <div class="hist-dot"></div>
+        <div class="hist-date">${g.date}</div>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-top:2px">
+          ${g.entries.map(({l,li})=>{
+            const timeOnly=l.date.replace(g.date,'').trim();
+            const entryFiles=(x.files||[]).filter(f=>f.logRef===li);
+            return`<div>
+              <div style="display:flex;gap:6px;align-items:flex-start">
+                ${timeOnly?`<span style="font-size:9px;color:var(--muted);font-family:'DM Mono',monospace;white-space:nowrap;padding-top:2px">${timeOnly}</span>`:''}
+                <span style="font-size:12px;color:var(--slate);flex:1;line-height:1.5">${esc(l.text)}</span>
+              </div>
+              ${entryFiles.length?`<div style="display:flex;flex-direction:column;gap:3px;margin-top:4px;margin-left:${timeOnly?'40px':'0'}">${entryFiles.map(f=>{
+                const gFi=(x.files||[]).indexOf(f);
+                return`<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--paper);border-radius:6px;border:1px solid var(--div2)">
+                  <span style="font-size:13px">${f.type&&f.type.includes('pdf')?'📄':'🖼️'}</span>
+                  <span style="font-size:10px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--slate)">${f.name}</span>
+                  <button onclick="viewFile(${gFi},'I',${idx})" style="border:none;background:var(--navy);color:var(--gold);border-radius:5px;padding:2px 8px;font-size:10px;cursor:pointer">👁 ดู</button>
+                </div>`;}).join('')}</div>`:''}
+            </div>`;}).join('')}
+        </div>
+      </div>`).join('');
+    }
+  }
   $('detailOv').classList.remove('hidden');
 }
 function closeDetail(){$('detailOv').classList.add('hidden');detailIdx=-1;}
@@ -3545,9 +4194,10 @@ async function buildPptx(){
   function txBody(txt,sz,bold,colorHex,align='l',wrap=true,fontFace='Calibri'){
     const bStr=bold?'<a:b/>':'';
     const aStr=align==='c'?'ctr':align==='r'?'r':'l';
-    return`<p:txBody><a:bodyPr wrap="${wrap?'square':'none'}" rtlCol="0"><a:normAutofit/></a:bodyPr><a:lstStyle/>
-      <a:p><a:pPr algn="${aStr}"/><a:r><a:rPr lang="th-TH" altLang="en-US" sz="${sz*100}" dirty="0">${bStr}
-      <a:latin typeface="${fontFace}"/></a:rPr><a:t>${esc_xml(txt)}</a:t></a:r></a:p></p:txBody>`;
+    const colStr=colorHex?`<a:solidFill><a:srgbClr val="${colorHex.replace('#','')}"/></a:solidFill>`:'';
+    return`<p:txBody><a:bodyPr wrap="${wrap?'square':'none'}" rtlCol="0" anchor="ctr"><a:normAutofit/></a:bodyPr><a:lstStyle/>
+      <a:p><a:pPr algn="${aStr}" marL="0" indent="0"/><a:r><a:rPr lang="th-TH" altLang="en-US" sz="${sz*100}" dirty="0" b="${bold?1:0}" spc="-100">
+      ${colStr}<a:latin typeface="${fontFace}"/><a:ea typeface="Sarabun"/></a:rPr><a:t>${esc_xml(txt)}</a:t></a:r></a:p></p:txBody>`;
   }
 
   function spRect(id,name,x,y,w,h,fillHex,lineHex,lineW=9525){
@@ -3642,44 +4292,48 @@ async function buildPptx(){
    {l:'Completed',v:cnt['Completed'],sub:'แล้วเสร็จ',c:C.purple},
    {l:'Avg Progress',v:avg+'%',sub:'ความคืบหน้าเฉลี่ย',c:C.amber},
   ].forEach((k,i)=>{
-    const kx=.28+i*2.57, ky=1.15, kw=2.42, kh=1.85;
+    const kx=.28+i*2.57, ky=1.12, kw=2.42, kh=2.3;
     s2.push(spRect(id2++,'kcard'+i,kx,ky,kw,kh,C.white,'D8D0C2',9525));
-    s2.push(spRect(id2++,'kline'+i,kx,ky,kw,.06,k.c,k.c));
-    s2.push(spText(id2++,'kv'+i,kx,ky+.22,kw,.82,String(k.v),38,true,k.c,'c','Calibri'));
-    s2.push(spText(id2++,'kl'+i,kx,ky+1.08,kw,.3,k.l,10,true,C.slate,'c','Calibri'));
-    s2.push(spText(id2++,'ks'+i,kx,ky+1.42,kw,.28,k.sub,8,false,C.muted,'c','Calibri'));
+    s2.push(spRect(id2++,'kline'+i,kx,ky,kw,.07,k.c,k.c));
+    s2.push(spText(id2++,'kv'+i,kx,ky+.28,kw,1.0,String(k.v),44,true,k.c,'c','Calibri'));
+    s2.push(spText(id2++,'kl'+i,kx,ky+1.38,kw,.35,k.l,10,true,C.slate,'c','Calibri'));
+    s2.push(spText(id2++,'ks'+i,kx,ky+1.78,kw,.32,k.sub,9,false,C.muted,'c','Calibri'));
   });
 
   // Overall progress section
-  s2.push(spText(id2++,'ptlbl',.28,3.22,8,.32,'● Overall Portfolio Progress',10,true,C.slate,'l','Calibri'));
-  s2.push(spText(id2++,'ptpct',11.8,3.22,1.3,.32,avg+'%',10,true,C.amber,'r','Calibri'));
+  s2.push(spText(id2++,'ptlbl',.28,3.65,8,.32,'● Overall Portfolio Progress',10,true,C.slate,'l','Calibri'));
+  s2.push(spText(id2++,'ptpct',11.8,3.65,1.3,.32,avg+'%',10,true,C.amber,'r','Calibri'));
   // Progress track
-  s2.push(spRect(id2++,'pbg',.28,3.62,12.77,.38,'EAE4DB','EAE4DB'));
+  s2.push(spRect(id2++,'pbg',.28,4.05,12.77,.44,'EAE4DB','EAE4DB'));
   if(avg>0){
-    s2.push(spRect(id2++,'pfill',.28,3.62,12.77*(avg/100),.38,C.gold,C.gold));
+    s2.push(spRect(id2++,'pfill',.28,4.05,12.77*(avg/100),.44,C.gold,C.gold));
     // Milestone marks at 25/50/75
     [25,50,75].forEach(pct=>{
       if(avg>=pct)return;
       const mx=.28+12.77*(pct/100);
-      s2.push(spRect(id2++,'pm'+pct,mx,3.58,.015,.46,C.muted,C.muted));
+      s2.push(spRect(id2++,'pm'+pct,mx,4.01,.015,.52,C.muted,C.muted));
     });
   }
 
-  // Status breakdown — horizontal bars with counts
-  s2.push(spText(id2++,'sbT',.28,4.22,12,.3,'● Status Breakdown',10,true,C.slate,'l','Calibri'));
-  const maxN2=Math.max(...Object.values(cnt),1);
-  ['On Track','Delay','Completed','At Risk','Not Started'].forEach((st,i)=>{
-    const sy=4.62+i*.48, n=cnt[st], col=STATUS_COL[st];
-    const pctW=10*(n/maxN2);
-    // Label
-    s2.push(spText(id2++,'sl'+i,.28,sy,2.2,.32,st,9,true,C.slate,'l','Calibri'));
-    // Track
-    s2.push(spRect(id2++,'sbg'+i,2.4,sy+.05,10,.26,'EAE4DB','EAE4DB'));
-    // Fill
-    if(n>0)s2.push(spRect(id2++,'sf'+i,2.4,sy+.05,pctW,.26,col,col));
-    // Count badge
-    s2.push(spRect(id2++,'scnt'+i,12.45,sy+.01,.6,.3,col+'22',col,9525));
-    s2.push(spText(id2++,'sn'+i,12.45,sy+.01,.6,.3,String(n),9,true,col,'c','Calibri'));
+  // Project status detail grid — replaces Status Breakdown
+  s2.push(spText(id2++,'detlbl',.28,4.35,12,.32,'● Project Status Detail',10,true,C.slate,'l','Calibri'));
+  const colHdrs=['ID','Project Name','Owner','Status','Progress'];
+  const colX=[.28,1.5,6.2,9.0,11.0], colW=[1.1,4.6,2.6,1.8,2.0];
+  colHdrs.forEach((h,ci)=>{
+    s2.push(spRect(id2++,'th'+ci,colX[ci],4.78,colW[ci],.34,'EAE4DB','D8D0C2',9525));
+    s2.push(spText(id2++,'tht'+ci,colX[ci],4.78,colW[ci],.34,h,8,true,C.slate,'c','Calibri'));
+  });
+  P.slice(0,7).forEach((p,i)=>{
+    const ry=5.18+i*.32, rbg=i%2===0?C.white:'F7F5F0', col=STATUS_COL[p.status]||C.muted;
+    s2.push(spRect(id2++,'row'+i,.28,ry,13.05,.30,rbg,'EAE4DB',9525));
+    s2.push(spText(id2++,'rid'+i,colX[0],ry,colW[0],.30,p.id,7,false,C.muted,'c','Calibri'));
+    s2.push(spText(id2++,'rnm'+i,colX[1],ry,colW[1],.30,p.name,8,true,C.slate,'l','Calibri'));
+    s2.push(spText(id2++,'rown'+i,colX[2],ry,colW[2],.30,p.owner||'',7,false,C.slate,'c','Calibri'));
+    s2.push(spRect(id2++,'rst'+i,colX[3]+.1,ry+.05,1.5,.22,col+'22',col,9525));
+    s2.push(spText(id2++,'rstt'+i,colX[3]+.1,ry+.04,1.5,.24,p.status,7,true,col,'c','Calibri'));
+    s2.push(spRect(id2++,'rpbg'+i,colX[4],ry+.09,1.9,.14,'EAE4DB','EAE4DB'));
+    if(p.pct>0)s2.push(spRect(id2++,'rpf'+i,colX[4],ry+.09,1.9*(p.pct/100),.14,col,col));
+    s2.push(spText(id2++,'rpc'+i,colX[4]+1.95,ry+.06,.5,.20,p.pct+'%',7,true,col,'l','Calibri'));
   });
 
   /* ════ SLIDE 3 — GANTT ════ */
@@ -3740,9 +4394,12 @@ async function buildPptx(){
       const r1=rpsP??psP??0, r2=rpeP??peP??1;
       if(r2>r1)s3.push(spRect(id3++,'rev'+i,gX+r1*gW,ry+.05,Math.max(.015,(r2-r1)*gW),.11,'F0A500','F0A500'));
     }
-    // Actual bar (thick, colored)
+    // Actual bar (thick, colored) — extend to today if not completed
     if(asP!==null){
-      const aeP2=aeP??Math.min(1,asP+(p.pct/100)*((peP??asP+.01)-asP));
+      const todayFrac=Math.min(1,Math.max(0,(TODAY-CS_)/TMS_));
+      let aeP2;
+      if(p.status==='Completed') aeP2=aeP??Math.min(1,asP+(p.pct/100)*((peP??asP+.01)-asP));
+      else aeP2=todayFrac; // always run to today
       const bw=Math.max(.015,(aeP2-asP)*gW);
       s3.push(spRect(id3++,'act'+i,gX+asP*gW,ry+.2,bw,.14,scol,scol));
     }
@@ -3884,7 +4541,7 @@ async function buildPptx(){
      BUILD ZIP (PPTX = ZIP with OOXML)
   ═══════════════════════════════════════ */
   const slides=[s1,s2,s3,s4,s5,s6];
-  const slideBgs=[C.navy,C.paper,C.paper,C.paper,C.paper,C.paper];
+  const slideBgs=[C.navy,C.white,C.white,C.white,C.white,C.white];
 
   // relationships
   const slideRels=slides.map((_,i)=>
@@ -4494,7 +5151,7 @@ function vipTab(t){
 
 function renderVipGantt(){
   const el=$('vipGantt');if(!el)return;
-  const SCOL={'On Track':'#1a7a4a','Delay':'#c0392b','Completed':'#6c3483','At Risk':'#c87a00','Not Started':'#8a9bb0'};
+  const SCOL={'On Track':'#3aaa6a','Delay':'#d9534f','Completed':'#8e5cb5','At Risk':'#d9960a','Not Started':'#8a9bb0'};
   const CS2=new Date('2025-04-01'),CE2=new Date('2026-09-30'),TMS2=CE2-CS2;
   const pp2=dt=>dt?Math.min(100,Math.max(0,(dt-CS2)/TMS2*100)):null;
   const td2=pp2(TODAY);
@@ -4562,7 +5219,7 @@ function renderVipIdeas(){
 
 function renderVipList(){
   const el=$('vipList');if(!el)return;
-  const SCOL={'On Track':'#1a7a4a','Delay':'#c0392b','Completed':'#6c3483','At Risk':'#c87a00','Not Started':'#8a9bb0'};
+  const SCOL={'On Track':'#3aaa6a','Delay':'#d9534f','Completed':'#8e5cb5','At Risk':'#d9960a','Not Started':'#8a9bb0'};
   let html=`<h3 style="font-family:'Playfair Display',serif;font-size:16px;color:#1c2b3a;margin-bottom:16px">📁 รายการโครงการทั้งหมด</h3>`;
   if(!P.length){el.innerHTML=html+'<div style="color:#8a9bb0;text-align:center;padding:24px">ยังไม่มีข้อมูล</div>';return;}
   html+=`<table style="width:100%;border-collapse:collapse;font-size:11px">
