@@ -1036,22 +1036,9 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
     <!-- KPI Summary Cards (PCG style) -->
     <div id="sumKpiRow" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px"></div>
 
-    <!-- PROJECT stats + IDEA stats side by side -->
+    <!-- IDEA stats + PROJECT stats side by side (swapped to align with List of Projects) -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
-      <!-- PROJECT by Category & Status -->
-      <div class="card" style="padding:0;overflow:hidden">
-        <div style="background:var(--navy);padding:10px 18px;display:flex;align-items:center;gap:8px">
-          <span style="font-size:14px">📁</span>
-          <span style="font-family:'Playfair Display',serif;font-size:13px;color:var(--gold);letter-spacing:.5px">PROJECT</span>
-          <span style="margin-left:auto;font-family:'DM Mono',monospace;font-size:11px;color:rgba(255,255,255,.4)">by Category &amp; Status</span>
-        </div>
-        <div style="padding:16px 18px">
-          <div id="sumCatBars" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
-          <div style="height:1px;background:var(--div2);margin-bottom:12px"></div>
-          <div id="sumStatBars" style="display:flex;flex-direction:column;gap:7px"></div>
-        </div>
-      </div>
-      <!-- IDEA / PROPOSAL summary -->
+      <!-- IDEA / PROPOSAL summary — LEFT -->
       <div class="card" style="padding:0;overflow:hidden">
         <div style="background:var(--navy);padding:10px 18px;display:flex;align-items:center;gap:8px">
           <span style="font-size:14px">💡</span>
@@ -1062,6 +1049,19 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
           <div id="sumIdeaStageBars" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
           <div style="height:1px;background:var(--div2);margin-bottom:12px"></div>
           <div id="sumIdeaStatBars" style="display:flex;flex-direction:column;gap:7px"></div>
+        </div>
+      </div>
+      <!-- PROJECT by Category & Status — RIGHT -->
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="background:var(--navy);padding:10px 18px;display:flex;align-items:center;gap:8px">
+          <span style="font-size:14px">📁</span>
+          <span style="font-family:'Playfair Display',serif;font-size:13px;color:var(--gold);letter-spacing:.5px">PROJECT</span>
+          <span style="margin-left:auto;font-family:'DM Mono',monospace;font-size:11px;color:rgba(255,255,255,.4)">by Category &amp; Status</span>
+        </div>
+        <div style="padding:16px 18px">
+          <div id="sumCatBars" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
+          <div style="height:1px;background:var(--div2);margin-bottom:12px"></div>
+          <div id="sumStatBars" style="display:flex;flex-direction:column;gap:7px"></div>
         </div>
       </div>
     </div>
@@ -2315,10 +2315,12 @@ async function save(){
 async function load(){
   TODAY=new Date();TODAY.setHours(0,0,0,0);
   const base=location.hostname.includes('onrender.com')||location.hostname==='localhost'?'':'https://portfolio-dashboard-v1.onrender.com';
-  try{const r=await fetch(base+'/api/data',{credentials:'include'});if(r.ok){const d=await r.json();if(d.projects&&d.projects.length)P=d.projects;if(d.ideas&&d.ideas.length)IDEAS=d.ideas;}}catch(e){}
-  if(!P.length){try{const s=localStorage.getItem(SK);if(s)P=JSON.parse(s);}catch(e){}}
-  if(!IDEAS.length){try{const s=localStorage.getItem(IK);if(s)IDEAS=JSON.parse(s);}catch(e){}}
-  restoreFilesFromSave(); // Restore file binary data
+  // 1) Load localStorage first — most reliable
+  try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s);if(d&&d.length)P=d;}}catch(e){}
+  try{const s=localStorage.getItem(IK);if(s){const d=JSON.parse(s);if(d&&d.length)IDEAS=d;}}catch(e){}
+  // 2) Sync with server — only overwrite if server has MORE records
+  try{const r=await fetch(base+'/api/data',{credentials:'include'});if(r.ok){const d=await r.json();if(d.projects&&d.projects.length&&d.projects.length>=P.length)P=d.projects;if(d.ideas&&d.ideas.length&&d.ideas.length>=IDEAS.length)IDEAS=d.ideas;}}catch(e){}
+  restoreFilesFromSave();
   if(!P.length)loadDemoP();if(!IDEAS.length)loadDemoI();
 }
 function loadDemoP(){P=[
