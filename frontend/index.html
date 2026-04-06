@@ -1036,9 +1036,9 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
     <!-- KPI Summary Cards (PCG style) -->
     <div id="sumKpiRow" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px"></div>
 
-    <!-- IDEA stats + PROJECT stats side by side (swapped to align with List of Projects) -->
+    <!-- PROJECT stats + IDEA stats side by side -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
-      <!-- IDEA / PROPOSAL summary — LEFT -->
+      <!-- IDEA / PROPOSAL summary — LEFT (matches Idea Pitching / Project Proposal columns below) -->
       <div class="card" style="padding:0;overflow:hidden">
         <div style="background:var(--navy);padding:10px 18px;display:flex;align-items:center;gap:8px">
           <span style="font-size:14px">💡</span>
@@ -1051,7 +1051,7 @@ select.ci{cursor:pointer;appearance:none;background:transparent url("data:image/
           <div id="sumIdeaStatBars" style="display:flex;flex-direction:column;gap:7px"></div>
         </div>
       </div>
-      <!-- PROJECT by Category & Status — RIGHT -->
+      <!-- PROJECT by Category & Status — RIGHT (matches Execution / Closing / Result Follow columns below) -->
       <div class="card" style="padding:0;overflow:hidden">
         <div style="background:var(--navy);padding:10px 18px;display:flex;align-items:center;gap:8px">
           <span style="font-size:14px">📁</span>
@@ -2315,36 +2315,30 @@ async function save(){
 async function load(){
   TODAY=new Date();TODAY.setHours(0,0,0,0);
   const base=location.hostname.includes('onrender.com')||location.hostname==='localhost'?'':'https://portfolio-dashboard-v1.onrender.com';
-  // 1) Load localStorage first — most reliable
-  try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s);if(d&&d.length)P=d;}}catch(e){}
-  try{const s=localStorage.getItem(IK);if(s){const d=JSON.parse(s);if(d&&d.length)IDEAS=d;}}catch(e){}
-  // 2) Sync with server — only overwrite if server has MORE records
-  try{const r=await fetch(base+'/api/data',{credentials:'include'});if(r.ok){const d=await r.json();if(d.projects&&d.projects.length&&d.projects.length>=P.length)P=d.projects;if(d.ideas&&d.ideas.length&&d.ideas.length>=IDEAS.length)IDEAS=d.ideas;}}catch(e){}
+  // Load localStorage first (always available immediately)
+  let localP=[],localI=[];
+  try{const s=localStorage.getItem(SK);if(s)localP=JSON.parse(s);}catch(e){}
+  try{const s=localStorage.getItem(IK);if(s)localI=JSON.parse(s);}catch(e){}
+  // Try server — server wins if it has data (more authoritative/shared)
+  let serverP=[],serverI=[];
+  try{
+    const r=await fetch(base+'/api/data',{credentials:'include'});
+    if(r.ok){const d=await r.json();
+      if(d.projects&&d.projects.length)serverP=d.projects;
+      if(d.ideas&&d.ideas.length)serverI=d.ideas;
+    }
+  }catch(e){}
+  // Use whichever has more data (server preferred, localStorage as fallback)
+  P=serverP.length>=localP.length?serverP:localP;
+  IDEAS=serverI.length>=localI.length?serverI:localI;
   restoreFilesFromSave();
-  if(!P.length)loadDemoP();if(!IDEAS.length)loadDemoI();
+  // Only load demo if truly no data anywhere
+  if(!P.length)loadDemoP();
+  if(!IDEAS.length)loadDemoI();
 }
-function loadDemoP(){P=[
-  {id:'PRJ-001',name:'Project Alpha',  pcat:'ENE',owner:'สมชาย ใจดี', status:'On Track',  pct:15,ps:'2026-03-01',pe:'2026-05-26',as_:'2026-03-01',ae:''},
-  {id:'PRJ-002',name:'Project Beta',   pcat:'CST',owner:'วิภา มานะ',  status:'Delay',     pct:80,ps:'2025-04-01',pe:'2025-11-28',as_:'2025-05-01',ae:'2026-01-26'},
-  {id:'PRJ-003',name:'Project Gamma',  pcat:'QLT',owner:'ประทีป สุข', status:'Delay',     pct:80,ps:'2025-04-01',pe:'2025-11-28',as_:'2025-05-01',ae:'2026-01-26'},
-  {id:'PRJ-004',name:'Project Delta',  pcat:'SAF',owner:'นิภา รักดี', status:'Delay',     pct:95,ps:'2025-04-01',pe:'2025-10-28',as_:'2025-05-01',ae:'2026-01-26'},
-  {id:'PRJ-005',name:'Project Epsilon',pcat:'PRD',owner:'สมหมาย ทอง',status:'Completed', pct:75,ps:'2025-07-30',pe:'2026-08-24',as_:'2025-07-30',ae:'2026-05-26'},
-  {id:'PRJ-006',name:'Project Zeta',   pcat:'MRL',owner:'อรนุช แก้ว', status:'Completed', pct:50,ps:'2026-01-26',pe:'2026-07-25',as_:'2026-01-26',ae:'2026-05-26'},
-  {id:'PRJ-007',name:'Project Eta',    pcat:'ENV',owner:'พิชัย วงศ์', status:'Not Started',pct:0,ps:'',pe:'',as_:'',ae:''},
-  {id:'PRJ-008',name:'Project Theta',  pcat:'ENE',owner:'กนกวรรณ ศรี',status:'Completed',pct:90,ps:'2026-01-26',pe:'2026-03-27',as_:'2026-01-26',ae:'2026-03-13'},
-  {id:'PRJ-009',name:'Project Iota',   pcat:'CST',owner:'ธนพล ชัย',   status:'Completed', pct:90,ps:'2026-01-26',pe:'2026-03-27',as_:'2026-01-26',ae:'2026-03-13'},
-  {id:'PRJ-010',name:'Project Kappa',  pcat:'QLT',owner:'รัตนา พรม',  status:'Completed', pct:90,ps:'2026-01-26',pe:'2026-03-27',as_:'2026-01-26',ae:'2026-03-13'},
-  {id:'PRJ-011',name:'Project Lambda', pcat:'SAF',owner:'ชาญ บุญมา',  status:'Completed', pct:60,ps:'2025-12-01',pe:'2026-06-30',as_:'2025-12-01',ae:'2026-04-15'},
-  {id:'PRJ-012',name:'Project Mu',     pcat:'PRD',owner:'ศิริพร นาค', status:'Completed', pct:35,ps:'2026-02-01',pe:'2026-09-30',as_:'2026-02-01',ae:'2026-04-01'},
-];}
-function loadDemoI(){IDEAS=[
-  {id:'IDEA-001',title:'AI Chatbot Customer Service',owner:'วิภา มานะ',cat:'PRD',date:'2026-01-15',budget:500000,desc:'พัฒนา AI Chatbot รองรับคำถามลูกค้าอัตโนมัติ ลด workload CS 30%',impact:9,feasibility:7,strategic:8,status:'approved',note:'อนุมัติงบ Q2 2026'},
-  {id:'IDEA-002',title:'ERP เชื่อมต่อ Warehouse',owner:'สมชาย ใจดี',cat:'CST',date:'2026-02-01',budget:1200000,desc:'ปรับปรุง inventory tracking เชื่อมต่อ ERP ลด stockout 80%',impact:8,feasibility:6,strategic:9,status:'review',note:'รอ vendor quotation'},
-  {id:'IDEA-003',title:'Loyalty Program ใหม่',owner:'อรนุช แก้ว',cat:'MRL',date:'2026-02-10',budget:300000,desc:'loyalty program tier-based เพิ่ม customer retention 25%',impact:7,feasibility:8,strategic:7,status:'new',note:''},
-  {id:'IDEA-004',title:'Employee Wellbeing App',owner:'ชาญ บุญมา',cat:'MRL',date:'2026-02-20',budget:150000,desc:'App ติดตาม wellbeing พนักงาน รายงาน burnout risk',impact:6,feasibility:8,strategic:6,status:'new',note:''},
-  {id:'IDEA-005',title:'Green Office – Solar Panel',owner:'นิภา รักดี',cat:'ENV',date:'2026-01-20',budget:800000,desc:'Solar Panel ลดค่าไฟ 40% ESG score ดีขึ้น',impact:7,feasibility:5,strategic:8,status:'rejected',note:'เลื่อน FY2027'},
-  {id:'IDEA-006',title:'Upskill Data Analytics',owner:'สมหมาย ทอง',cat:'hr',date:'2026-03-01',budget:450000,desc:'หลักสูตร Data Analytics พนักงาน 80% ใช้ Data เองได้',impact:7,feasibility:9,strategic:8,status:'approved',note:'เริ่ม Q3 2026'},
-];}
+function loadDemoP(){P=[];}
+function loadDemoI(){IDEAS=[];}
+
 
 let saveT;
 function setSave(st){$('sdot').className='sdot '+(st==='ok'?'ok':'go');$('slbl').textContent=st==='ok'?'บันทึกแล้ว':'กำลังบันทึก...';}
@@ -3357,10 +3351,18 @@ function renderSummary(){
   const stageOf=p=>{
     if(p.stage)return p.stage; // manual override wins
     const s=p.status||'';
-    if(s==='Completed')return'clos';        // Completed → Closing (auto)
-    if(s==='Not Started')return'idea';      // Not Started → Idea Pitching
+    if(s==='Not Started')return'idea';
     if(s==='On Track'||s==='At Risk')return'exec';
     if(s==='Delay')return'exec';
+    if(s==='Completed'){
+      // Use ae (Actual End) as completion date, fallback to pe
+      const completedDate=p.ae?new Date(p.ae):p.pe?new Date(p.pe):null;
+      if(!completedDate)return'clos';
+      const daysSince=Math.floor((TODAY-completedDate)/86400000);
+      if(daysSince<14)return'exec';   // 0-13 วัน: ยังอยู่ใน Execution
+      if(daysSince<74)return'clos';   // 14-73 วัน: Closing
+      return'res';                    // 74+ วัน: Result Follow
+    }
     return'idea';
   };
 
@@ -3595,7 +3597,7 @@ async function exportSummaryPDF(){
 
     // KPIs
     const total=P.length;
-    const stageOf=p=>{if(p.stage)return p.stage;const s=p.status||'';if(s==='Completed')return'clos';if(s==='Not Started')return'idea';return'exec';};
+    const stageOf=p=>{if(p.stage)return p.stage;const s=p.status||'';if(s==='Not Started')return'idea';if(s==='On Track'||s==='At Risk'||s==='Delay')return'exec';if(s==='Completed'){const cd=p.ae?new Date(p.ae):p.pe?new Date(p.pe):null;if(!cd)return'clos';const ds=Math.floor((TODAY-cd)/86400000);if(ds<14)return'exec';if(ds<74)return'clos';return'res';}return'idea';};
     const preP=P.filter(p=>['idea','prop'].includes(stageOf(p))).length;
     const ongoP=P.filter(p=>['exec','clos'].includes(stageOf(p))).length;
     const doneP=P.filter(p=>stageOf(p)==='res').length;
@@ -5287,9 +5289,17 @@ function renderVipContent(){
   const stageOfV=p=>{
     if(p.stage)return p.stage;
     const s=p.status||'';
-    if(s==='Completed')return'clos';
     if(s==='Not Started')return'idea';
-    return'exec';
+    if(s==='On Track'||s==='At Risk'||s==='Delay')return'exec';
+    if(s==='Completed'){
+      const cd=p.ae?new Date(p.ae):p.pe?new Date(p.pe):null;
+      if(!cd)return'clos';
+      const ds=Math.floor((TODAY-cd)/86400000);
+      if(ds<14)return'exec';
+      if(ds<74)return'clos';
+      return'res';
+    }
+    return'idea';
   };
 
   const total=P.length;
