@@ -63,8 +63,17 @@ The SQLite database (`portfolio.db`) is created automatically on first run.
 
 ---
 ## Run on AWS
-13.213.3.238:8504
+For the remote to AWS server
 
+ssh -i "your-key-name.pem" username@public-ip-address
+
+If you didn't want to type sudo every time use
+sudo chown -R ubuntu:ubuntu (username: username) ....file path
+This give you the permission to user that will not require the sudo command
+as a administrator.
+```
+13.213.3.238:8504
+```
 ## Default Login
 
 | Username | Password   | Role  |
