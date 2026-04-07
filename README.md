@@ -62,6 +62,8 @@ http://localhost:5000
 The SQLite database (`portfolio.db`) is created automatically on first run.
 
 ---
+## Run on AWS
+13.213.3.238:8504
 
 ## Default Login
 
