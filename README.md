@@ -63,14 +63,21 @@ The SQLite database (`portfolio.db`) is created automatically on first run.
 
 ---
 ## Run on AWS
-For the remote to AWS server
+For the remote to the AWS server
 
 ssh -i "your-key-name.pem" username@public-ip-address
-
-If you didn't want to type sudo every time use
+Docker build
+```
+docker build -t dashboard-app .
+```
+Docker run image
+```
+sudo docker run -d -p 8504:8504 dashboard-app
+```
+If you didn't want to type sudo every time, use
 sudo chown -R ubuntu:ubuntu (username: username) ....file path
-This give you the permission to user that will not require the sudo command
-as a administrator.
+This gives you the permission to user that will not require the sudo command
+as an administrator.
 ```
 13.213.3.238:8504
 ```
